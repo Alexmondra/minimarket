@@ -5,7 +5,7 @@ use App\Http\Controllers\Filament\PresentacionSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('public.inicio');
 });
 
 Route::get('/filament/presentaciones/search', [PresentacionSearchController::class, 'search'])
@@ -14,4 +14,3 @@ Route::get('/filament/presentaciones/search', [PresentacionSearchController::cla
 Route::get('/filament/compras/comprobante/{compra}', [CompraComprobanteController::class, 'view'])
     ->middleware(['web', 'auth'])
     ->name('filament.compras.comprobante');
-

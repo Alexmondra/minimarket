@@ -4,3 +4,91 @@
 @source '../../../../resources/views/filament';
 @source '../../../../app/Livewire';
 @source '../../../../resources/views/livewire';
+
+.fi-sidebar.fi-main-sidebar {
+    @apply bg-white/95 shadow-xl ring-1 ring-gray-950/5 backdrop-blur dark:bg-gray-950/95 dark:ring-white/10 lg:shadow-none;
+}
+
+.fi-body:not(.fi-body-has-top-navigation) .fi-sidebar.fi-main-sidebar {
+    @apply lg:border-e lg:border-gray-200/70 dark:lg:border-white/10;
+}
+
+.fi-sidebar-header {
+    @apply px-4;
+}
+
+.fi-sidebar-nav {
+    @apply gap-y-5 px-4 py-5;
+}
+
+.fi-sidebar-nav-groups {
+    @apply mx-0 gap-y-5;
+}
+
+.fi-sidebar-group {
+    @apply rounded-xl;
+}
+
+.fi-sidebar-group-btn {
+    @apply mb-1 rounded-lg px-3 py-2;
+}
+
+.fi-sidebar-group-label {
+    @apply text-[0.7rem] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500;
+}
+
+.fi-sidebar-group-collapse-btn {
+    @apply rounded-md opacity-60 transition hover:opacity-100;
+}
+
+.fi-sidebar-group-items {
+    @apply gap-y-1.5;
+}
+
+.fi-sidebar-item-btn {
+    @apply min-h-10 rounded-xl px-3 py-2.5 transition duration-150;
+}
+
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn {
+    @apply hover:bg-gray-100 hover:shadow-sm focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus-visible:bg-white/10;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    @apply bg-primary-50 shadow-sm ring-1 ring-primary-500/15 dark:bg-primary-500/10 dark:ring-primary-400/20;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn > .fi-icon {
+    @apply text-primary-600 dark:text-primary-300;
+}
+
+.fi-sidebar-item-label {
+    @apply text-[0.92rem] font-semibold text-gray-700 dark:text-gray-200;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    @apply text-primary-700 dark:text-primary-200;
+}
+
+.fi-sidebar-item-grouped-border {
+    @apply size-5;
+}
+
+.fi-sidebar-item-grouped-border-part {
+    @apply size-2 bg-gray-300 dark:bg-gray-600;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-grouped-border-part {
+    @apply bg-primary-500 dark:bg-primary-300;
+}
+
+.fi-topbar {
+    @apply bg-white/95 backdrop-blur dark:bg-gray-950/95;
+}
+
+.fi-topbar-open-collapse-sidebar-btn,
+.fi-topbar-close-collapse-sidebar-btn,
+.fi-sidebar-open-collapse-sidebar-btn,
+.fi-sidebar-close-collapse-sidebar-btn {
+    @apply rounded-lg bg-gray-100 text-gray-600 transition hover:bg-primary-50 hover:text-primary-700 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-primary-500/15 dark:hover:text-primary-200;
+}

@@ -41,6 +41,11 @@ class Producto extends Model
         return $this->hasMany(ProductoPresentacion::class);
     }
 
+    public function productoSucursales()
+    {
+        return $this->hasMany(ProductoSucursal::class);
+    }
+
     public function primeraPresentacion()
     {
         return $this->hasOne(ProductoPresentacion::class)->ofMany('id', 'min');
@@ -86,11 +91,11 @@ class Producto extends Model
     public function getImagenPrioritariaAttribute(): ?string
     {
         $presentacion = $this->presentacionPrioritaria();
-        
+
         if ($presentacion && $presentacion->imagen) {
             return $presentacion->imagen_url;
         }
-        
+
         return null;
     }
 
