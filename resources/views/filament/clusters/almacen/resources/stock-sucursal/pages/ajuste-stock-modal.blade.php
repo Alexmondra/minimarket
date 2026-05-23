@@ -1,0 +1,1 @@
+@livewire('almacen.ajuste-stock')
