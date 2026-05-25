@@ -9,8 +9,8 @@ use App\Models\LotePresentacion;
 use App\Models\MovimientoInventario;
 use App\Models\ProductoPresentacion;
 use App\Models\Serie;
-use App\Models\Sunat;
 use App\Models\User;
+use App\Support\Facturacion\FacturacionService;
 use Illuminate\Support\Facades\DB;
 
 class RegistrarVenta
@@ -28,13 +28,13 @@ class RegistrarVenta
         protected CajaService $cajaService,
         protected VentaCalculator $calculator,
         protected PuntosService $puntosService,
-        protected VentaXmlGenerator $xmlGenerator,
         protected VentaFileService $fileService,
+        protected FacturacionService $facturacionService,
     ) {}
 
     public function ejecutar(User $user, array $payload): Documento
     {
-        return DB::transaction(function () use ($user, $payload): Documento {
+        $documento = DB::transaction(function () use ($user, $payload): Documento {
             $empresa = $user->empresa()->with('empresaConfig')->firstOrFail();
             $sucursalId = (int) $payload['sucursal_id'];
             $caja = $this->cajaService->requireCajaAbierta($user->id, $sucursalId);
@@ -195,20 +195,10 @@ class RegistrarVenta
                 'detalles.presentacion.unidadMedida',
             ]);
 
-            $xml = $this->xmlGenerator->generar($documento);
-            $this->fileService->guardarXml($documento, $xml);
-
             $htmlTicket = view('ventas.ticket', [
                 'documento' => $documento,
             ])->render();
             $this->fileService->guardarTicketHtml($documento, $htmlTicket);
-
-            Sunat::create([
-                'empresa_id' => $empresa->id,
-                'documento_id' => $documento->id,
-                'estado_sunat' => false,
-                'mensaje_sunat' => 'Pendiente de envio a cola SUNAT.',
-            ]);
 
             return $documento->fresh([
                 'cliente',
@@ -219,6 +209,17 @@ class RegistrarVenta
                 'sunat',
             ]);
         });
+
+        $this->facturacionService->procesar($documento);
+
+        return $documento->fresh([
+            'cliente',
+            'empresa',
+            'sucursal',
+            'detalles.presentacion.unidadMedida',
+            'archivos',
+            'sunat',
+        ]);
     }
 
     protected function resolverCliente(string $tipoComprobante, array $clienteData): ?Cliente

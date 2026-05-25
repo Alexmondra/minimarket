@@ -1,0 +1,158 @@
+<?php
+
+namespace App\Support\Facturacion;
+
+use App\Models\Cliente;
+use App\Models\DetalleDocumento;
+use App\Models\Documento;
+use App\Models\Empresa;
+use Greenter\Model\Client\Client;
+use Greenter\Model\Company\Address;
+use Greenter\Model\Company\Company;
+use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
+use Greenter\Model\Sale\Invoice;
+use Greenter\Model\Sale\Legend;
+use Greenter\Model\Sale\SaleDetail;
+use NumberFormatter;
+use RuntimeException;
+
+class DocumentoGreenterFactory
+{
+    public function make(Documento $documento): Invoice
+    {
+        $documento->loadMissing([
+            'empresa.empresaConfig',
+            'sucursal',
+            'cliente',
+            'detalles.presentacion.unidadMedida',
+        ]);
+
+        if (! in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
+            throw new RuntimeException('El comprobante no aplica para envio SUNAT.');
+        }
+
+        return (new Invoice())
+            ->setUblVersion('2.1')
+            ->setTipoOperacion('0101')
+            ->setTipoDoc($documento->tipo_comprobante === 'FACTURA' ? '01' : '03')
+            ->setSerie((string) $documento->serie)
+            ->setCorrelativo(ltrim((string) $documento->numero, '0') ?: (string) $documento->numero)
+            ->setFechaEmision($documento->fecha_emision?->toDateTime() ?? now()->toDateTime())
+            ->setFormaPago(new FormaPagoContado())
+            ->setTipoMoneda((string) ($documento->tipo_moneda ?: 'PEN'))
+            ->setCompany($this->company($documento->empresa, $documento))
+            ->setClient($this->client($documento->cliente))
+            ->setMtoOperGravadas($this->money($documento->op_gravada))
+            ->setMtoOperExoneradas($this->money($documento->op_exonerada))
+            ->setMtoOperInafectas($this->money($documento->op_inafecta))
+            ->setMtoIGV($this->money($documento->total_igv))
+            ->setTotalImpuestos($this->money($documento->total_igv))
+            ->setValorVenta($this->money($documento->subtotal))
+            ->setSubTotal($this->money($documento->total_neto))
+            ->setMtoImpVenta($this->money($documento->total_neto))
+            ->setDetails($this->details($documento))
+            ->setLegends([
+                (new Legend())
+                    ->setCode('1000')
+                    ->setValue($this->montoEnLetras($this->money($documento->total_neto))),
+            ]);
+    }
+
+    protected function company(Empresa $empresa, Documento $documento): Company
+    {
+        return (new Company())
+            ->setRuc((string) $empresa->ruc)
+            ->setRazonSocial((string) $empresa->razon_social)
+            ->setNombreComercial((string) $empresa->razon_social)
+            ->setAddress(
+                (new Address())
+                    ->setUbigueo($documento->sucursal?->ubigeo ?: null)
+                    ->setDireccion($empresa->direccion_fiscal ?: $documento->sucursal?->direccion ?: '-')
+                    ->setCodLocal($this->codigoLocal($documento->sucursal?->codigo))
+            );
+    }
+
+    protected function client(?Cliente $cliente): Client
+    {
+        return (new Client())
+            ->setTipoDoc($this->tipoDocumentoCliente($cliente?->tipo_documento))
+            ->setNumDoc((string) ($cliente?->documento ?: '00000000'))
+            ->setRznSocial((string) ($cliente?->razon_social ?: trim(($cliente?->nombre ?? 'Cliente').' '.($cliente?->apellido ?? 'Varios'))))
+            ->setAddress((new Address())->setDireccion($cliente?->direccion ?: '-'));
+    }
+
+    /**
+     * @return array<int, SaleDetail>
+     */
+    protected function details(Documento $documento): array
+    {
+        return $documento->detalles
+            ->values()
+            ->map(fn (DetalleDocumento $detalle, int $index): SaleDetail => $this->detail($detalle, $index + 1, $documento))
+            ->all();
+    }
+
+    protected function detail(DetalleDocumento $detalle, int $index, Documento $documento): SaleDetail
+    {
+        $tipAfeIgv = $detalle->tipo_afectacion === 'GRAVADO' ? '10' : ($detalle->tipo_afectacion === 'INAFECTO' ? '30' : '20');
+        $porcentajeIgv = $tipAfeIgv === '10' ? $this->money($documento->porcentaje_igv) : 0.0;
+
+        return (new SaleDetail())
+            ->setCodProducto((string) ($detalle->producto_presentacion_id ?: $index))
+            ->setUnidad($this->unidadSunat($detalle->presentacion?->unidadMedida?->abreviatura))
+            ->setCantidad((float) $detalle->cantidad)
+            ->setDescripcion((string) $detalle->producto_nombre)
+            ->setMtoBaseIgv($this->money($detalle->subtotal_neto))
+            ->setPorcentajeIgv($porcentajeIgv)
+            ->setIgv($this->money($detalle->total_igv))
+            ->setTipAfeIgv($tipAfeIgv)
+            ->setTotalImpuestos($this->money($detalle->total_igv))
+            ->setMtoValorVenta($this->money($detalle->subtotal_neto))
+            ->setMtoValorUnitario($this->money($detalle->valor_unitario))
+            ->setMtoPrecioUnitario($this->money($detalle->precio_unitario));
+    }
+
+    protected function tipoDocumentoCliente(?string $tipoDocumento): string
+    {
+        return match (strtoupper((string) $tipoDocumento)) {
+            'RUC' => '6',
+            'CE', 'CARNET_EXTRANJERIA' => '4',
+            'PASAPORTE' => '7',
+            default => '1',
+        };
+    }
+
+    protected function montoEnLetras(float $total): string
+    {
+        $entero = (int) floor($total);
+        $centimos = (int) round(($total - $entero) * 100);
+        $letras = number_format($entero, 0, '.', '');
+
+        if (class_exists(NumberFormatter::class)) {
+            $formatter = new NumberFormatter('es_PE', NumberFormatter::SPELLOUT);
+            $letras = mb_strtoupper((string) $formatter->format($entero));
+        }
+
+        return sprintf('SON %s CON %02d/100 SOLES', $letras, $centimos);
+    }
+
+    protected function codigoLocal(?string $codigo): string
+    {
+        return preg_match('/^\d{4}$/', (string) $codigo) ? (string) $codigo : '0000';
+    }
+
+    protected function unidadSunat(?string $unidad): string
+    {
+        $unidad = strtoupper(trim((string) $unidad));
+
+        return match ($unidad) {
+            'NIU', 'ZZ', 'KGM', 'LTR', 'MTR', 'BX' => $unidad,
+            default => 'NIU',
+        };
+    }
+
+    protected function money(mixed $value): float
+    {
+        return round((float) $value, 2);
+    }
+}

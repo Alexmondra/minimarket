@@ -9,6 +9,7 @@
         "php": "^8.3",
         "blade-ui-kit/blade-heroicons": "^2.7",
         "filament/filament": "^4.0",
+        "greenter/greenter": "^5.2",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "spatie/laravel-permission": "^7.4"
