@@ -15,6 +15,15 @@ use Illuminate\Support\Facades\DB;
 
 class RegistrarVenta
 {
+    public const MEDIOS_PAGO_CONTADO = [
+        'EFECTIVO',
+        'YAPE',
+        'PLIN',
+        'TARJETA',
+        'TRANSFERENCIA',
+        'OTRO',
+    ];
+
     public function __construct(
         protected CajaService $cajaService,
         protected VentaCalculator $calculator,
@@ -30,6 +39,11 @@ class RegistrarVenta
             $sucursalId = (int) $payload['sucursal_id'];
             $caja = $this->cajaService->requireCajaAbierta($user->id, $sucursalId);
             $tipoComprobante = strtoupper($payload['tipo_comprobante']);
+            $medioPago = strtoupper((string) ($payload['medio_pago'] ?? 'EFECTIVO'));
+
+            if (! in_array($medioPago, self::MEDIOS_PAGO_CONTADO, true)) {
+                throw new \RuntimeException('El medio de pago seleccionado no es válido.');
+            }
 
             $cliente = $this->resolverCliente(
                 tipoComprobante: $tipoComprobante,
@@ -46,7 +60,12 @@ class RegistrarVenta
                 ->first();
 
             if (! $serie) {
-                throw new \RuntimeException('No hay una serie configurada para este tipo de comprobante en la sucursal.');
+                $serie = Serie::create([
+                    'sucursal_id' => $sucursalId,
+                    'tipo_comprobante' => $tipoComprobante,
+                    'serie' => $this->seriePorDefecto($tipoComprobante),
+                    'correlativo' => 1,
+                ]);
             }
 
             $lineasVenta = collect($payload['items'] ?? [])
@@ -66,6 +85,20 @@ class RegistrarVenta
                 })
                 ->all();
 
+            if ($lineasVenta === []) {
+                throw new \RuntimeException('Agrega al menos un producto para registrar la venta.');
+            }
+
+            foreach ($lineasVenta as $lineaVenta) {
+                if ($lineaVenta['cantidad'] <= 0) {
+                    throw new \RuntimeException("La cantidad de {$lineaVenta['producto_nombre']} debe ser mayor a cero.");
+                }
+
+                if ($lineaVenta['precio_unitario'] < 0) {
+                    throw new \RuntimeException("El precio de {$lineaVenta['producto_nombre']} no puede ser negativo.");
+                }
+            }
+
             $calculo = $this->calculator->calcular(
                 $lineasVenta,
                 (bool) $empresa->incluido_tributo,
@@ -76,7 +109,11 @@ class RegistrarVenta
             $totales = $calculo['totales'];
             $montoRecibido = (float) ($payload['monto_recibido'] ?? 0);
             $totalNeto = (float) $totales['total_neto'];
-            $vuelto = strtoupper((string) ($payload['medio_pago'] ?? 'EFECTIVO')) === 'EFECTIVO'
+            if ($medioPago !== 'EFECTIVO') {
+                $montoRecibido = $totalNeto;
+            }
+
+            $vuelto = $medioPago === 'EFECTIVO'
                 ? max(round($montoRecibido - $totalNeto, 2), 0)
                 : 0;
 
@@ -100,7 +137,7 @@ class RegistrarVenta
                 'total_igv' => $totales['total_igv'],
                 'porcentaje_igv' => $payload['porcentaje_igv'] ?? 18,
                 'tipo_moneda' => $payload['tipo_moneda'] ?? 'PEN',
-                'medio_pago' => strtoupper((string) ($payload['medio_pago'] ?? 'EFECTIVO')),
+                'medio_pago' => $medioPago,
                 'monto_recibido' => $montoRecibido,
                 'vuelto' => $vuelto,
                 'puntos_ganados' => 0,
@@ -312,5 +349,14 @@ class RegistrarVenta
 
             $remaining = round($remaining - $consumir, 3);
         }
+    }
+
+    protected function seriePorDefecto(string $tipoComprobante): string
+    {
+        return match ($tipoComprobante) {
+            'FACTURA' => 'F001',
+            'BOLETA' => 'B001',
+            default => 'T001',
+        };
     }
 }

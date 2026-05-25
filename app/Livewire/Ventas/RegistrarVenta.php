@@ -13,7 +13,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
-class RegistrarVenta extends Component
+trait RegistrarVentaBehavior
 {
     public string $posTheme = 'light';
 
@@ -63,13 +63,19 @@ class RegistrarVenta extends Component
 
     public ?int $clienteId = null;
 
+    public string $searchCliente = '';
+
+    public array $clientesResultados = [];
+
+    public bool $showClienteDropdown = false;
+
     public bool $usarPuntos = false;
 
     public int $puntosCanjear = 0;
 
     public int $puntosDisponibles = 0;
 
-    public function mount(): void
+    public function mountRegistrarVenta(): void
     {
         $context = app(SucursalContext::class);
         $context->normalizeSession(Auth::user());
@@ -102,6 +108,12 @@ class RegistrarVenta extends Component
 
     public function updatedMedioPago(string $value): void
     {
+        if (! in_array($value, RegistrarVentaAction::MEDIOS_PAGO_CONTADO, true)) {
+            $this->medioPago = 'EFECTIVO';
+
+            return;
+        }
+
         if ($value !== 'EFECTIVO') {
             $resumen = $this->getResumenProperty();
             $this->montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
@@ -112,8 +124,78 @@ class RegistrarVenta extends Component
 
     public function cambiarMedioPago(string $medio): void
     {
+        if (! in_array($medio, RegistrarVentaAction::MEDIOS_PAGO_CONTADO, true)) {
+            return;
+        }
+
         $this->medioPago = $medio;
         $this->updatedMedioPago($medio);
+    }
+
+    public function updatedSearchCliente(): void
+    {
+        $term = trim($this->searchCliente);
+
+        if (strlen($term) < 2) {
+            $this->clientesResultados = [];
+            $this->showClienteDropdown = false;
+
+            return;
+        }
+
+        $this->clientesResultados = Cliente::query()
+            ->where(function ($query) use ($term): void {
+                $query->where('documento', 'like', "%{$term}%")
+                    ->orWhere('nombre', 'like', "%{$term}%")
+                    ->orWhere('apellido', 'like', "%{$term}%")
+                    ->orWhere('razon_social', 'like', "%{$term}%")
+                    ->orWhere('telefono', 'like', "%{$term}%");
+            })
+            ->orderByRaw('documento = ? desc', [$term])
+            ->limit(8)
+            ->get()
+            ->map(fn (Cliente $cliente): array => [
+                'id' => $cliente->id,
+                'tipo_documento' => $cliente->tipo_documento,
+                'documento' => $cliente->documento,
+                'nombre_completo' => $cliente->razon_social ?: trim(($cliente->nombre ?? '').' '.($cliente->apellido ?? '')),
+                'telefono' => $cliente->telefono,
+            ])
+            ->all();
+
+        $this->showClienteDropdown = count($this->clientesResultados) > 0;
+    }
+
+    public function seleccionarCliente(int $clienteId): void
+    {
+        $cliente = Cliente::query()->find($clienteId);
+
+        if (! $cliente) {
+            return;
+        }
+
+        $this->clienteId = $cliente->id;
+        $this->clienteTipoDocumento = $cliente->tipo_documento ?: 'DNI';
+        $this->clienteDocumento = $cliente->documento ?? '';
+        $this->clienteNombre = $cliente->nombre;
+        $this->clienteApellido = $cliente->apellido;
+        $this->clienteRazonSocial = $cliente->razon_social;
+        $this->clienteTelefono = $cliente->telefono;
+        $this->clienteEmail = $cliente->email;
+        $this->clienteDireccion = $cliente->direccion;
+        $this->puntosDisponibles = app(PuntosService::class)->puntosDisponibles($cliente, Auth::user()->empresa_id);
+        $this->searchCliente = '';
+        $this->clientesResultados = [];
+        $this->showClienteDropdown = false;
+    }
+
+    public function limpiarCliente(): void
+    {
+        $this->clienteDocumento = '';
+        $this->searchCliente = '';
+        $this->clientesResultados = [];
+        $this->showClienteDropdown = false;
+        $this->resetClienteData();
     }
 
     public function updatedClienteDocumento(): void
@@ -279,7 +361,12 @@ class RegistrarVenta extends Component
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
+            ->whereHas('producto', function ($query) {
+                $query->where('empresa_id', Auth::user()->empresa_id)
+                    ->where('activo', true);
+            })
             ->whereHas('lotePresentacion', fn ($query) => $query->where('producto_presentacion_id', $presentacionId))
+            ->whereHas('lotePresentacion', fn ($query) => $query->where('stock', '>', 0))
             ->get();
 
         if ($group->isEmpty()) {
@@ -320,6 +407,8 @@ class RegistrarVenta extends Component
         $producto = $this->obtenerDetalleProducto($presentacionId);
 
         if (! $producto) {
+            Notification::make()->title('Producto sin stock disponible')->warning()->send();
+
             return;
         }
 
@@ -612,10 +701,13 @@ class RegistrarVenta extends Component
                     'documento' => $documento,
                 ],
                 [
-                    'nombre' => $this->clienteTipoDocumento === 'RUC' ? null : $this->clienteNombre,
+                    'nombre' => $this->clienteTipoDocumento === 'RUC'
+                        ? ($this->clienteRazonSocial ?: 'Cliente')
+                        : ($this->clienteNombre ?: 'Cliente'),
                     'apellido' => $this->clienteTipoDocumento === 'RUC' ? null : $this->clienteApellido,
                     'razon_social' => $this->clienteTipoDocumento === 'RUC' ? $this->clienteRazonSocial : null,
                     'telefono' => $this->clienteTelefono,
+                    'email' => $this->clienteEmail,
                     'direccion' => $this->clienteDireccion,
                 ]
             );
@@ -644,6 +736,7 @@ class RegistrarVenta extends Component
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
+            ->whereHas('lotePresentacion', fn ($query) => $query->where('stock', '>', 0))
             ->whereHas('producto', function ($q) {
                 $q->where('empresa_id', Auth::user()->empresa_id)
                     ->where('activo', true);
@@ -690,6 +783,17 @@ class RegistrarVenta extends Component
         ->filter()
         ->values()
         ->all();
+    }
+
+}
+
+class RegistrarVenta extends Component
+{
+    use RegistrarVentaBehavior;
+
+    public function mount(): void
+    {
+        $this->mountRegistrarVenta();
     }
 
     public function render()

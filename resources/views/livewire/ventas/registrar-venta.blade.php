@@ -345,6 +345,7 @@
                                 >
                                     <div>
                                         <h3 class="text-xs font-bold leading-tight line-clamp-2 pos-text">{{ $prod['nombre'] }}</h3>
+                                        <p class="text-[9px] pos-text-muted mt-0.5">{{ $prod['presentacion'] }}</p>
                                     </div>
                                     <div class="flex justify-between items-end mt-1">
                                         <span class="text-[9px] font-bold {{ $prod['stock'] > 10 ? 'text-emerald-500' : 'text-amber-500' }}">
@@ -506,6 +507,30 @@
                         <span>Cliente</span>
                     </div>
 
+                    <div class="relative">
+                        <label class="block font-semibold pos-text-muted text-xs mb-1">Buscar cliente</label>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="searchCliente"
+                            class="w-full pos-input rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                            placeholder="Documento, nombre, razón social o teléfono"
+                        >
+                        @if($showClienteDropdown)
+                            <div class="absolute left-0 right-0 z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-slate-750 bg-slate-900/95 shadow-2xl divide-y divide-slate-800">
+                                @foreach($clientesResultados as $cliente)
+                                    <button
+                                        type="button"
+                                        wire:click="seleccionarCliente({{ $cliente['id'] }})"
+                                        class="w-full px-4 py-3 text-left hover:bg-emerald-500/10 transition text-white"
+                                    >
+                                        <span class="block text-xs font-bold">{{ $cliente['nombre_completo'] ?: 'Cliente' }}</span>
+                                        <span class="block text-[10px] text-slate-400">{{ $cliente['tipo_documento'] }} {{ $cliente['documento'] }} @if($cliente['telefono']) · {{ $cliente['telefono'] }} @endif</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
                     <div class="space-y-2.5 text-xs">
                         @if($clienteTipoDocumento === 'RUC')
                             <div>
@@ -567,6 +592,11 @@
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                             Agregar
                         </button>
+                        @if($clienteId || $clienteDocumento !== '')
+                            <button type="button" wire:click="limpiarCliente" class="col-span-2 border border-slate-400/30 pos-text-muted hover:bg-slate-500/5 py-2 px-1 rounded-lg text-[10px] font-bold transition focus:outline-none">
+                                Limpiar cliente
+                            </button>
+                        @endif
                     </div>
 
                     <!-- Loyalty points (Gold) -->
@@ -671,7 +701,23 @@
                             <span class="text-lg">💼</span>
                             <span class="text-[9px]">Plin / Wallet</span>
                         </button>
+
+                        <button
+                            type="button"
+                            wire:click="cambiarMedioPago('OTRO')"
+                            class="py-2.5 px-1 border rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center focus:outline-none {{ $medioPago === 'OTRO' ? 'pos-active-payment-transf font-bold' : 'pos-border pos-hoverable pos-text-muted' }}"
+                        >
+                            <span class="text-lg">✅</span>
+                            <span class="text-[9px]">Otro</span>
+                        </button>
                     </div>
+
+                    @if($medioPago !== 'EFECTIVO')
+                        <div>
+                            <label class="block font-semibold pos-text-muted text-xs mb-1">Referencia de pago</label>
+                            <input type="text" wire:model="referenciaPago" class="w-full pos-input rounded-xl py-2 px-3 text-xs focus:outline-none" placeholder="Operación, código o nota">
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -706,8 +752,12 @@
                             </div>
                         @endif
                         <div class="flex justify-between pos-text-muted">
-                            <span>IGV (18%)</span>
+                            <span>IGV ({{ number_format($porcentajeIgv, 2) }}%)</span>
                             <span class="pos-text">S/ {{ number_format($resumen['totales']['total_igv'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between pos-text-muted text-[10px]">
+                            <span>Configuración</span>
+                            <span class="pos-text">{{ $this->preciosIncluyenImpuesto ? 'Precios con IGV' : 'Precios sin IGV' }}</span>
                         </div>
                     </div>
 

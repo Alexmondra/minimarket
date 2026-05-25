@@ -9,7 +9,7 @@ class DetalleDocumento extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'detalle_documentos';
+    protected $table = 'documentos_detalles';
 
     protected $fillable = [
         'documento_id',
