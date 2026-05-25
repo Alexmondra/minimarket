@@ -21,8 +21,22 @@ class Sunat extends Model
         'fecha_respuesta',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'estado_sunat' => 'boolean',
+            'fecha_envio' => 'datetime',
+            'fecha_respuesta' => 'datetime',
+        ];
+    }
+
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
+    }
+
+    public function documento()
+    {
+        return $this->belongsTo(Documento::class);
     }
 }

@@ -12,16 +12,16 @@ use App\Filament\Clusters\Configuraciones\Resources\Sucursales\Tables\Sucursales
 use App\Models\Sucursal;
 use App\Support\SucursalContext;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class SucursalResource extends Resource
 {
-
     protected static ?string $model = Sucursal::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
@@ -84,5 +84,35 @@ class SucursalResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('sucursales.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('sucursales.crear') ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->can('sucursales.editar') ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->can('sucursales.eliminar') ?? false;
+    }
+
+    public static function canForceDelete(Model $record): bool
+    {
+        return static::canDelete($record);
+    }
+
+    public static function canRestore(Model $record): bool
+    {
+        return static::canDelete($record);
     }
 }

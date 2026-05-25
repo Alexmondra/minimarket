@@ -23,4 +23,26 @@ class Cliente extends Model
         'email',
         'direccion',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'fecha_nacimiento' => 'date',
+        ];
+    }
+
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class);
+    }
+
+    public function puntos()
+    {
+        return $this->hasMany(ClientePunto::class);
+    }
+
+    public function movimientosPuntos()
+    {
+        return $this->hasMany(ClientePuntoMovimiento::class);
+    }
 }

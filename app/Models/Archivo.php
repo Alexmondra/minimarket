@@ -19,4 +19,9 @@ class Archivo extends Model
         'ruta_archivo',
         'nombre_archivo',
     ];
+
+    public function documento()
+    {
+        return $this->belongsTo(Documento::class);
+    }
 }

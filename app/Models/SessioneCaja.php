@@ -25,6 +25,19 @@ class SessioneCaja extends Model
         'observaciones',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'fecha_apertura' => 'datetime',
+            'fecha_cierre' => 'datetime',
+            'saldo_inicial' => 'decimal:2',
+            'saldo_teorico' => 'decimal:2',
+            'saldo_real' => 'decimal:2',
+            'diferencia' => 'decimal:2',
+            'estado' => 'boolean',
+        ];
+    }
+
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
@@ -38,5 +51,10 @@ class SessioneCaja extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class, 'caja_sesion_id');
     }
 }

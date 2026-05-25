@@ -1,0 +1,1 @@
+@livewire('ventas.registrar-venta')

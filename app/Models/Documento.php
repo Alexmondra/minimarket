@@ -23,6 +23,7 @@ class Documento extends Model
         'fecha_emision',
         'total_bruto',
         'total_descuento',
+        'subtotal',
         'total_neto',
         'op_gravada',
         'op_exonerada',
@@ -32,10 +33,40 @@ class Documento extends Model
         'tipo_moneda',
         'medio_pago',
         'monto_recibido',
+        'vuelto',
+        'puntos_ganados',
+        'puntos_canjeados',
+        'descuento_puntos',
         'referencia_pago',
         'estado',
         'observaciones',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'fecha_emision' => 'date',
+            'total_bruto' => 'decimal:2',
+            'total_descuento' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+            'total_neto' => 'decimal:2',
+            'op_gravada' => 'decimal:2',
+            'op_exonerada' => 'decimal:2',
+            'op_inafecta' => 'decimal:2',
+            'total_igv' => 'decimal:2',
+            'porcentaje_igv' => 'decimal:2',
+            'monto_recibido' => 'decimal:2',
+            'vuelto' => 'decimal:2',
+            'descuento_puntos' => 'decimal:2',
+            'puntos_ganados' => 'integer',
+            'puntos_canjeados' => 'integer',
+        ];
+    }
+
+    public function cajaSesion()
+    {
+        return $this->belongsTo(SessioneCaja::class, 'caja_sesion_id');
+    }
 
     public function sucursal()
     {
@@ -60,5 +91,20 @@ class Documento extends Model
     public function detalle()
     {
         return $this->hasMany(DetalleDocumento::class);
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(DetalleDocumento::class);
+    }
+
+    public function archivos()
+    {
+        return $this->hasMany(Archivo::class);
+    }
+
+    public function sunat()
+    {
+        return $this->hasOne(Sunat::class);
     }
 }

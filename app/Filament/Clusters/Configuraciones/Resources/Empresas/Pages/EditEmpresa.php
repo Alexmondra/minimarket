@@ -12,7 +12,6 @@ class EditEmpresa extends EditRecord
 {
     protected static string $resource = EmpresaResource::class;
 
-
     protected array $sensitiveFields = [
         'certificado_pass',
         'pass_sol',
@@ -37,7 +36,7 @@ class EditEmpresa extends EditRecord
         parent::mount($record);
 
         // Si el usuario no tiene permiso de ver configuración, redirigir
-        if (!auth()->user()?->can('config.ver')) {
+        if (! auth()->user()?->can('config.ver')) {
             abort(403, 'No tienes permiso para acceder a esta página.');
         }
     }
@@ -50,8 +49,8 @@ class EditEmpresa extends EditRecord
         if ($this->canEdit()) {
             $actions[] = Action::make('toggleEditing')
                 ->label(fn (): string => $this->isEditing
-                    ? '🔍 Modo Vista'
-                    : '✏️ Modo Edición')
+                    ? 'Volver a vista'
+                    : 'Editar empresa')
                 ->color(fn (): string => $this->isEditing ? 'gray' : 'warning')
                 ->icon(fn (): string => $this->isEditing
                     ? 'heroicon-o-eye'
@@ -68,14 +67,14 @@ class EditEmpresa extends EditRecord
     public function toggleEditingMode(): void
     {
         // Seguridad: solo permitir si tiene permiso de edición
-        if (!$this->canEdit()) {
+        if (! $this->canEdit()) {
             return;
         }
 
-        $this->isEditing = !$this->isEditing;
+        $this->isEditing = ! $this->isEditing;
 
         // Si desactiva edición, recargamos datos originales
-        if (!$this->isEditing) {
+        if (! $this->isEditing) {
             $this->fillForm();
         }
     }
@@ -83,13 +82,13 @@ class EditEmpresa extends EditRecord
     protected function getFormActions(): array
     {
         // Solo mostrar botones de guardar/cancelar si el usuario tiene permiso
-        if (!$this->isEditing || !$this->canEdit()) {
+        if (! $this->isEditing || ! $this->canEdit()) {
             return [];
         }
 
         return [
             Action::make('save')
-                ->label('💾 Guardar cambios')
+                ->label('Guardar cambios')
                 ->color('success')
                 ->icon('heroicon-o-check-circle')
                 ->action('save'),
@@ -104,7 +103,7 @@ class EditEmpresa extends EditRecord
     public function cancelEditing(): void
     {
         // Seguridad: solo permitir si tiene permiso de edición
-        if (!$this->canEdit()) {
+        if (! $this->canEdit()) {
             return;
         }
 
@@ -133,7 +132,7 @@ class EditEmpresa extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         // Seguridad: verificar permiso antes de guardar
-        if (!$this->canEdit()) {
+        if (! $this->canEdit()) {
             abort(403, 'No tienes permiso para editar la configuración.');
         }
 
@@ -162,7 +161,7 @@ class EditEmpresa extends EditRecord
         $record->update($empresaData);
 
         // Actualizar o crear empresa_config (solo con campos que tengan valor)
-        if (!empty($configData)) {
+        if (! empty($configData)) {
             $record->empresaConfig()->updateOrCreate(
                 ['empresa_id' => $record->id],
                 $configData

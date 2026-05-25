@@ -9,16 +9,16 @@ use App\Filament\Clusters\Configuraciones\Resources\Empresas\Schemas\EmpresaInfo
 use App\Filament\Clusters\Configuraciones\Resources\Empresas\Tables\EmpresasTable;
 use App\Models\Empresa;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class EmpresaResource extends Resource
 {
-
     protected static ?string $model = Empresa::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
@@ -64,6 +64,7 @@ class EmpresaResource extends Resource
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
         return parent::getRecordRouteBindingEloquentQuery()
+            ->where('id', auth()->user()?->empresa_id)
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
@@ -74,5 +75,26 @@ class EmpresaResource extends Resource
         return parent::getEloquentQuery()
             ->where('id', auth()->user()->empresa_id)
             ->with('empresaConfig');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('config.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return ($record->id === auth()->user()?->empresa_id)
+            && (auth()->user()?->can('config.editar') ?? false);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
     }
 }

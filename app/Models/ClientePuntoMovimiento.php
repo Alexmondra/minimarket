@@ -3,25 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ClientePunto extends Model
+class ClientePuntoMovimiento extends Model
 {
-    use SoftDeletes;
-
-    protected $table = 'cliente_puntos';
+    protected $table = 'cliente_punto_movimientos';
 
     protected $fillable = [
         'cliente_id',
         'empresa_id',
         'sucursal_id',
+        'documento_id',
+        'user_id',
+        'tipo',
         'puntos',
+        'monto_descuento',
+        'motivo',
     ];
 
     protected function casts(): array
     {
         return [
             'puntos' => 'integer',
+            'monto_descuento' => 'decimal:2',
         ];
     }
 
@@ -40,8 +43,13 @@ class ClientePunto extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
-    public function scopeForEmpresa($query, int $empresaId)
+    public function documento()
     {
-        return $query->where('empresa_id', $empresaId);
+        return $this->belongsTo(Documento::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
