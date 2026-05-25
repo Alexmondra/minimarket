@@ -6,6 +6,8 @@ use App\Filament\Clusters\Configuraciones\Resources\Empresas\EmpresaResource;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\View;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 
 class EditEmpresa extends EditRecord
@@ -22,6 +24,22 @@ class EditEmpresa extends EditRecord
      * Controla el modo vista (false) / edición (true).
      */
     public bool $isEditing = false;
+
+    public function getTitle(): string
+    {
+        return $this->isEditing ? 'Editar Mi Empresa' : '';
+    }
+
+    public function content(Schema $schema): Schema
+    {
+        if ($this->isEditing) {
+            return parent::content($schema);
+        }
+
+        return $schema->components([
+            View::make('filament.clusters.configuraciones.resources.empresas.pages.view-empresa-custom'),
+        ]);
+    }
 
     /**
      * Verifica si el usuario tiene permiso de editar configuración.
@@ -43,22 +61,20 @@ class EditEmpresa extends EditRecord
 
     protected function getHeaderActions(): array
     {
+        if (! $this->isEditing) {
+            return [];
+        }
+
         $actions = [];
 
         // Solo mostrar el toggle si el usuario tiene permiso de edición
         if ($this->canEdit()) {
             $actions[] = Action::make('toggleEditing')
-                ->label(fn (): string => $this->isEditing
-                    ? 'Volver a vista'
-                    : 'Editar empresa')
-                ->color(fn (): string => $this->isEditing ? 'gray' : 'warning')
-                ->icon(fn (): string => $this->isEditing
-                    ? 'heroicon-o-eye'
-                    : 'heroicon-o-pencil-square')
+                ->label('Volver a vista')
+                ->color('gray')
+                ->icon('heroicon-o-eye')
                 ->action('toggleEditingMode')
-                ->tooltip(fn (): string => $this->isEditing
-                    ? 'Cambiar a modo vista (solo lectura)'
-                    : 'Habilitar campos para modificar los datos de la empresa');
+                ->tooltip('Cambiar a modo vista (solo lectura)');
         }
 
         return $actions;
