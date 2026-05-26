@@ -173,6 +173,16 @@ class EditEmpresa extends EditRecord
             }
         }
 
+        // Detectar tipo de certificado automáticamente a partir de la extensión del archivo subido
+        if (array_key_exists('certificado', $configData)) {
+            if (blank($configData['certificado'])) {
+                $configData['tipo_certificado'] = null;
+            } else {
+                $extension = pathinfo($configData['certificado'], PATHINFO_EXTENSION);
+                $configData['tipo_certificado'] = strtoupper($extension ?: 'PEM');
+            }
+        }
+
         // Actualizar empresa
         $record->update($empresaData);
 

@@ -159,22 +159,19 @@ class EmpresaForm
                             })
                             ->visible(fn (Livewire $livewire): bool => ! $livewire->isEditing)
                             ->columnSpan(1),
-                        Select::make('tipo_certificado')
+                        TextInput::make('tipo_certificado')
                             ->label('Tipo de Certificado')
-                            ->options([
-                                'PRODUCCIÓN' => 'Producción',
-                                'CERTIFICADO' => 'Certificado',
-                            ])
-                            ->placeholder('Seleccione el tipo')
-                            ->nullable()
-                            ->helperText('Tipo de certificado digital para firmar documentos XML.')
+                            ->disabled()
+                            ->placeholder('Se detectará automáticamente')
+                            ->helperText('Extensión detectada del archivo cargado (ej: PEM, PFX).')
                             ->visible(fn (Livewire $livewire): bool => $livewire->isEditing)
                             ->columnSpan(1),
 
                         FileUpload::make('certificado')
                             ->label('Cargar Certificado Digital')
+                            ->disk('local')
                             ->directory('empresas/certificados')
-                            ->acceptedFileTypes(['.pem', '.pfx', '.cer', '.crt', '.p12'])
+                            ->rules(['file', 'extensions:pem,pfx,cer,crt,p12'])
                             ->helperText('Formatos válidos: .pem, .pfx, .cer, .crt, .p12')
                             ->visible(fn (Livewire $livewire): bool => $livewire->isEditing)
                             ->columnSpan(1),

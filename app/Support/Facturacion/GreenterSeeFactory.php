@@ -32,7 +32,7 @@ class GreenterSeeFactory
         $see = new See();
         $see->setCertificate($certificate);
         $see->setClaveSOL((string) $empresa->ruc, (string) $config->user_sol, (string) $config->pass_sol);
-        $see->setService($empresa->entorno ? SunatEndpoints::FE_PRODUCCION : SunatEndpoints::FE_BETA);
+        $see->setService(SunatEndpoints::FE_BETA);
 
         return $see;
     }
