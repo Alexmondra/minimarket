@@ -14,16 +14,45 @@ class VentaFileService
         $filename = $this->nombreBase($documento).'-ticket.html';
         $path = $this->rutaBase($documento).'/'.$filename;
 
-        Storage::disk('local')->put($path, $html);
+        if ($documento->tipo_comprobante !== 'TICKET') {
+            Storage::disk('local')->put($path, $html);
+        }
 
-        return Archivo::create([
-            'documento_id' => $documento->id,
-            'tipo_archivo' => 'ticket_html',
-            'proveedor_almacenamiento' => 'local',
-            'bucket' => 'private',
-            'ruta_archivo' => $path,
-            'nombre_archivo' => $filename,
-        ]);
+        return Archivo::updateOrCreate(
+            [
+                'documento_id' => $documento->id,
+                'tipo_archivo' => 'ticket_html',
+            ],
+            [
+                'proveedor_almacenamiento' => 'local',
+                'bucket' => 'private',
+                'ruta_archivo' => $path,
+                'nombre_archivo' => $filename,
+            ]
+        );
+    }
+
+    public function guardarPdf(Documento $documento, string $pdfContent): Archivo
+    {
+        $filename = $this->nombreBase($documento).'-pdf.pdf';
+        $path = $this->rutaBase($documento).'/'.$filename;
+
+        if ($documento->tipo_comprobante !== 'TICKET') {
+            Storage::disk('local')->put($path, $pdfContent);
+        }
+
+        return Archivo::updateOrCreate(
+            [
+                'documento_id' => $documento->id,
+                'tipo_archivo' => 'pdf',
+            ],
+            [
+                'proveedor_almacenamiento' => 'local',
+                'bucket' => 'private',
+                'ruta_archivo' => $path,
+                'nombre_archivo' => $filename,
+            ]
+        );
     }
 
     protected function rutaBase(Documento $documento): string

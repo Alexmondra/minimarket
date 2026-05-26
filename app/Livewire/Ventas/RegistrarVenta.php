@@ -81,7 +81,19 @@ trait RegistrarVentaBehavior
         $context->normalizeSession(Auth::user());
 
         $this->sucursalId = $context->resolveSucursalForWrite();
-        $this->porcentajeIgv = (float) ($context->activeSucursal()?->impuesto_porcentaje ?? 18);
+        $activeSucursal = $context->activeSucursal() ?: ($this->sucursalId ? \App\Models\Sucursal::with('ubigeoRel')->find($this->sucursalId) : null);
+        if ($activeSucursal) {
+            $activeSucursal->loadMissing('ubigeoRel');
+            $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
+            $departamento = $activeSucursal->ubigeoRel ? strtoupper(trim($activeSucursal->ubigeoRel->departamento)) : '';
+            if (in_array($departamento, $exempt) || (float) $activeSucursal->impuesto_porcentaje === 0.0) {
+                $this->porcentajeIgv = 0.0;
+            } else {
+                $this->porcentajeIgv = 18.0;
+            }
+        } else {
+            $this->porcentajeIgv = 18.0;
+        }
         $this->montoRecibido = 0;
 
         $this->categorias = \App\Models\Categoria::query()

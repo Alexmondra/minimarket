@@ -14,6 +14,8 @@ class GreenterSeeFactory
 {
     public function make(Empresa $empresa): See
     {
+        $this->ensureSoapExtension();
+
         $config = $empresa->empresaConfig;
 
         if (! $config) {
@@ -29,12 +31,19 @@ class GreenterSeeFactory
             password: (string) $config->certificado_pass
         );
 
-        $see = new See();
+        $see = new See;
         $see->setCertificate($certificate);
         $see->setClaveSOL((string) $empresa->ruc, (string) $config->user_sol, (string) $config->pass_sol);
-        $see->setService(SunatEndpoints::FE_BETA);
+        $see->setService($empresa->entorno ? SunatEndpoints::FE_PRODUCCION : SunatEndpoints::FE_BETA);
 
         return $see;
+    }
+
+    protected function ensureSoapExtension(): void
+    {
+        if (! class_exists(\SoapClient::class)) {
+            throw new RuntimeException('La extension SOAP de PHP no esta instalada o habilitada. Instala php-soap/php8.x-soap y reinicia PHP para enviar comprobantes a SUNAT con Greenter.');
+        }
     }
 
     protected function certificatePem(string $path, string $password): string

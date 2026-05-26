@@ -1,3 +1,4 @@
+<x-filament-panels::page>
 @php($documento = $this->getDocumento())
 
 <div class="space-y-6">
@@ -96,3 +97,4 @@
         </aside>
     </div>
 </div>
+</x-filament-panels::page>

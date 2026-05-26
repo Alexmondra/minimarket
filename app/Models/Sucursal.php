@@ -9,6 +9,31 @@ class Sucursal extends Model
 {
     use SoftDeletes;
     protected $table = 'sucursales';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function (Sucursal $sucursal) {
+            $ubigeoId = $sucursal->ubigeo;
+            if ($ubigeoId) {
+                $ubigeo = Ubigeo::find($ubigeoId);
+                if ($ubigeo) {
+                    $departamento = strtoupper(trim($ubigeo->departamento));
+                    $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
+                    if (in_array($departamento, $exempt)) {
+                        $sucursal->impuesto_porcentaje = 0.00;
+                    } else {
+                        $sucursal->impuesto_porcentaje = 18.00;
+                    }
+                } else {
+                    $sucursal->impuesto_porcentaje = 18.00;
+                }
+            } else {
+                $sucursal->impuesto_porcentaje = 18.00;
+            }
+        });
+    }
     
     protected $fillable = [
         'empresa_id',

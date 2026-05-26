@@ -22,7 +22,7 @@ class DocumentoGreenterFactory
     {
         $documento->loadMissing([
             'empresa.empresaConfig',
-            'sucursal',
+            'sucursal.ubigeoRel',
             'cliente',
             'detalles.presentacion.unidadMedida',
         ]);
@@ -31,14 +31,14 @@ class DocumentoGreenterFactory
             throw new RuntimeException('El comprobante no aplica para envio SUNAT.');
         }
 
-        return (new Invoice())
+        return (new Invoice)
             ->setUblVersion('2.1')
             ->setTipoOperacion('0101')
             ->setTipoDoc($documento->tipo_comprobante === 'FACTURA' ? '01' : '03')
             ->setSerie((string) $documento->serie)
             ->setCorrelativo(ltrim((string) $documento->numero, '0') ?: (string) $documento->numero)
             ->setFechaEmision($documento->fecha_emision?->toDateTime() ?? now()->toDateTime())
-            ->setFormaPago(new FormaPagoContado())
+            ->setFormaPago(new FormaPagoContado)
             ->setTipoMoneda((string) ($documento->tipo_moneda ?: 'PEN'))
             ->setCompany($this->company($documento->empresa, $documento))
             ->setClient($this->client($documento->cliente))
@@ -52,7 +52,7 @@ class DocumentoGreenterFactory
             ->setMtoImpVenta($this->money($documento->total_neto))
             ->setDetails($this->details($documento))
             ->setLegends([
-                (new Legend())
+                (new Legend)
                     ->setCode('1000')
                     ->setValue($this->montoEnLetras($this->money($documento->total_neto))),
             ]);
@@ -60,13 +60,17 @@ class DocumentoGreenterFactory
 
     protected function company(Empresa $empresa, Documento $documento): Company
     {
-        return (new Company())
+        $ubigeo = $documento->sucursal?->ubigeoRel;
+        return (new Company)
             ->setRuc((string) $empresa->ruc)
             ->setRazonSocial((string) $empresa->razon_social)
             ->setNombreComercial((string) $empresa->razon_social)
             ->setAddress(
-                (new Address())
-                    ->setUbigueo($documento->sucursal?->ubigeo ?: null)
+                (new Address)
+                    ->setUbigueo($ubigeo?->codigo ?: null)
+                    ->setDepartamento($ubigeo?->departamento ?: '-')
+                    ->setProvincia($ubigeo?->provincia ?: '-')
+                    ->setDistrito($ubigeo?->distrito ?: '-')
                     ->setDireccion($empresa->direccion_fiscal ?: $documento->sucursal?->direccion ?: '-')
                     ->setCodLocal($this->codigoLocal($documento->sucursal?->codigo))
             );
@@ -74,11 +78,11 @@ class DocumentoGreenterFactory
 
     protected function client(?Cliente $cliente): Client
     {
-        return (new Client())
+        return (new Client)
             ->setTipoDoc($this->tipoDocumentoCliente($cliente?->tipo_documento))
             ->setNumDoc((string) ($cliente?->documento ?: '00000000'))
             ->setRznSocial((string) ($cliente?->razon_social ?: trim(($cliente?->nombre ?? 'Cliente').' '.($cliente?->apellido ?? 'Varios'))))
-            ->setAddress((new Address())->setDireccion($cliente?->direccion ?: '-'));
+            ->setAddress((new Address)->setDireccion($cliente?->direccion ?: '-'));
     }
 
     /**
@@ -94,19 +98,25 @@ class DocumentoGreenterFactory
 
     protected function detail(DetalleDocumento $detalle, int $index, Documento $documento): SaleDetail
     {
-        $tipAfeIgv = $detalle->tipo_afectacion === 'GRAVADO' ? '10' : ($detalle->tipo_afectacion === 'INAFECTO' ? '30' : '20');
+        $tipoAfectacion = strtoupper(trim((string) $detalle->tipo_afectacion));
+        $tipAfeIgv = match ($tipoAfectacion) {
+            '10', 'GRAVADO' => '10',
+            '30', 'INAFECTO' => '30',
+            default => '20',
+        };
         $porcentajeIgv = $tipAfeIgv === '10' ? $this->money($documento->porcentaje_igv) : 0.0;
+        $igv = $tipAfeIgv === '10' ? $this->money($detalle->total_igv) : 0.00;
 
-        return (new SaleDetail())
+        return (new SaleDetail)
             ->setCodProducto((string) ($detalle->producto_presentacion_id ?: $index))
             ->setUnidad($this->unidadSunat($detalle->presentacion?->unidadMedida?->abreviatura))
             ->setCantidad((float) $detalle->cantidad)
             ->setDescripcion((string) $detalle->producto_nombre)
             ->setMtoBaseIgv($this->money($detalle->subtotal_neto))
             ->setPorcentajeIgv($porcentajeIgv)
-            ->setIgv($this->money($detalle->total_igv))
+            ->setIgv($igv)
             ->setTipAfeIgv($tipAfeIgv)
-            ->setTotalImpuestos($this->money($detalle->total_igv))
+            ->setTotalImpuestos($igv)
             ->setMtoValorVenta($this->money($detalle->subtotal_neto))
             ->setMtoValorUnitario($this->money($detalle->valor_unitario))
             ->setMtoPrecioUnitario($this->money($detalle->precio_unitario));

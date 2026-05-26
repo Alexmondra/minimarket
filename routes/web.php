@@ -23,3 +23,11 @@ Route::get('/filament/archivos/{archivo}/view', [ArchivoPrivadoController::class
 Route::get('/filament/archivos/{archivo}/download', [ArchivoPrivadoController::class, 'download'])
     ->middleware(['web', 'auth'])
     ->name('filament.archivos.download');
+
+Route::get('/filament/documentos/{documento}/pdf', [ArchivoPrivadoController::class, 'viewDocumentoPdf'])
+    ->middleware(['web', 'auth'])
+    ->name('filament.documentos.pdf');
+
+Route::get('/filament/documentos/{documento}/ticket', [ArchivoPrivadoController::class, 'viewDocumentoTicket'])
+    ->middleware(['web', 'auth'])
+    ->name('filament.documentos.ticket');

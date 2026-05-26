@@ -55,7 +55,13 @@ class FacturacionService
             $result = $see->send($greenterDocument);
 
             if ($result instanceof BillResult && $result->getCdrZip()) {
-                $this->fileService->guardarCdrZip($documento, $result->getCdrZip());
+                $cdrZip = $result->getCdrZip();
+                $this->fileService->guardarCdrZip($documento, $cdrZip);
+
+                $cdrXml = $this->fileService->extraerCdrXml($cdrZip);
+                if ($cdrXml) {
+                    $this->fileService->guardarCdrXml($documento, $cdrXml);
+                }
             }
 
             return $this->guardarRespuesta($sunat, $result);
@@ -90,11 +96,25 @@ class FacturacionService
         }
 
         if (! $result->isSuccess()) {
-            $error = $result->getError();
+            $cdr = method_exists($result, 'getCdrResponse') ? $result->getCdrResponse() : null;
+            $code = null;
+            $message = null;
+
+            if ($cdr) {
+                $code = $cdr->getCode();
+                $message = $cdr->getDescription();
+            }
+
+            if (! $code || ! $message) {
+                $error = $result->getError();
+                $code = $code ?: ($error?->getCode() ?: 'ERROR');
+                $message = $message ?: ($error?->getMessage() ?: 'SUNAT rechazo el envio.');
+            }
+
             $sunat->update([
                 'estado_sunat' => false,
-                'codigo_respuesta_sunat' => $error?->getCode() ?: 'ERROR',
-                'mensaje_sunat' => $error?->getMessage() ?: 'SUNAT rechazo el envio.',
+                'codigo_respuesta_sunat' => $code,
+                'mensaje_sunat' => $message,
                 'fecha_respuesta' => now(),
             ]);
 
@@ -103,14 +123,26 @@ class FacturacionService
 
         $cdr = $result instanceof BillResult ? $result->getCdrResponse() : null;
         $notes = $cdr?->getNotes() ? ' Notas: '.implode(' | ', $cdr->getNotes()) : '';
+        $code = $cdr?->getCode() ?: '0';
 
         $sunat->update([
-            'estado_sunat' => true,
-            'codigo_respuesta_sunat' => $cdr?->getCode() ?: '0',
+            'estado_sunat' => $this->codigoAceptado($code),
+            'codigo_respuesta_sunat' => $code,
             'mensaje_sunat' => trim(($cdr?->getDescription() ?: 'Comprobante aceptado por SUNAT.').$notes),
             'fecha_respuesta' => now(),
         ]);
 
         return $sunat->fresh();
+    }
+
+    protected function codigoAceptado(string $code): bool
+    {
+        if (! is_numeric($code)) {
+            return false;
+        }
+
+        $numericCode = (int) $code;
+
+        return $numericCode === 0 || ($numericCode >= 100 && $numericCode <= 1999);
     }
 }

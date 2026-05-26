@@ -64,7 +64,24 @@ class SucursalForm
                             )
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $ubigeo = Ubigeo::find($state);
+                                    if ($ubigeo) {
+                                        $departamento = strtoupper(trim($ubigeo->departamento));
+                                        $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
+                                        if (in_array($departamento, $exempt)) {
+                                            $set('impuesto_porcentaje', '0.00');
+                                        } else {
+                                            $set('impuesto_porcentaje', '18.00');
+                                        }
+                                        return;
+                                    }
+                                }
+                                $set('impuesto_porcentaje', '18.00');
+                            }),
                         TextInput::make('direccion')
                             ->label('Direccion')
                             ->required()
@@ -96,7 +113,10 @@ class SucursalForm
                             ->minValue(0)
                             ->maxValue(100)
                             ->suffix('%')
-                            ->label('Impuesto aplicado'),
+                            ->label('Impuesto aplicado')
+                            ->disabled()
+                            ->dehydrated()
+                            ->helperText('Se calcula automaticamente segun el ubigeo seleccionado.'),
                     ]),
             ]);
     }

@@ -9,6 +9,7 @@ use App\Models\LotePresentacion;
 use App\Models\MovimientoInventario;
 use App\Models\ProductoPresentacion;
 use App\Models\Serie;
+use App\Models\Sucursal;
 use App\Models\User;
 use App\Support\Facturacion\FacturacionService;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,7 @@ class RegistrarVenta
         $documento = DB::transaction(function () use ($user, $payload): Documento {
             $empresa = $user->empresa()->with('empresaConfig')->firstOrFail();
             $sucursalId = (int) $payload['sucursal_id'];
+            $sucursal = Sucursal::with('ubigeoRel')->findOrFail($sucursalId);
             $caja = $this->cajaService->requireCajaAbierta($user->id, $sucursalId);
             $tipoComprobante = strtoupper($payload['tipo_comprobante']);
             $medioPago = strtoupper((string) ($payload['medio_pago'] ?? 'EFECTIVO'));
@@ -99,10 +101,18 @@ class RegistrarVenta
                 }
             }
 
+            $porcentajeIgv = (float) ($payload['porcentaje_igv'] ?? 18);
+            if ($this->esExentoDeIgv($sucursal)) {
+                $porcentajeIgv = 0.0;
+                foreach ($lineasVenta as $k => $lineaVenta) {
+                    $lineasVenta[$k]['afecto_igv'] = false;
+                }
+            }
+
             $calculo = $this->calculator->calcular(
                 $lineasVenta,
                 (bool) $empresa->incluido_tributo,
-                (float) ($payload['porcentaje_igv'] ?? 18),
+                $porcentajeIgv,
                 $descuentoPuntos
             );
 
@@ -135,7 +145,7 @@ class RegistrarVenta
                 'op_exonerada' => $totales['op_exonerada'],
                 'op_inafecta' => $totales['op_inafecta'],
                 'total_igv' => $totales['total_igv'],
-                'porcentaje_igv' => $payload['porcentaje_igv'] ?? 18,
+                'porcentaje_igv' => $porcentajeIgv,
                 'tipo_moneda' => $payload['tipo_moneda'] ?? 'PEN',
                 'medio_pago' => $medioPago,
                 'monto_recibido' => $montoRecibido,
@@ -199,6 +209,9 @@ class RegistrarVenta
                 'documento' => $documento,
             ])->render();
             $this->fileService->guardarTicketHtml($documento, $htmlTicket);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+            $this->fileService->guardarPdf($documento, $pdf->output());
 
             return $documento->fresh([
                 'cliente',
@@ -359,5 +372,23 @@ class RegistrarVenta
             'BOLETA' => 'B001',
             default => 'T001',
         };
+    }
+
+    public function esExentoDeIgv(Sucursal $sucursal): bool
+    {
+        if ((float) $sucursal->impuesto_porcentaje === 0.0) {
+            return true;
+        }
+
+        $ubigeo = $sucursal->ubigeoRel;
+        if ($ubigeo) {
+            $departamento = strtoupper(trim($ubigeo->departamento));
+            $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
+            if (in_array($departamento, $exempt)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

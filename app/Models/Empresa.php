@@ -18,6 +18,14 @@ class Empresa extends Model
         'entorno',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'incluido_tributo' => 'boolean',
+            'entorno' => 'boolean',
+        ];
+    }
+
     public function sucursales()
     {
         return $this->hasMany(Sucursal::class);
