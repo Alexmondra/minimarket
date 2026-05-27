@@ -26,6 +26,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -145,49 +147,79 @@ class ProductoResource extends Resource
                     ->schema([
                         Repeater::make('presentaciones')
                             ->relationship()
+                            ->collapsed()
+                            ->itemLabel(function (array $state): ?string {
+                                $tipo = $state['tipo_presentacion'] ?? null;
+                                $cantidad = $state['cantidad'] ?? null;
+                                $unidadId = $state['unidad_medida_id'] ?? null;
+                                
+                                if (blank($tipo) && blank($cantidad) && blank($unidadId)) {
+                                    return 'Nueva presentación';
+                                }
+
+                                $label = $tipo ?? 'Sin tipo';
+                                if ($cantidad !== null) {
+                                    $label .= " - {$cantidad}";
+                                }
+                                if ($unidadId !== null) {
+                                    $abreviatura = \App\Models\UniMedida::find($unidadId)?->abreviatura;
+                                    if ($abreviatura) {
+                                        $label .= " {$abreviatura}";
+                                    }
+                                }
+                                return $label;
+                            })
                             ->schema([
-                                TextInput::make('tipo_presentacion')
-                                    ->label('Tipo de Presentación')
-                                    ->placeholder('Escriba para buscar o cree una nueva...')
-                                    ->required()
-                                    ->datalist(function () {
-                                        $empresaId = auth()->user()->empresa_id;
-                                        return \App\Models\ProductoPresentacion::query()
-                                            ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
-                                            ->where('productos.empresa_id', $empresaId)
-                                            ->whereNull('producto_presentacion.deleted_at')
-                                            ->whereNull('productos.deleted_at')
-                                            ->distinct()
-                                            ->pluck('producto_presentacion.tipo_presentacion')
-                                            ->toArray();
-                                    }),
-                                TextInput::make('cantidad')
-                                    ->label('Cantidad')
-                                    ->numeric()
-                                    ->default(1)
-                                    ->required(),
-                                Select::make('unidad_medida_id')
-                                    ->label('Unidad de Medida')
-                                    ->relationship('unidadMedida', 'nombre')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required(),
-                                FileUpload::make('imagen')
-                                    ->label('Imagen de la Presentación')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->disk('public')
-                                    ->directory('productos/presentaciones')
-                                    ->visibility('public'),
-                                TextInput::make('codigo_barra')
-                                    ->label('Código de Barras')
-                                    ->maxLength(255)
-                                    ->default(null),
-                                Toggle::make('es_pesable')
-                                    ->label('¿Es pesable?')
-                                    ->default(false),
+                                Grid::make(['default' => 1, 'md' => 3])
+                                    ->schema([
+                                        FileUpload::make('imagen')
+                                            ->label('Imagen de la Presentación')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->disk('public')
+                                            ->directory('productos/presentaciones')
+                                            ->visibility('public')
+                                            ->columnSpan(['default' => 1, 'md' => 1]),
+                                        Grid::make(['default' => 1, 'sm' => 2])
+                                            ->schema([
+                                                TextInput::make('tipo_presentacion')
+                                                    ->label('Tipo de Presentación')
+                                                    ->placeholder('Escriba para buscar o cree una nueva...')
+                                                    ->required()
+                                                    ->columnSpan(['default' => 1, 'sm' => 2])
+                                                    ->datalist(function () {
+                                                        $empresaId = auth()->user()->empresa_id;
+                                                        return \App\Models\ProductoPresentacion::query()
+                                                            ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
+                                                            ->where('productos.empresa_id', $empresaId)
+                                                            ->whereNull('producto_presentacion.deleted_at')
+                                                            ->whereNull('productos.deleted_at')
+                                                            ->distinct()
+                                                            ->pluck('producto_presentacion.tipo_presentacion')
+                                                            ->toArray();
+                                                    }),
+                                                TextInput::make('cantidad')
+                                                    ->label('Cantidad')
+                                                    ->numeric()
+                                                    ->default(1)
+                                                    ->required(),
+                                                Select::make('unidad_medida_id')
+                                                    ->label('Unidad de Medida')
+                                                    ->relationship('unidadMedida', 'nombre')
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->required(),
+                                                TextInput::make('codigo_barra')
+                                                    ->label('Código de Barras')
+                                                    ->maxLength(255)
+                                                    ->default(null),
+                                                Toggle::make('es_pesable')
+                                                    ->label('¿Es pesable?')
+                                                    ->default(false),
+                                            ])
+                                            ->columnSpan(['default' => 1, 'md' => 2]),
+                                    ]),
                             ])
-                            ->columns(2)
                             ->defaultItems(0)
                             ->minItems(0)
                             ->addActionLabel('+ Agregar Presentación')

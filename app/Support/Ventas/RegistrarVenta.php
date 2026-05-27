@@ -35,7 +35,15 @@ class RegistrarVenta
 
     public function ejecutar(User $user, array $payload): Documento
     {
-        $documento = DB::transaction(function () use ($user, $payload): Documento {
+        $itemsPayload = collect($payload['items'] ?? []);
+        $presentacionIds = $itemsPayload->pluck('producto_presentacion_id')->filter()->unique()->all();
+        $presentaciones = ProductoPresentacion::query()
+            ->with('producto')
+            ->whereIn('id', $presentacionIds)
+            ->get()
+            ->keyBy('id');
+
+        $documento = DB::transaction(function () use ($user, $payload, $presentaciones, $itemsPayload): Documento {
             $empresa = $user->empresa()->with('empresaConfig')->firstOrFail();
             $sucursalId = (int) $payload['sucursal_id'];
             $sucursal = Sucursal::with('ubigeoRel')->findOrFail($sucursalId);
@@ -70,11 +78,14 @@ class RegistrarVenta
                 ]);
             }
 
-            $lineasVenta = collect($payload['items'] ?? [])
-                ->map(function (array $item): array {
-                    $presentacion = ProductoPresentacion::query()
-                        ->with('producto')
-                        ->findOrFail($item['producto_presentacion_id']);
+            $lineasVenta = $itemsPayload
+                ->map(function (array $item) use ($presentaciones): array {
+                    $presentacionId = $item['producto_presentacion_id'];
+                    $presentacion = $presentaciones->get($presentacionId);
+
+                    if (! $presentacion) {
+                        throw new \RuntimeException("La presentación de producto con ID {$presentacionId} no existe.");
+                    }
 
                     return [
                         'producto_presentacion_id' => $presentacion->id,
@@ -198,32 +209,25 @@ class RegistrarVenta
                 );
             }
 
-            $documento->loadMissing([
-                'empresa',
-                'sucursal',
-                'cliente',
-                'detalles.presentacion.unidadMedida',
-            ]);
-
-            $htmlTicket = view('ventas.ticket', [
-                'documento' => $documento,
-            ])->render();
-            $this->fileService->guardarTicketHtml($documento, $htmlTicket);
-
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-            $this->fileService->guardarPdf($documento, $pdf->output());
-
-            return $documento->fresh([
-                'cliente',
-                'empresa',
-                'sucursal',
-                'detalles.presentacion.unidadMedida',
-                'archivos',
-                'sunat',
-            ]);
+            return $documento;
         });
 
-        $this->facturacionService->procesar($documento);
+        $documento->loadMissing([
+            'empresa',
+            'sucursal',
+            'cliente',
+            'detalles.presentacion.unidadMedida',
+        ]);
+
+        $htmlTicket = view('ventas.ticket', [
+            'documento' => $documento,
+        ])->render();
+        $this->fileService->guardarTicketHtml($documento, $htmlTicket);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+        $this->fileService->guardarPdf($documento, $pdf->output());
+
+        \App\Jobs\ProcesarFacturaSunat::dispatch($documento);
 
         return $documento->fresh([
             'cliente',

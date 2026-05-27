@@ -11,11 +11,16 @@ use App\Support\Ventas\RegistrarVenta as RegistrarVentaAction;
 use App\Support\Ventas\VentaCalculator;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 
 trait RegistrarVentaBehavior
 {
     public string $posTheme = 'light';
+
+    public ?int $createdDocumentoId = null;
+
+    public bool $showSuccessModal = false;
 
     public ?int $selectedCategoriaId = null;
 
@@ -68,6 +73,10 @@ trait RegistrarVentaBehavior
     public array $clientesResultados = [];
 
     public bool $showClienteDropdown = false;
+
+    public bool $showRegistrarClienteModal = false;
+
+    public bool $showEditarClienteModal = false;
 
     public bool $usarPuntos = false;
 
@@ -208,6 +217,230 @@ trait RegistrarVentaBehavior
         $this->clientesResultados = [];
         $this->showClienteDropdown = false;
         $this->resetClienteData();
+    }
+
+    public function buscarCliente(): void
+    {
+        $term = trim($this->searchCliente);
+        if ($term === '') {
+            return;
+        }
+
+        if (!ctype_digit($term) || (strlen($term) !== 8 && strlen($term) !== 11)) {
+            Notification::make()
+                ->title('Error en la digitación: El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC).')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $tipoDoc = strlen($term) === 8 ? 'DNI' : 'RUC';
+        $cliente = Cliente::query()
+            ->where('documento', $term)
+            ->where('tipo_documento', $tipoDoc)
+            ->first();
+
+        if ($cliente) {
+            $this->seleccionarCliente($cliente->id);
+            Notification::make()
+                ->title('Cliente seleccionado')
+                ->success()
+                ->send();
+            return;
+        }
+
+        // If not found in local DB, consult external API
+        $key = config('services.datos.key');
+        $dniUrl = config('services.datos.dni_url');
+        $rucUrl = config('services.datos.ruc_url');
+
+        if (empty($key) || ($tipoDoc === 'DNI' && empty($dniUrl)) || ($tipoDoc === 'RUC' && empty($rucUrl))) {
+            Notification::make()
+                ->title('Error: Configuración de API externa no encontrada.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $url = $tipoDoc === 'DNI' ? ($dniUrl . $term) : ($rucUrl . $term);
+
+        try {
+            $response = Http::timeout(15)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'X-API-KEY' => $key,
+                    'Accept' => 'application/json',
+                ])
+                ->get($url);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                $data = $responseData['data'] ?? $responseData;
+
+                $nombre = $data['nombres'] ?? $data['nombre'] ?? null;
+                $apellidoPaterno = $data['apellido_paterno'] ?? $data['apellidoPaterno'] ?? '';
+                $apellidoMaterno = $data['apellido_materno'] ?? $data['apellidoMaterno'] ?? '';
+                $apellido = trim($apellidoPaterno . ' ' . $apellidoMaterno);
+                if (empty($apellido) && isset($data['apellidos'])) {
+                    $apellido = $data['apellidos'];
+                }
+
+                $razonSocial = $data['razon_social'] ?? $data['razonSocial'] ?? $data['nombre_o_razon_social'] ?? null;
+                if ($tipoDoc === 'RUC' && empty($razonSocial)) {
+                    $razonSocial = $data['nombre'] ?? $data['nombres'] ?? null;
+                }
+
+                $direccion = $data['direccion'] ?? $data['domicilio_fiscal'] ?? $data['direccion_completa'] ?? null;
+
+                $hasName = ($tipoDoc === 'DNI' && !empty($nombre)) || ($tipoDoc === 'RUC' && !empty($razonSocial));
+
+                if ($hasName) {
+                    $cliente = Cliente::create([
+                        'tipo_documento' => $tipoDoc,
+                        'documento' => $term,
+                        'nombre' => $tipoDoc === 'RUC' ? $razonSocial : $nombre,
+                        'apellido' => $tipoDoc === 'RUC' ? null : (empty($apellido) ? null : $apellido),
+                        'razon_social' => $tipoDoc === 'RUC' ? $razonSocial : null,
+                        'direccion' => $direccion,
+                        'telefono' => $data['telefono'] ?? null,
+                        'email' => $data['correo'] ?? $data['email'] ?? null,
+                    ]);
+
+                    $this->seleccionarCliente($cliente->id);
+
+                    Notification::make()
+                        ->title('Cliente encontrado y guardado localmente.')
+                        ->success()
+                        ->send();
+                } else {
+                    Notification::make()
+                        ->title('No se encontraron datos para el documento ingresado.')
+                        ->danger()
+                        ->send();
+                }
+            } else {
+                Notification::make()
+                    ->title('Error al consultar el servicio externo de datos.')
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            Notification::make()
+                ->title('Error al conectar con la API externa: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public function abrirRegistroManual(): void
+    {
+        $term = trim($this->searchCliente);
+        $this->resetClienteData();
+        $this->clienteDocumento = $term;
+        if (strlen($term) === 11) {
+            $this->clienteTipoDocumento = 'RUC';
+        } else {
+            $this->clienteTipoDocumento = 'DNI';
+        }
+        $this->showRegistrarClienteModal = true;
+    }
+
+    public function registrarClienteManual(): void
+    {
+        $documento = trim($this->clienteDocumento);
+        if ($documento === '') {
+            Notification::make()->title('Ingresa el número de documento')->warning()->send();
+            return;
+        }
+
+        if (!ctype_digit($documento) || (strlen($documento) !== 8 && strlen($documento) !== 11)) {
+            Notification::make()
+                ->title('Error en la digitación: El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC).')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        try {
+            $cliente = Cliente::updateOrCreate(
+                [
+                    'tipo_documento' => $this->clienteTipoDocumento,
+                    'documento' => $documento,
+                ],
+                [
+                    'nombre' => $this->clienteTipoDocumento === 'RUC' ? ($this->clienteRazonSocial ?: 'Cliente') : ($this->clienteNombre ?: 'Cliente'),
+                    'apellido' => $this->clienteTipoDocumento === 'RUC' ? null : $this->clienteApellido,
+                    'razon_social' => $this->clienteTipoDocumento === 'RUC' ? ($this->clienteRazonSocial ?: 'Cliente') : null,
+                    'telefono' => $this->clienteTelefono,
+                    'email' => $this->clienteEmail,
+                    'direccion' => $this->clienteDireccion,
+                ]
+            );
+
+            $this->seleccionarCliente($cliente->id);
+            $this->showRegistrarClienteModal = false;
+
+            Notification::make()
+                ->title('Cliente registrado con éxito')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al guardar cliente: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public function abrirEdicionCliente(): void
+    {
+        if (!$this->clienteId) {
+            return;
+        }
+
+        $cliente = Cliente::find($this->clienteId);
+        if ($cliente) {
+            $this->clienteTelefono = $cliente->telefono;
+            $this->clienteEmail = $cliente->email;
+            $this->clienteDireccion = $cliente->direccion;
+        }
+
+        $this->showEditarClienteModal = true;
+    }
+
+    public function guardarEdicionCliente(): void
+    {
+        if (!$this->clienteId) {
+            return;
+        }
+
+        try {
+            $cliente = Cliente::find($this->clienteId);
+            if ($cliente) {
+                $cliente->update([
+                    'telefono' => $this->clienteTelefono,
+                    'email' => $this->clienteEmail,
+                    'direccion' => $this->clienteDireccion,
+                ]);
+
+                $this->clienteTelefono = $cliente->telefono;
+                $this->clienteEmail = $cliente->email;
+                $this->clienteDireccion = $cliente->direccion;
+
+                $this->showEditarClienteModal = false;
+
+                Notification::make()
+                    ->title('Cliente actualizado con éxito')
+                    ->success()
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al actualizar cliente: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function updatedClienteDocumento(): void
@@ -573,7 +806,8 @@ trait RegistrarVentaBehavior
                 ->success()
                 ->send();
 
-            $this->redirect(route('filament.admin.resources.documentos.view', ['record' => $documento]));
+            $this->createdDocumentoId = $documento->id;
+            $this->showSuccessModal = true;
         } catch (\Throwable $e) {
             report($e);
 
@@ -797,6 +1031,35 @@ trait RegistrarVentaBehavior
         ->all();
     }
 
+    public function toggleMedioPagoShortcut(): void
+    {
+        $medios = RegistrarVentaAction::MEDIOS_PAGO_CONTADO;
+        $currentIdx = array_search($this->medioPago, $medios, true);
+        if ($currentIdx === false) {
+            $nextIdx = 0;
+        } else {
+            $nextIdx = ($currentIdx + 1) % count($medios);
+        }
+        $this->cambiarMedioPago($medios[$nextIdx]);
+
+        Notification::make()
+            ->title("Medio de pago cambiado a: " . $medios[$nextIdx])
+            ->info()
+            ->duration(1500)
+            ->send();
+    }
+
+    public function cerrarSuccessModal(): void
+    {
+        $this->cartItems = [];
+        $this->resetClienteData();
+        $this->montoRecibido = 0;
+        $this->clienteDocumento = '';
+        $this->searchProducto = '';
+        $this->selectedCategoriaId = null;
+        $this->createdDocumentoId = null;
+        $this->showSuccessModal = false;
+    }
 }
 
 class RegistrarVenta extends Component
