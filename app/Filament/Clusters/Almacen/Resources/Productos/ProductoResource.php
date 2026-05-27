@@ -29,6 +29,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -58,173 +61,103 @@ class ProductoResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $isCreate = $schema->getLivewire() instanceof CreateProducto;
+
+        $generalFields = [
+            TextInput::make('nombre')
+                ->required()
+                ->maxLength(255),
+            Select::make('categoria_id')
+                ->label('Categoría')
+                ->relationship('categoria', 'nombre', fn (Builder $query) => $query->where('empresa_id', auth()->user()->empresa_id))
+                ->searchable()
+                ->preload()
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('nombre')
+                        ->required()
+                        ->maxLength(255),
+                    Textarea::make('descripcion')
+                        ->maxLength(65535),
+                    Toggle::make('estado')
+                        ->default(true),
+                ])
+                ->createOptionUsing(function (array $data): int {
+                    $categoria = \App\Models\Categoria::create([
+                        'empresa_id' => auth()->user()->empresa_id,
+                        'nombre' => $data['nombre'],
+                        'descripcion' => $data['descripcion'] ?? null,
+                        'estado' => $data['estado'] ?? true,
+                    ]);
+                    return $categoria->id;
+                }),
+            Select::make('marca_id')
+                ->label('Marca')
+                ->relationship('marca', 'nombre', fn (Builder $query) => $query->where('empresa_id', auth()->user()->empresa_id))
+                ->searchable()
+                ->preload()
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('nombre')
+                        ->required()
+                        ->maxLength(255),
+                    Textarea::make('descripcion')
+                        ->maxLength(65535),
+                ])
+                ->createOptionUsing(function (array $data): int {
+                    $marca = \App\Models\Marca::create([
+                        'empresa_id' => auth()->user()->empresa_id,
+                        'nombre' => $data['nombre'],
+                        'descripcion' => $data['descripcion'] ?? null,
+                    ]);
+                    return $marca->id;
+                }),
+            TextInput::make('codigo_interno')
+                ->maxLength(255)
+                ->default(null),
+            Textarea::make('descripcion')
+                ->maxLength(65535)
+                ->default(null)
+                ->columnSpanFull(),
+            Toggle::make('afecto_igv')
+                ->label('¿Afecto a IGV?')
+                ->default(true),
+            Toggle::make('activo')
+                ->default(true),
+        ];
+
+        if ($isCreate) {
+            return $schema
+                ->components([
+                    Section::make('Datos del Producto')
+                        ->description('Información general para registrar un nuevo producto')
+                        ->columns(2)
+                        ->columnSpanFull()
+                        ->extraAttributes([
+                            'onkeydown' => 'if(event.key === "Enter" && event.target.tagName !== "TEXTAREA") { event.preventDefault(); }',
+                        ])
+                        ->schema([
+                            View::make('filament.components.prevent-nested-submit'),
+                            ...$generalFields,
+                        ]),
+                ]);
+        }
+
         return $schema
             ->components([
-                Section::make('Datos del Producto')
-                    ->description('Información general del producto')
-                    ->columns(2)
-                    ->schema([
-                        TextInput::make('nombre')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, $set, $context) {
-                                if ($context === 'create') {
-                                    $baseSlug = Str::slug($state);
-                                    $slug = $baseSlug;
-                                    $counter = 1;
-                                    while (\App\Models\Producto::where('slug', $slug)->exists()) {
-                                        $slug = $baseSlug . '-' . $counter;
-                                        $counter++;
-                                    }
-                                    $set('slug', $slug);
-                                }
-                            }),
-                        TextInput::make('slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->visible(fn ($context) => $context === 'create'),
-                        Select::make('categoria_id')
-                            ->label('Categoría')
-                            ->relationship('categoria', 'nombre', fn (Builder $query) => $query->where('empresa_id', auth()->user()->empresa_id))
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->createOptionForm([
-                                TextInput::make('nombre')
-                                    ->required()
-                                    ->maxLength(255),
-                                Textarea::make('descripcion')
-                                    ->maxLength(65535),
-                                Toggle::make('estado')
-                                    ->default(true),
-                            ])
-                            ->createOptionUsing(function (array $data): int {
-                                $categoria = \App\Models\Categoria::create([
-                                    'empresa_id' => auth()->user()->empresa_id,
-                                    'nombre' => $data['nombre'],
-                                    'descripcion' => $data['descripcion'] ?? null,
-                                    'estado' => $data['estado'] ?? true,
-                                ]);
-                                return $categoria->id;
-                            }),
-                        Select::make('marca_id')
-                            ->label('Marca')
-                            ->relationship('marca', 'nombre', fn (Builder $query) => $query->where('empresa_id', auth()->user()->empresa_id))
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->createOptionForm([
-                                TextInput::make('nombre')
-                                    ->required()
-                                    ->maxLength(255),
-                                Textarea::make('descripcion')
-                                    ->maxLength(65535),
-                            ])
-                            ->createOptionUsing(function (array $data): int {
-                                $marca = \App\Models\Marca::create([
-                                    'empresa_id' => auth()->user()->empresa_id,
-                                    'nombre' => $data['nombre'],
-                                    'descripcion' => $data['descripcion'] ?? null,
-                                ]);
-                                return $marca->id;
-                            }),
-                        TextInput::make('codigo_interno')
-                            ->maxLength(255)
-                            ->default(null),
-                        Textarea::make('descripcion')
-                            ->maxLength(65535)
-                            ->default(null)
-                            ->columnSpanFull(),
-                        Toggle::make('afecto_igv')
-                            ->label('¿Afecto a IGV?')
-                            ->default(true),
-                        Toggle::make('activo')
-                            ->default(true),
-                    ]),
-                Section::make('Presentaciones del Producto')
-                    ->description('Agregue una o más presentaciones para este producto')
-                    ->schema([
-                        Repeater::make('presentaciones')
-                            ->relationship()
-                            ->collapsed()
-                            ->itemLabel(function (array $state): ?string {
-                                $tipo = $state['tipo_presentacion'] ?? null;
-                                $cantidad = $state['cantidad'] ?? null;
-                                $unidadId = $state['unidad_medida_id'] ?? null;
-                                
-                                if (blank($tipo) && blank($cantidad) && blank($unidadId)) {
-                                    return 'Nueva presentación';
-                                }
-
-                                $label = $tipo ?? 'Sin tipo';
-                                if ($cantidad !== null) {
-                                    $label .= " - {$cantidad}";
-                                }
-                                if ($unidadId !== null) {
-                                    $abreviatura = \App\Models\UniMedida::find($unidadId)?->abreviatura;
-                                    if ($abreviatura) {
-                                        $label .= " {$abreviatura}";
-                                    }
-                                }
-                                return $label;
-                            })
+                Tabs::make('Detalles del Producto')
+                    ->columnSpanFull()
+                    ->tabs([
+                        Tab::make('Datos Básicos')
+                            ->icon('heroicon-m-document-text')
+                            ->columns(2)
+                            ->schema($generalFields),
+                        Tab::make('Presentaciones')
+                            ->icon('heroicon-m-squares-2x2')
                             ->schema([
-                                Grid::make(['default' => 1, 'md' => 3])
-                                    ->schema([
-                                        FileUpload::make('imagen')
-                                            ->label('Imagen de la Presentación')
-                                            ->image()
-                                            ->imageEditor()
-                                            ->disk('public')
-                                            ->directory('productos/presentaciones')
-                                            ->visibility('public')
-                                            ->columnSpan(['default' => 1, 'md' => 1]),
-                                        Grid::make(['default' => 1, 'sm' => 2])
-                                            ->schema([
-                                                TextInput::make('tipo_presentacion')
-                                                    ->label('Tipo de Presentación')
-                                                    ->placeholder('Escriba para buscar o cree una nueva...')
-                                                    ->required()
-                                                    ->columnSpan(['default' => 1, 'sm' => 2])
-                                                    ->datalist(function () {
-                                                        $empresaId = auth()->user()->empresa_id;
-                                                        return \App\Models\ProductoPresentacion::query()
-                                                            ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
-                                                            ->where('productos.empresa_id', $empresaId)
-                                                            ->whereNull('producto_presentacion.deleted_at')
-                                                            ->whereNull('productos.deleted_at')
-                                                            ->distinct()
-                                                            ->pluck('producto_presentacion.tipo_presentacion')
-                                                            ->toArray();
-                                                    }),
-                                                TextInput::make('cantidad')
-                                                    ->label('Cantidad')
-                                                    ->numeric()
-                                                    ->default(1)
-                                                    ->required(),
-                                                Select::make('unidad_medida_id')
-                                                    ->label('Unidad de Medida')
-                                                    ->relationship('unidadMedida', 'nombre')
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->required(),
-                                                TextInput::make('codigo_barra')
-                                                    ->label('Código de Barras')
-                                                    ->maxLength(255)
-                                                    ->default(null),
-                                                Toggle::make('es_pesable')
-                                                    ->label('¿Es pesable?')
-                                                    ->default(false),
-                                            ])
-                                            ->columnSpan(['default' => 1, 'md' => 2]),
-                                    ]),
-                            ])
-                            ->defaultItems(0)
-                            ->minItems(0)
-                            ->addActionLabel('+ Agregar Presentación')
-                            ->reorderable(false)
-                            ->collapsible(),
+                                View::make('filament.components.presentaciones-manager')
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
             ]);
     }

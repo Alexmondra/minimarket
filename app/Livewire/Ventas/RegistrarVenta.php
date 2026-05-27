@@ -513,7 +513,7 @@ trait RegistrarVentaBehavior
                     $query->whereHas('producto', function ($q) use ($term) {
                         $q->where('codigo_interno', $term);
                     })->orWhereHas('lotePresentacion.productoPresentacion', function ($q) use ($term) {
-                        $q->where('codigo_barra', $term);
+                        $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
                     });
                 })
                 ->whereHas('lotePresentacion', fn ($q) => $q->where('stock', '>', 0))
@@ -531,6 +531,7 @@ trait RegistrarVentaBehavior
                 'lotePresentacion.lote',
                 'lotePresentacion.productoPresentacion.unidadMedida',
                 'lotePresentacion.productoPresentacion.producto',
+                'lotePresentacion.productoPresentacion.barras',
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
@@ -544,7 +545,7 @@ trait RegistrarVentaBehavior
                     $productQuery->where('nombre', 'like', "%{$term}%")
                         ->orWhere('codigo_interno', 'like', "%{$term}%");
                 })->orWhereHas('lotePresentacion.productoPresentacion', function ($presentationQuery) use ($term) {
-                    $presentationQuery->where('codigo_barra', 'like', "%{$term}%")
+                    $presentationQuery->whereHas('barras', fn ($b) => $b->where('codigo_barra', 'like', "%{$term}%"))
                         ->orWhere('tipo_presentacion', 'like', "%{$term}%");
                 });
             })
@@ -570,7 +571,7 @@ trait RegistrarVentaBehavior
                 'producto_presentacion_id' => $presentacion->id,
                 'producto_id' => $producto->id,
                 'nombre' => $producto->nombre,
-                'codigo' => $presentacion->codigo_barra ?: $producto->codigo_interno,
+                'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
                 'presentacion' => $presentacion->tipo_presentacion ?: 'Presentacion',
                 'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
                 'cantidad_presentacion' => $presentacion->cantidad ?? 1,
@@ -603,6 +604,7 @@ trait RegistrarVentaBehavior
                 'lotePresentacion.lote',
                 'lotePresentacion.productoPresentacion.unidadMedida',
                 'lotePresentacion.productoPresentacion.producto',
+                'lotePresentacion.productoPresentacion.barras',
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
@@ -634,7 +636,7 @@ trait RegistrarVentaBehavior
             'producto_presentacion_id' => $presentacion->id,
             'producto_id' => $producto->id,
             'nombre' => $producto->nombre,
-            'codigo' => $presentacion->codigo_barra ?: $producto->codigo_interno,
+            'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
             'presentacion' => $presentacion->tipo_presentacion ?: 'Presentación',
             'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
             'cantidad_presentacion' => $presentacion->cantidad ?? 1,
@@ -979,6 +981,7 @@ trait RegistrarVentaBehavior
                 'lotePresentacion.lote',
                 'lotePresentacion.productoPresentacion.unidadMedida',
                 'lotePresentacion.productoPresentacion.producto',
+                'lotePresentacion.productoPresentacion.barras',
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
@@ -1014,7 +1017,7 @@ trait RegistrarVentaBehavior
                 'producto_presentacion_id' => $presentacion->id,
                 'producto_id' => $producto->id,
                 'nombre' => $producto->nombre,
-                'codigo' => $presentacion->codigo_barra ?: $producto->codigo_interno,
+                'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
                 'presentacion' => $presentacion->tipo_presentacion ?: 'Presentación',
                 'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
                 'cantidad_presentacion' => $presentacion->cantidad ?? 1,

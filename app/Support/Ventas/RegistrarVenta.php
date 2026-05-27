@@ -8,6 +8,7 @@ use App\Models\Documento;
 use App\Models\LotePresentacion;
 use App\Models\MovimientoInventario;
 use App\Models\ProductoPresentacion;
+use App\Models\ProductoSucursal;
 use App\Models\Serie;
 use App\Models\Sucursal;
 use App\Models\User;
@@ -313,6 +314,37 @@ class RegistrarVenta
             ->get();
 
         if ($stocks->sum('stock') < $remaining) {
+            $this->intentarDescomprimirPadres(
+                productoPresentacionId: $lineItem['producto_presentacion_id'],
+                cantidadNecesaria: $remaining - $stocks->sum('stock'),
+                sucursalId: $sucursalId,
+                userId: $userId,
+                empresaId: $empresaId,
+                documentoReferencia: "Venta {$documento->serie}-{$documento->numero}"
+            );
+
+            // Re-fetch stocks after decompression
+            $stocks = LotePresentacion::query()
+                ->with([
+                    'lote',
+                    'productoPresentacion.producto',
+                    'productoSucursal' => fn ($query) => $query->where('sucursal_id', $sucursalId)->latest('id'),
+                ])
+                ->where('producto_presentacion_id', $lineItem['producto_presentacion_id'])
+                ->where('stock', '>', 0)
+                ->whereHas('productoSucursal', fn ($query) => $query
+                    ->where('sucursal_id', $sucursalId)
+                    ->where('activo', true))
+                ->join('lotes', 'lotes.id', '=', 'lote_presentacion.lote_id')
+                ->orderByRaw('CASE WHEN lotes.fecha_vencimiento IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('lotes.fecha_vencimiento')
+                ->orderBy('lotes.created_at')
+                ->select('lote_presentacion.*')
+                ->lockForUpdate()
+                ->get();
+        }
+
+        if ($stocks->sum('stock') < $remaining) {
             throw new \RuntimeException("Stock insuficiente para {$lineItem['producto_nombre']}.");
         }
 
@@ -368,6 +400,141 @@ class RegistrarVenta
             $remaining = round($remaining - $consumir, 3);
         }
     }
+
+    protected function intentarDescomprimirPadres(
+        int $productoPresentacionId,
+        float $cantidadNecesaria,
+        int $sucursalId,
+        int $userId,
+        int $empresaId,
+        string $documentoReferencia
+    ): void {
+        $parentPresentations = ProductoPresentacion::query()
+            ->where('presentacion_base_id', $productoPresentacionId)
+            ->get();
+
+        if ($parentPresentations->isEmpty()) {
+            return;
+        }
+
+        $parentIds = $parentPresentations->pluck('id')->all();
+
+        $parentStocks = LotePresentacion::query()
+            ->with(['lote', 'productoPresentacion'])
+            ->whereIn('producto_presentacion_id', $parentIds)
+            ->where('stock', '>', 0)
+            ->whereHas('productoSucursal', fn ($query) => $query
+                ->where('sucursal_id', $sucursalId)
+                ->where('activo', true))
+            ->join('lotes', 'lotes.id', '=', 'lote_presentacion.lote_id')
+            ->orderByRaw('CASE WHEN lotes.fecha_vencimiento IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('lotes.fecha_vencimiento')
+            ->orderBy('lotes.created_at')
+            ->select('lote_presentacion.*')
+            ->lockForUpdate()
+            ->get();
+
+        $acumulado = 0.0;
+
+        foreach ($parentStocks as $parentStock) {
+            if ($acumulado >= $cantidadNecesaria) {
+                break;
+            }
+
+            $parentPres = $parentStock->productoPresentacion;
+            $factor = (float) $parentPres->cantidad;
+            if ($factor <= 0) {
+                continue;
+            }
+
+            $faltante = $cantidadNecesaria - $acumulado;
+            $cajasANecesitar = ceil($faltante / $factor);
+            $cajasDisponibles = (float) $parentStock->stock;
+            $cajasADescomprimir = min($cajasANecesitar, $cajasDisponibles);
+
+            if ($cajasADescomprimir <= 0) {
+                continue;
+            }
+
+            $parentStock->update([
+                'stock' => round($parentStock->stock - $cajasADescomprimir, 3),
+            ]);
+
+            $baseLotePres = LotePresentacion::query()
+                ->where('lote_id', $parentStock->lote_id)
+                ->where('producto_presentacion_id', $productoPresentacionId)
+                ->first();
+
+            $cantidadAdicionada = $cajasADescomprimir * $factor;
+
+            if ($baseLotePres) {
+                $baseLotePres->update([
+                    'stock' => round($baseLotePres->stock + $cantidadAdicionada, 3),
+                ]);
+            } else {
+                $baseLotePres = LotePresentacion::create([
+                    'lote_id' => $parentStock->lote_id,
+                    'producto_presentacion_id' => $productoPresentacionId,
+                    'stock' => round($cantidadAdicionada, 3),
+                ]);
+            }
+
+            $baseProdSucursal = ProductoSucursal::query()
+                ->where('sucursal_id', $sucursalId)
+                ->where('lote_presentacion_id', $baseLotePres->id)
+                ->first();
+
+            if (! $baseProdSucursal) {
+                $anyBaseProdSucursal = ProductoSucursal::query()
+                    ->where('sucursal_id', $sucursalId)
+                    ->whereHas('lotePresentacion', fn ($q) => $q->where('producto_presentacion_id', $productoPresentacionId))
+                    ->first();
+
+                $precioBase = $anyBaseProdSucursal ? $anyBaseProdSucursal->precio : 0.00;
+                $precioBaseMayorista = $anyBaseProdSucursal ? $anyBaseProdSucursal->precio_mayorista : null;
+
+                ProductoSucursal::create([
+                    'producto_id' => $parentPres->producto_id,
+                    'sucursal_id' => $sucursalId,
+                    'lote_presentacion_id' => $baseLotePres->id,
+                    'stock_minimo' => 0,
+                    'precio' => $precioBase,
+                    'precio_mayorista' => $precioBaseMayorista,
+                    'activo' => true,
+                ]);
+            }
+
+            MovimientoInventario::create([
+                'empresa_id' => $empresaId,
+                'sucursal_id' => $sucursalId,
+                'producto_nombre' => $parentPres->producto?->nombre . ' (' . $parentPres->tipo_presentacion . ')',
+                'producto_presentacion_id' => $parentPres->id,
+                'tipo' => 'salida_descompresion',
+                'cantidad' => -$cajasADescomprimir,
+                'motivo' => "Descompresión para {$documentoReferencia}",
+                'referencia' => "Lote:{$parentStock->lote_id}",
+                'user_id' => $userId,
+                'stock_final' => $parentStock->fresh()->stock,
+            ]);
+
+            $basePres = ProductoPresentacion::find($productoPresentacionId);
+            MovimientoInventario::create([
+                'empresa_id' => $empresaId,
+                'sucursal_id' => $sucursalId,
+                'producto_nombre' => $basePres->producto?->nombre . ' (' . $basePres->tipo_presentacion . ')',
+                'producto_presentacion_id' => $productoPresentacionId,
+                'tipo' => 'entrada_descompresion',
+                'cantidad' => $cantidadAdicionada,
+                'motivo' => "Descompresión desde {$parentPres->tipo_presentacion} ({$cajasADescomprimir} unidades)",
+                'referencia' => "Lote:{$parentStock->lote_id}",
+                'user_id' => $userId,
+                'stock_final' => $baseLotePres->fresh()->stock,
+            ]);
+
+            $acumulado += $cantidadAdicionada;
+        }
+    }
+
 
     protected function seriePorDefecto(string $tipoComprobante): string
     {

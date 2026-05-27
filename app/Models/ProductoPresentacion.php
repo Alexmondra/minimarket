@@ -13,11 +13,11 @@ class ProductoPresentacion extends Model
 
     protected $fillable = [
         'producto_id',
+        'presentacion_base_id',
         'unidad_medida_id',
         'cantidad',
         'tipo_presentacion',
         'imagen',
-        'codigo_barra',
         'es_pesable',
     ];
 
@@ -29,6 +29,21 @@ class ProductoPresentacion extends Model
     public function unidadMedida()
     {
         return $this->belongsTo(UniMedida::class, 'unidad_medida_id');
+    }
+
+    public function presentacionBase()
+    {
+        return $this->belongsTo(ProductoPresentacion::class, 'presentacion_base_id');
+    }
+
+    public function presentacionesHijas()
+    {
+        return $this->hasMany(ProductoPresentacion::class, 'presentacion_base_id');
+    }
+
+    public function barras()
+    {
+        return $this->hasMany(ProductoPresentacionBarra::class, 'producto_presentacion_id');
     }
 
     /**

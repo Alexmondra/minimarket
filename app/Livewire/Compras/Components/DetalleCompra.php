@@ -151,13 +151,13 @@ class DetalleCompra extends Component
         $term = trim($this->searchProducto);
 
         $this->productosResultados = ProductoPresentacion::query()
-            ->with(['producto', 'unidadMedida'])
+            ->with(['producto', 'unidadMedida', 'barras'])
             ->whereHas('producto', function ($query) {
                 $query->where('activo', true)
                     ->where('empresa_id', Auth::user()?->empresa_id);
             })
             ->where(function ($query) use ($term) {
-                $query->where('codigo_barra', 'like', "%{$term}%")
+                $query->whereHas('barras', fn ($b) => $b->where('codigo_barra', 'like', "%{$term}%"))
                     ->orWhere('tipo_presentacion', 'like', "%{$term}%")
                     ->orWhereHas('producto', function ($productQuery) use ($term) {
                         $productQuery->where('nombre', 'like', "%{$term}%")
@@ -166,12 +166,12 @@ class DetalleCompra extends Component
             })
             ->limit(10)
             ->get()
-            ->sortByDesc(fn (ProductoPresentacion $presentacion): bool => $presentacion->codigo_barra === $term)
+            ->sortByDesc(fn (ProductoPresentacion $presentacion): bool => $presentacion->barras->pluck('codigo_barra')->contains($term))
             ->map(fn (ProductoPresentacion $presentacion): array => [
                 'id' => $presentacion->id,
                 'producto_id' => $presentacion->producto_id,
                 'producto_nombre' => $presentacion->producto?->nombre,
-                'codigo' => $presentacion->codigo_barra ?: $presentacion->producto?->codigo_interno,
+                'codigo' => $presentacion->barras->first()?->codigo_barra ?: $presentacion->producto?->codigo_interno,
                 'label' => trim(($presentacion->producto?->nombre ?? 'Producto') . ' - ' . ($presentacion->tipo_presentacion ?: 'Presentación') . ' x ' . $presentacion->cantidad . ' ' . ($presentacion->unidadMedida?->abreviatura ?? 'und')),
             ])
             ->values()
@@ -617,14 +617,21 @@ class DetalleCompra extends Component
                     ->where('empresa_id', Auth::user()?->empresa_id)
                     ->findOrFail($this->modalProductoId);
 
-            return ProductoPresentacion::create([
+            $pres = ProductoPresentacion::create([
                 'producto_id' => $producto->id,
                 'unidad_medida_id' => $this->modalUnidadMedidaId,
                 'cantidad' => $this->modalCantidadPorEmpaque,
                 'tipo_presentacion' => $this->modalTipoPresentacion,
-                'codigo_barra' => $this->modalCodigoBarra,
                 'es_pesable' => $this->modalEsPesable,
             ]);
+
+            if (filled($this->modalCodigoBarra)) {
+                $pres->barras()->create([
+                    'codigo_barra' => trim($this->modalCodigoBarra)
+                ]);
+            }
+
+            return $pres;
         });
 
         $this->cerrarCrearPresentacionModal();

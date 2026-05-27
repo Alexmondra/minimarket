@@ -134,13 +134,18 @@ class ModalCrearProducto extends Component
             ]);
 
             // Crear presentación básica
-            ProductoPresentacion::create([
+            $pres = ProductoPresentacion::create([
                 'producto_id' => $producto->id,
                 'unidad_medida_id' => $this->unidadMedidaId,
                 'cantidad' => $this->cantidadPorEmpaque,
                 'tipo_presentacion' => $this->tipoPresentacion,
-                'codigo_barra' => $this->codigoBarra,
             ]);
+
+            if (filled($this->codigoBarra)) {
+                $pres->barras()->create([
+                    'codigo_barra' => trim($this->codigoBarra)
+                ]);
+            }
 
             Notification::make()
                 ->title("Producto {$this->nombre} creado correctamente")

@@ -235,3 +235,134 @@
     @apply text-[#a855f7] dark:text-[#a855f7] bg-[#1a143b] p-1.5 rounded-lg w-8 h-8 shrink-0 border border-purple-500/15;
 }
 
+/* --- BESPOKE PRODUCT HEADER CARD --- */
+.product-header-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.7) !important;
+    border-left: 5px solid #6366f1 !important; /* Indigo accent border */
+    border-radius: 20px !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.02) !important;
+    padding: 1.75rem !important;
+    transition: all 0.3s ease;
+}
+
+.dark .product-header-card {
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid rgba(51, 65, 85, 0.3) !important;
+    border-left: 5px solid #818cf8 !important;
+    box-shadow: none !important;
+}
+
+/* --- BESPOKE PRESENTATIONS CONTAINER --- */
+.presentations-container-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.5) !important;
+    border-radius: 20px !important;
+    padding: 1.75rem !important;
+    transition: all 0.3s ease;
+}
+
+.dark .presentations-container-card {
+    background: rgba(15, 23, 42, 0.2) !important;
+    border: 1px solid rgba(51, 65, 85, 0.15) !important;
+}
+
+/* Animación de entrada suave para modals y tarjetas */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --- MODERN & PREMIUM TABS COMPONENT STYLING --- */
+
+/* Tabs container styling */
+.fi-sc-tabs {
+    position: relative;
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.03) !important;
+    padding: 1.5rem !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .fi-sc-tabs {
+    background: rgba(15, 23, 42, 0.3) !important;
+    border: 1px solid rgba(51, 65, 85, 0.25) !important;
+    box-shadow: none !important;
+}
+
+/* Hover effect on tabs container */
+.fi-sc-tabs:hover {
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+.dark .fi-sc-tabs:hover {
+    border-color: rgba(129, 140, 248, 0.25) !important;
+}
+
+/* Inactive Tab Button styling */
+.fi-sc-tabs button:not(.fi-active) {
+    @apply transition-all duration-300;
+}
+
+/* Active Tab Button styling */
+.fi-sc-tabs button.fi-active {
+    @apply font-bold transition-all duration-300;
+}
+
+/* Inputs, textareas, selects inside tabs */
+.fi-sc-tabs input, 
+.fi-sc-tabs textarea, 
+.fi-sc-tabs select {
+    border-radius: 0.75rem !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    transition: all 0.3s ease !important;
+}
+
+.dark .fi-sc-tabs input, 
+.dark .fi-sc-tabs textarea, 
+.dark .fi-sc-tabs select {
+    background-color: rgba(15, 23, 42, 0.3) !important;
+    border-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+.fi-sc-tabs input:focus, 
+.fi-sc-tabs textarea:focus, 
+.fi-sc-tabs select:focus {
+    border-color: #6366f1 !important;
+}
+
+.dark .fi-sc-tabs input:focus, 
+.dark .fi-sc-tabs textarea:focus, 
+.dark .fi-sc-tabs select:focus {
+    border-color: #818cf8 !important;
+}
+
+/* Section elements within Tabs */
+.fi-sc-tabs .fi-section {
+    border: 0 !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+
+
+
