@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Sucursal extends Model
 {
     use SoftDeletes;
+
     protected $table = 'sucursales';
 
     protected static function boot()
@@ -34,7 +35,7 @@ class Sucursal extends Model
             }
         });
     }
-    
+
     protected $fillable = [
         'empresa_id',
         'codigo',

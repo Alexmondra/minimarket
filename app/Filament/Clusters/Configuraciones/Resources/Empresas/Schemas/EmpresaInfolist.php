@@ -22,7 +22,7 @@ class EmpresaInfolist
                 TextEntry::make('direccion_fiscal')
                     ->placeholder('-'),
                 IconEntry::make('entorno')
-                      ->boolean(),
+                    ->boolean(),
                 TextEntry::make('created_at')
                     ->dateTime()
                     ->placeholder('-'),

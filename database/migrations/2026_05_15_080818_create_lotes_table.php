@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('fecha_fabricacion')->nullable();
             $table->date('fecha_vencimiento')->nullable();
             $table->string('ubicacion')->nullable();
-            $table->decimal('precio_compra', 10,2)->nullable();
+            $table->decimal('precio_compra', 10, 2)->nullable();
             $table->text('observaciones')->nullable();
             $table->string('estado_lote')->default('bueno');
             $table->timestamps();

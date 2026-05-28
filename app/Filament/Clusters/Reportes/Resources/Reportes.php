@@ -2,24 +2,29 @@
 
 namespace App\Filament\Clusters\Reportes\Resources;
 
+use App\Models\User;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class Reportes extends Resource
 {
-
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
+
     protected static string|UnitEnum|null $navigationGroup = 'Reportes';
+
     protected static ?string $navigationLabel = 'Dashboard';
+
     protected static ?string $modelLabel = 'Dashboard';
+
     protected static ?string $pluralModelLabel = 'Reportes';
+
     protected static ?string $slug = 'dashboard';
 
     public static function getModel(): string
     {
-        return \App\Models\User::class;
+        return User::class;
     }
 
     public static function canViewAny(): bool

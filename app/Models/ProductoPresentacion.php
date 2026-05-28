@@ -63,6 +63,6 @@ class ProductoPresentacion extends Model
             'public/',
         ], '', $path);
 
-        return url('/storage/' . $path);
+        return url('/storage/'.$path);
     }
 }

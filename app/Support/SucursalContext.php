@@ -22,7 +22,7 @@ class SucursalContext
     {
         $user ??= auth()->user();
 
-        if (!$user?->empresa_id) {
+        if (! $user?->empresa_id) {
             return collect();
         }
 
@@ -37,7 +37,7 @@ class SucursalContext
     {
         $user ??= auth()->user();
 
-        if (!$user?->empresa_id) {
+        if (! $user?->empresa_id) {
             return collect();
         }
 
@@ -73,7 +73,7 @@ class SucursalContext
     {
         $activeId = $this->activeSucursalId();
 
-        if (!$activeId) {
+        if (! $activeId) {
             return null;
         }
 
@@ -84,7 +84,7 @@ class SucursalContext
     {
         $user ??= auth()->user();
 
-        if (!$this->isAdmin($user)) {
+        if (! $this->isAdmin($user)) {
             return false;
         }
 
@@ -124,19 +124,19 @@ class SucursalContext
     {
         $user ??= auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
         $allowed = $this->allowedSucursales($user);
         $activeId = $this->activeSucursalId();
 
-        if ($activeId && !$allowed->contains('id', $activeId)) {
+        if ($activeId && ! $allowed->contains('id', $activeId)) {
             session()->forget(self::SESSION_KEY);
             $activeId = null;
         }
 
-        if (!$this->isAdmin($user)) {
+        if (! $this->isAdmin($user)) {
             if ($allowed->count() === 1) {
                 session([self::SESSION_KEY => $allowed->first()->id]);
             }
@@ -152,7 +152,7 @@ class SucursalContext
             return;
         }
 
-        if (!session()->exists(self::SESSION_KEY)) {
+        if (! session()->exists(self::SESSION_KEY)) {
             session([self::SESSION_KEY => null]);
         }
     }
@@ -161,7 +161,7 @@ class SucursalContext
     {
         $user ??= auth()->user();
 
-        if (!$user || $this->isAdmin($user)) {
+        if (! $user || $this->isAdmin($user)) {
             return false;
         }
 
@@ -173,14 +173,14 @@ class SucursalContext
 
         $activeId = $this->activeSucursalId();
 
-        return !$activeId || !$allowed->contains('id', $activeId);
+        return ! $activeId || ! $allowed->contains('id', $activeId);
     }
 
     public function hasNoSucursalAccess(?User $user = null): bool
     {
         $user ??= auth()->user();
 
-        return !$this->isAdmin($user) && $this->allowedSucursales($user)->isEmpty();
+        return ! $this->isAdmin($user) && $this->allowedSucursales($user)->isEmpty();
     }
 
     public function resolveSucursalForWrite(?int $requestedSucursalId = null, ?User $user = null): ?int

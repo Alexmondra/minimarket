@@ -51,6 +51,7 @@ class PuntoVenta extends Page
 
         if ($this->tieneCajaAbierta()) {
             $this->redirect(DocumentoResource::getUrl('registrar'));
+
             return;
         }
 

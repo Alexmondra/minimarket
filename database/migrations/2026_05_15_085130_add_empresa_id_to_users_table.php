@@ -13,22 +13,22 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('empresa_id')
-                  ->after('id')
-                  ->nullable()
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->after('id')
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('telefono')
-                  ->nullable()
-                  ->after('email');
+                ->nullable()
+                ->after('email');
 
             $table->boolean('activo')
-                  ->default(true)
-                  ->after('password');
+                ->default(true)
+                ->after('password');
 
             $table->timestamp('ultimo_acceso')
-                  ->nullable()
-                  ->after('remember_token');
+                ->nullable()
+                ->after('remember_token');
         });
     }
 

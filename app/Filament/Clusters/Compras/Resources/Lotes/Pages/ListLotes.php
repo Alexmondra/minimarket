@@ -3,12 +3,11 @@
 namespace App\Filament\Clusters\Compras\Resources\Lotes\Pages;
 
 use App\Filament\Clusters\Compras\Resources\Lotes\LoteResource;
+use App\Support\SucursalContext;
 use Filament\Resources\Pages\ListRecords;
-
-use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use App\Support\SucursalContext;
+use Filament\Tables\Table;
 
 class ListLotes extends ListRecords
 {

@@ -11,17 +11,15 @@ use App\Filament\Clusters\Configuraciones\Resources\Ubigeos\Schemas\UbigeoInfoli
 use App\Filament\Clusters\Configuraciones\Resources\Ubigeos\Tables\UbigeosTable;
 use App\Models\Ubigeo;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class UbigeoResource extends Resource
 {
-
     protected static ?string $model = Ubigeo::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-map-pin';

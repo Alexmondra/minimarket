@@ -23,7 +23,7 @@ class ProveedorForm
                     ->options([
                         'RUC' => 'RUC',
                         'DNI' => 'DNI',
-                        'CE'  => 'Carné de Extranjería',
+                        'CE' => 'Carné de Extranjería',
                         'OTRO' => 'Otro',
                     ])
                     ->default('RUC')

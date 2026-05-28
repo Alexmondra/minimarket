@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('empresas', function (Blueprint $table) {
-        $table->id();
-        $table->string('ruc')->unique();
-        $table->string('logo')->nullable();
-        $table->boolean('incluido_tributo')->default(false);
-        $table->string('razon_social');
-        $table->string('direccion_fiscal')->nullable();
-        $table->boolean('entorno')->default(false);
-        $table->timestamps();
-        $table->softDeletes();
+        Schema::create('empresas', function (Blueprint $table) {
+            $table->id();
+            $table->string('ruc')->unique();
+            $table->string('logo')->nullable();
+            $table->boolean('incluido_tributo')->default(false);
+            $table->string('razon_social');
+            $table->string('direccion_fiscal')->nullable();
+            $table->boolean('entorno')->default(false);
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

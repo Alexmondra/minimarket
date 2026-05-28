@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Ventas;
 
+use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\ProductoSucursal;
+use App\Models\Sucursal;
 use App\Support\SucursalContext;
 use App\Support\Ventas\CajaService;
 use App\Support\Ventas\PuntosService;
@@ -90,7 +92,7 @@ trait RegistrarVentaBehavior
         $context->normalizeSession(Auth::user());
 
         $this->sucursalId = $context->resolveSucursalForWrite();
-        $activeSucursal = $context->activeSucursal() ?: ($this->sucursalId ? \App\Models\Sucursal::with('ubigeoRel')->find($this->sucursalId) : null);
+        $activeSucursal = $context->activeSucursal() ?: ($this->sucursalId ? Sucursal::with('ubigeoRel')->find($this->sucursalId) : null);
         if ($activeSucursal) {
             $activeSucursal->loadMissing('ubigeoRel');
             $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
@@ -105,7 +107,7 @@ trait RegistrarVentaBehavior
         }
         $this->montoRecibido = 0;
 
-        $this->categorias = \App\Models\Categoria::query()
+        $this->categorias = Categoria::query()
             ->where('empresa_id', Auth::user()->empresa_id)
             ->where('estado', true)
             ->get()
@@ -226,11 +228,12 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        if (!ctype_digit($term) || (strlen($term) !== 8 && strlen($term) !== 11)) {
+        if (! ctype_digit($term) || (strlen($term) !== 8 && strlen($term) !== 11)) {
             Notification::make()
                 ->title('Error en la digitación: El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC).')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -246,6 +249,7 @@ trait RegistrarVentaBehavior
                 ->title('Cliente seleccionado')
                 ->success()
                 ->send();
+
             return;
         }
 
@@ -259,10 +263,11 @@ trait RegistrarVentaBehavior
                 ->title('Error: Configuración de API externa no encontrada.')
                 ->danger()
                 ->send();
+
             return;
         }
 
-        $url = $tipoDoc === 'DNI' ? ($dniUrl . $term) : ($rucUrl . $term);
+        $url = $tipoDoc === 'DNI' ? ($dniUrl.$term) : ($rucUrl.$term);
 
         try {
             $response = Http::timeout(15)
@@ -280,7 +285,7 @@ trait RegistrarVentaBehavior
                 $nombre = $data['nombres'] ?? $data['nombre'] ?? null;
                 $apellidoPaterno = $data['apellido_paterno'] ?? $data['apellidoPaterno'] ?? '';
                 $apellidoMaterno = $data['apellido_materno'] ?? $data['apellidoMaterno'] ?? '';
-                $apellido = trim($apellidoPaterno . ' ' . $apellidoMaterno);
+                $apellido = trim($apellidoPaterno.' '.$apellidoMaterno);
                 if (empty($apellido) && isset($data['apellidos'])) {
                     $apellido = $data['apellidos'];
                 }
@@ -292,7 +297,7 @@ trait RegistrarVentaBehavior
 
                 $direccion = $data['direccion'] ?? $data['domicilio_fiscal'] ?? $data['direccion_completa'] ?? null;
 
-                $hasName = ($tipoDoc === 'DNI' && !empty($nombre)) || ($tipoDoc === 'RUC' && !empty($razonSocial));
+                $hasName = ($tipoDoc === 'DNI' && ! empty($nombre)) || ($tipoDoc === 'RUC' && ! empty($razonSocial));
 
                 if ($hasName) {
                     $cliente = Cliente::create([
@@ -327,7 +332,7 @@ trait RegistrarVentaBehavior
         } catch (\Throwable $e) {
             report($e);
             Notification::make()
-                ->title('Error al conectar con la API externa: ' . $e->getMessage())
+                ->title('Error al conectar con la API externa: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -351,14 +356,16 @@ trait RegistrarVentaBehavior
         $documento = trim($this->clienteDocumento);
         if ($documento === '') {
             Notification::make()->title('Ingresa el número de documento')->warning()->send();
+
             return;
         }
 
-        if (!ctype_digit($documento) || (strlen($documento) !== 8 && strlen($documento) !== 11)) {
+        if (! ctype_digit($documento) || (strlen($documento) !== 8 && strlen($documento) !== 11)) {
             Notification::make()
                 ->title('Error en la digitación: El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC).')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -387,7 +394,7 @@ trait RegistrarVentaBehavior
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Error al guardar cliente: ' . $e->getMessage())
+                ->title('Error al guardar cliente: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -395,7 +402,7 @@ trait RegistrarVentaBehavior
 
     public function abrirEdicionCliente(): void
     {
-        if (!$this->clienteId) {
+        if (! $this->clienteId) {
             return;
         }
 
@@ -411,7 +418,7 @@ trait RegistrarVentaBehavior
 
     public function guardarEdicionCliente(): void
     {
-        if (!$this->clienteId) {
+        if (! $this->clienteId) {
             return;
         }
 
@@ -437,7 +444,7 @@ trait RegistrarVentaBehavior
             }
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Error al actualizar cliente: ' . $e->getMessage())
+                ->title('Error al actualizar cliente: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -506,7 +513,7 @@ trait RegistrarVentaBehavior
                 ->where('sucursal_id', $this->sucursalId)
                 ->where('activo', true)
                 ->whereHas('producto', function ($query) {
-                    $query->where('empresa_id', \Illuminate\Support\Facades\Auth::user()->empresa_id)
+                    $query->where('empresa_id', Auth::user()->empresa_id)
                         ->where('activo', true);
                 })
                 ->where(function ($query) use ($term) {
@@ -521,6 +528,7 @@ trait RegistrarVentaBehavior
 
             if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
                 $this->agregarProducto($exactMatch->lotePresentacion->producto_presentacion_id);
+
                 return;
             }
         }
@@ -939,6 +947,7 @@ trait RegistrarVentaBehavior
         $documento = trim($this->clienteDocumento);
         if ($documento === '') {
             Notification::make()->title('Ingresa el número de documento')->warning()->send();
+
             return;
         }
 
@@ -962,10 +971,10 @@ trait RegistrarVentaBehavior
 
             $this->clienteId = $cliente->id;
             $this->puntosDisponibles = app(PuntosService::class)->puntosDisponibles($cliente, Auth::user()->empresa_id);
-            
+
             Notification::make()->title('Cliente registrado con éxito')->success()->send();
         } catch (\Exception $e) {
-            Notification::make()->title('Error al guardar cliente: ' . $e->getMessage())->danger()->send();
+            Notification::make()->title('Error al guardar cliente: '.$e->getMessage())->danger()->send();
         }
     }
 
@@ -1029,9 +1038,9 @@ trait RegistrarVentaBehavior
                 'afecto_igv' => (bool) $producto->afecto_igv,
             ];
         })
-        ->filter()
-        ->values()
-        ->all();
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function toggleMedioPagoShortcut(): void
@@ -1046,7 +1055,7 @@ trait RegistrarVentaBehavior
         $this->cambiarMedioPago($medios[$nextIdx]);
 
         Notification::make()
-            ->title("Medio de pago cambiado a: " . $medios[$nextIdx])
+            ->title('Medio de pago cambiado a: '.$medios[$nextIdx])
             ->info()
             ->duration(1500)
             ->send();

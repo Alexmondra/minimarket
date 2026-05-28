@@ -23,49 +23,81 @@ use Livewire\Component;
 class DetalleCompra extends Component
 {
     public ?int $compraId = null;
+
     public ?int $sucursalId = null;
 
     public array $detalles = [];
 
     public string $searchProducto = '';
+
     public array $productosResultados = [];
+
     public bool $showProductoDropdown = false;
+
     public ?int $productoId = null;
+
     public ?string $productoNombre = null;
+
     public ?int $presentacionSeleccionadaId = null;
+
     public bool $mostrarTodasPresentaciones = true;
+
     public int $totalPresentacionesProducto = 0;
+
     public ?string $ultimaBusquedaSinResultado = null;
 
     public string $codigoLote = '';
+
     public ?string $fechaFabricacion = null;
+
     public ?string $fechaVencimiento = null;
+
     public ?string $ubicacion = null;
+
     public ?float $precioCompraTotal = null;
+
     public ?string $observaciones = null;
 
     public array $presentacionesDisponibles = [];
 
     public bool $showCrearPresentacionModal = false;
+
     public string $modoProductoPresentacion = 'existente';
+
     public string $modalSearchProducto = '';
+
     public array $modalProductosResultados = [];
+
     public bool $modalShowProductoDropdown = false;
+
     public ?int $modalProductoId = null;
+
     public ?string $modalProductoNombre = null;
+
     public ?string $modalNuevoProductoNombre = null;
+
     public ?string $modalCodigoInterno = null;
+
     public ?int $modalCategoriaId = null;
+
     public ?int $modalMarcaId = null;
+
     public bool $modalAfectoIgv = true;
+
     public ?int $modalUnidadMedidaId = null;
+
     public int $modalCantidadPorEmpaque = 1;
+
     public ?string $modalTipoPresentacion = null;
+
     public ?string $modalCodigoBarra = null;
+
     public bool $modalEsPesable = false;
 
     public ?int $historialProductoId = null;
+
     public array $historialCompras = [];
+
     public bool $showHistorial = false;
 
     protected $listeners = [
@@ -90,8 +122,9 @@ class DetalleCompra extends Component
 
     public function cargarDetalles(): void
     {
-        if (!$this->compraId) {
+        if (! $this->compraId) {
             $this->detalles = [];
+
             return;
         }
 
@@ -145,6 +178,7 @@ class DetalleCompra extends Component
         if (strlen($this->searchProducto) < 2) {
             $this->productosResultados = [];
             $this->showProductoDropdown = false;
+
             return;
         }
 
@@ -172,14 +206,14 @@ class DetalleCompra extends Component
                 'producto_id' => $presentacion->producto_id,
                 'producto_nombre' => $presentacion->producto?->nombre,
                 'codigo' => $presentacion->barras->first()?->codigo_barra ?: $presentacion->producto?->codigo_interno,
-                'label' => trim(($presentacion->producto?->nombre ?? 'Producto') . ' - ' . ($presentacion->tipo_presentacion ?: 'Presentación') . ' x ' . $presentacion->cantidad . ' ' . ($presentacion->unidadMedida?->abreviatura ?? 'und')),
+                'label' => trim(($presentacion->producto?->nombre ?? 'Producto').' - '.($presentacion->tipo_presentacion ?: 'Presentación').' x '.$presentacion->cantidad.' '.($presentacion->unidadMedida?->abreviatura ?? 'und')),
             ])
             ->values()
             ->toArray();
 
         $this->showProductoDropdown = count($this->productosResultados) > 0;
 
-        if (!$this->showProductoDropdown && strlen($term) >= 5 && $this->ultimaBusquedaSinResultado !== $term) {
+        if (! $this->showProductoDropdown && strlen($term) >= 5 && $this->ultimaBusquedaSinResultado !== $term) {
             $this->abrirCrearPresentacionModal($term);
         }
     }
@@ -198,7 +232,7 @@ class DetalleCompra extends Component
     public function seleccionarPresentacion(int $presentacionId): void
     {
         $presentacion = ProductoPresentacion::with('producto')->find($presentacionId);
-        if (!$presentacion || !$presentacion->producto) {
+        if (! $presentacion || ! $presentacion->producto) {
             return;
         }
 
@@ -206,7 +240,7 @@ class DetalleCompra extends Component
         $this->productoNombre = $presentacion->producto->nombre;
         $this->presentacionSeleccionadaId = $presentacion->id;
         $this->mostrarTodasPresentaciones = false;
-        $this->searchProducto = trim($presentacion->producto->nombre . ' - ' . ($presentacion->tipo_presentacion ?: 'Presentación'));
+        $this->searchProducto = trim($presentacion->producto->nombre.' - '.($presentacion->tipo_presentacion ?: 'Presentación'));
         $this->showProductoDropdown = false;
         $this->cargarPresentaciones($presentacion->id);
     }
@@ -214,7 +248,7 @@ class DetalleCompra extends Component
     public function setProducto(int $productoId): void
     {
         $producto = Producto::find($productoId);
-        if (!$producto) {
+        if (! $producto) {
             return;
         }
 
@@ -223,9 +257,10 @@ class DetalleCompra extends Component
 
     protected function cargarPresentaciones(?int $soloPresentacionId = null): void
     {
-        if (!$this->productoId) {
+        if (! $this->productoId) {
             $this->presentacionesDisponibles = [];
             $this->totalPresentacionesProducto = 0;
+
             return;
         }
 
@@ -240,7 +275,7 @@ class DetalleCompra extends Component
             ->with('unidadMedida')
             ->orderBy('id');
 
-        if ($soloPresentacionId && !$this->mostrarTodasPresentaciones) {
+        if ($soloPresentacionId && ! $this->mostrarTodasPresentaciones) {
             $query->where('id', $soloPresentacionId);
         }
 
@@ -250,8 +285,8 @@ class DetalleCompra extends Component
                 $precioVenta = $this->obtenerPrecioVentaActual($presentacion->id);
 
                 return [
-                'id' => $presentacion->id,
-                'label' => trim(($presentacion->tipo_presentacion ?: 'Presentación') . ' x ' . $presentacion->cantidad . ' ' . ($presentacion->unidadMedida?->abreviatura ?? 'und')),
+                    'id' => $presentacion->id,
+                    'label' => trim(($presentacion->tipo_presentacion ?: 'Presentación').' x '.$presentacion->cantidad.' '.($presentacion->unidadMedida?->abreviatura ?? 'und')),
                     'cantidad' => $actual['cantidad'] ?? null,
                     'precio_especial' => $actual['precio_especial'] ?? null,
                     'mostrar_precio_venta' => $actual['mostrar_precio_venta'] ?? false,
@@ -295,7 +330,7 @@ class DetalleCompra extends Component
         $context = app(SucursalContext::class);
         $this->sucursalId = $context->resolveSucursalForWrite($this->sucursalId);
 
-        if (!$this->sucursalId) {
+        if (! $this->sucursalId) {
             Notification::make()
                 ->title('Selecciona una sucursal para registrar el lote')
                 ->warning()
@@ -324,6 +359,7 @@ class DetalleCompra extends Component
                 $item['precio_venta'] = is_numeric($item['precio_venta'] ?? null) ? (float) $item['precio_venta'] : 0;
                 $item['precio_mayorista'] = is_numeric($item['precio_mayorista'] ?? null) ? (float) $item['precio_mayorista'] : null;
                 $item['minimo_mayorista'] = max(1, (int) ($item['minimo_mayorista'] ?? 2));
+
                 return $item;
             })
             ->filter(fn (array $item): bool => $item['cantidad'] > 0)
@@ -334,6 +370,7 @@ class DetalleCompra extends Component
                 ->title('Agrega al menos una presentación con cantidad mayor a cero')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -342,7 +379,7 @@ class DetalleCompra extends Component
             ->where('sucursal_id', $this->sucursalId)
             ->exists();
 
-        if (!$compraValida) {
+        if (! $compraValida) {
             abort(403, 'No tienes acceso a esta compra.');
         }
 
@@ -551,6 +588,7 @@ class DetalleCompra extends Component
         if (strlen($this->modalSearchProducto) < 2) {
             $this->modalProductosResultados = [];
             $this->modalShowProductoDropdown = false;
+
             return;
         }
 
@@ -607,7 +645,7 @@ class DetalleCompra extends Component
                     'empresa_id' => Auth::user()?->empresa_id ?? 1,
                     'categoria_id' => $this->modalCategoriaId,
                     'marca_id' => $this->modalMarcaId,
-                    'codigo_interno' => $this->modalCodigoInterno ?: 'PROD-' . strtoupper(substr(md5(uniqid()), 0, 8)),
+                    'codigo_interno' => $this->modalCodigoInterno ?: 'PROD-'.strtoupper(substr(md5(uniqid()), 0, 8)),
                     'nombre' => $this->modalNuevoProductoNombre,
                     'slug' => $this->generarSlugUnico($this->modalNuevoProductoNombre),
                     'afecto_igv' => $this->modalAfectoIgv,
@@ -627,7 +665,7 @@ class DetalleCompra extends Component
 
             if (filled($this->modalCodigoBarra)) {
                 $pres->barras()->create([
-                    'codigo_barra' => trim($this->modalCodigoBarra)
+                    'codigo_barra' => trim($this->modalCodigoBarra),
                 ]);
             }
 
@@ -650,7 +688,7 @@ class DetalleCompra extends Component
         $counter = 1;
 
         while (Producto::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 

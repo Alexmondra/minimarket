@@ -36,7 +36,7 @@ class DetalleCompra extends Model
 
     public function getCantidadTotalAttribute(): int
     {
-        if (!$this->lote) {
+        if (! $this->lote) {
             return 0;
         }
 

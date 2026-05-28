@@ -5,7 +5,6 @@ namespace App\Filament\Clusters\Almacen\Resources\Categorias;
 use App\Filament\Clusters\Almacen\Resources\Categorias\Pages\ManageCategorias;
 use App\Models\Categoria;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -15,8 +14,8 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -28,10 +27,10 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class CategoriaResource extends Resource
 {
-
     protected static ?string $model = Categoria::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';

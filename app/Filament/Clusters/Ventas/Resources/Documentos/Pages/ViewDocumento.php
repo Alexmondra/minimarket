@@ -3,9 +3,17 @@
 namespace App\Filament\Clusters\Ventas\Resources\Documentos\Pages;
 
 use App\Filament\Clusters\Ventas\Resources\Documentos\DocumentoResource;
+use App\Models\Cliente;
+use App\Models\Serie;
+use App\Support\Facturacion\FacturacionService;
+use App\Support\Ventas\VentaFileService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ViewDocumento extends ViewRecord
 {
@@ -65,7 +73,7 @@ class ViewDocumento extends ViewRecord
                 ->color('success')
                 ->visible(fn () => $documento->tipo_comprobante === 'TICKET')
                 ->form([
-                    \Filament\Forms\Components\Select::make('tipo_comprobante')
+                    Select::make('tipo_comprobante')
                         ->label('Tipo de Comprobante')
                         ->options([
                             'BOLETA' => 'Boleta de Venta',
@@ -73,28 +81,29 @@ class ViewDocumento extends ViewRecord
                         ])
                         ->required()
                         ->live(),
-                    \Filament\Forms\Components\Select::make('cliente_id')
+                    Select::make('cliente_id')
                         ->label('Cliente')
-                        ->options(\App\Models\Cliente::all()->mapWithKeys(function ($cliente) {
-                            $nombreCompleto = trim($cliente->razon_social ?: ($cliente->nombre . ' ' . $cliente->apellido));
+                        ->options(Cliente::all()->mapWithKeys(function ($cliente) {
+                            $nombreCompleto = trim($cliente->razon_social ?: ($cliente->nombre.' '.$cliente->apellido));
+
                             return [$cliente->id => "{$cliente->documento} - {$nombreCompleto}"];
                         }))
                         ->searchable()
                         ->required(fn (callable $get) => $get('tipo_comprobante') === 'FACTURA'),
                 ])
                 ->action(function (array $data) use ($documento): void {
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($documento, $data): void {
+                    DB::transaction(function () use ($documento, $data): void {
                         $tipoComprobante = $data['tipo_comprobante'];
                         $clienteId = $data['cliente_id'];
 
-                        $serie = \App\Models\Serie::query()
+                        $serie = Serie::query()
                             ->where('sucursal_id', $documento->sucursal_id)
                             ->where('tipo_comprobante', $tipoComprobante)
                             ->lockForUpdate()
                             ->first();
 
-                        if (!$serie) {
-                            $serie = \App\Models\Serie::create([
+                        if (! $serie) {
+                            $serie = Serie::create([
                                 'sucursal_id' => $documento->sucursal_id,
                                 'tipo_comprobante' => $tipoComprobante,
                                 'serie' => $tipoComprobante === 'FACTURA' ? 'F001' : 'B001',
@@ -116,8 +125,8 @@ class ViewDocumento extends ViewRecord
                     // Delete old ticket_html and pdf files
                     $oldArchivos = $documento->archivos()->whereIn('tipo_archivo', ['ticket_html', 'pdf'])->get();
                     foreach ($oldArchivos as $old) {
-                        if ($old->ruta_archivo && \Illuminate\Support\Facades\Storage::disk('local')->exists($old->ruta_archivo)) {
-                            \Illuminate\Support\Facades\Storage::disk('local')->delete($old->ruta_archivo);
+                        if ($old->ruta_archivo && Storage::disk('local')->exists($old->ruta_archivo)) {
+                            Storage::disk('local')->delete($old->ruta_archivo);
                         }
                         $old->forceDelete();
                     }
@@ -132,15 +141,15 @@ class ViewDocumento extends ViewRecord
 
                     // Render and save ticket HTML
                     $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
-                    $ventaFileService = app(\App\Support\Ventas\VentaFileService::class);
+                    $ventaFileService = app(VentaFileService::class);
                     $ventaFileService->guardarTicketHtml($documento, $htmlTicket);
 
                     // Render and save PDF
-                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+                    $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
                     $ventaFileService->guardarPdf($documento, $pdf->output());
 
                     // Send to SUNAT
-                    app(\App\Support\Facturacion\FacturacionService::class)->procesar($documento);
+                    app(FacturacionService::class)->procesar($documento);
 
                     Notification::make()
                         ->title('Comprobante convertido y enviado a SUNAT con éxito')

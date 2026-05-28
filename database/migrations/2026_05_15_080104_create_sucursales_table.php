@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('nombre_sucursal');
             $table->string('imagen_sucursal')->nullable();
-            $table->decimal('impuesto_porcentaje', 5,2)->default(0);
+            $table->decimal('impuesto_porcentaje', 5, 2)->default(0);
             $table->json('configuracion_extra')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();

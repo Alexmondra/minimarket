@@ -5,7 +5,6 @@ namespace App\Filament\Clusters\Almacen\Resources\UniMedidas;
 use App\Filament\Clusters\Almacen\Resources\UniMedidas\Pages\ManageUniMedidas;
 use App\Models\UniMedida;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -27,6 +26,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class UniMedidaResource extends Resource
 {

@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcesarFacturaSunat;
 use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\Lote;
 use App\Models\LotePresentacion;
-use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\ProductoPresentacion;
 use App\Models\ProductoPresentacionBarra;
@@ -29,7 +29,7 @@ class DecompresionStockTest extends TestCase
     {
         parent::setUp();
         // Prevent jobs from running during test if not needed
-        Event::fake(\App\Jobs\ProcesarFacturaSunat::class);
+        Event::fake(ProcesarFacturaSunat::class);
     }
 
     public function test_it_decompresses_parent_presentation_stock_when_base_stock_is_insufficient(): void
@@ -180,7 +180,7 @@ class DecompresionStockTest extends TestCase
                     'producto_presentacion_id' => $presUnidad->id,
                     'cantidad' => 5.0,
                     'precio_unitario' => 3.00,
-                ]
+                ],
             ],
         ];
 

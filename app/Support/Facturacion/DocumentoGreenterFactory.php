@@ -61,6 +61,7 @@ class DocumentoGreenterFactory
     protected function company(Empresa $empresa, Documento $documento): Company
     {
         $ubigeo = $documento->sucursal?->ubigeoRel;
+
         return (new Company)
             ->setRuc((string) $empresa->ruc)
             ->setRazonSocial((string) $empresa->razon_social)

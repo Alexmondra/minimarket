@@ -9,7 +9,7 @@ class VentaCalculatorTest extends TestCase
 {
     public function test_calcula_igv_cuando_el_precio_ya_lo_incluye(): void
     {
-        $calculator = new VentaCalculator();
+        $calculator = new VentaCalculator;
 
         $resultado = $calculator->calcular([
             [
@@ -27,7 +27,7 @@ class VentaCalculatorTest extends TestCase
 
     public function test_calcula_igv_cuando_el_precio_no_lo_incluye_y_aplica_descuento(): void
     {
-        $calculator = new VentaCalculator();
+        $calculator = new VentaCalculator;
 
         $resultado = $calculator->calcular([
             [

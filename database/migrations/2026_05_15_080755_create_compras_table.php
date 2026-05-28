@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('compras', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();            $table->foreignId('proveedor_id')->constrained('proveedores')->cascadeOnDelete();
+            $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
+            $table->foreignId('proveedor_id')->constrained('proveedores')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('tipo_comprobante');
             $table->string('numero_factura_proveedor')->nullable();
             $table->date('fecha_recepcion');
-            $table->decimal('costo_total_factura', 12,2);
+            $table->decimal('costo_total_factura', 12, 2);
             $table->text('observaciones')->nullable();
             $table->string('archivo_comprobante')->nullable();
             $table->boolean('estado')->default(true);

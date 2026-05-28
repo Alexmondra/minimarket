@@ -3,18 +3,18 @@
 namespace App\Filament\Clusters\Compras\Resources\Compras;
 
 use App\Filament\Clusters\Compras\Resources\Compras\Pages\ListCompras;
+use App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra;
 use App\Filament\Clusters\Compras\Resources\Compras\Pages\ViewCompra;
 use App\Models\Compra;
 use App\Support\SucursalContext;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 class CompraResource extends Resource
 {
-
     protected static ?string $model = Compra::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-archive-box';
@@ -27,7 +27,7 @@ class CompraResource extends Resource
     {
         return [
             'index' => ListCompras::route('/'),
-            'registrar' => \App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::route('/registrar'),
+            'registrar' => RegistrarCompra::route('/registrar'),
             'view' => ViewCompra::route('/{record}'),
         ];
     }

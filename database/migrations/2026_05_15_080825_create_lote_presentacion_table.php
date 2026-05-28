@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('lote_id')->constrained('lotes')->onDelete('cascade');
             $table->foreignId('producto_presentacion_id')->constrained('producto_presentacion')->onDelete('cascade');
             $table->integer('stock')->default(0);
-            $table->decimal('precio_oferta', 10,2)->nullable();
+            $table->decimal('precio_oferta', 10, 2)->nullable();
             $table->timestamps();
-            
+
             $table->unique(['lote_id', 'producto_presentacion_id']); // evita duplicados
         });
     }

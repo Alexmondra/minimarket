@@ -7,9 +7,9 @@ use App\Filament\Clusters\Configuraciones\Resources\Permisos\Pages\EditRol;
 use App\Filament\Clusters\Configuraciones\Resources\Permisos\Pages\ListPermisos;
 use App\Filament\Clusters\Configuraciones\Resources\Permisos\Pages\ManagePermisos;
 use BackedEnum;
+use Filament\Resources\Resource;
 use Spatie\Permission\Models\Permission;
 use UnitEnum;
-use Filament\Resources\Resource;
 
 class PermisoResource extends Resource
 {

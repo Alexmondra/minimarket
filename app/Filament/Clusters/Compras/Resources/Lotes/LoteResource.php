@@ -6,13 +6,12 @@ use App\Filament\Clusters\Compras\Resources\Lotes\Pages\ListLotes;
 use App\Models\Lote;
 use App\Support\SucursalContext;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class LoteResource extends Resource
 {
-
     protected static ?string $model = Lote::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';

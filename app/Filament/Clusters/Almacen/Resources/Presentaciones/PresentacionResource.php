@@ -3,16 +3,16 @@
 namespace App\Filament\Clusters\Almacen\Resources\Presentaciones;
 
 use App\Filament\Clusters\Almacen\Resources\Presentaciones\Pages\ListPresentaciones;
+use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use App\Models\Producto;
 use App\Models\ProductoPresentacion;
 use BackedEnum;
-use UnitEnum;
-use Filament\Resources\Resource;
 use Filament\Actions\Action;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use UnitEnum;
 
 class PresentacionResource extends Resource
 {
@@ -32,9 +32,9 @@ class PresentacionResource extends Resource
     {
         return $table
             ->columns([
-                
+
                 TextColumn::make('tipo_presentacion')
-            ->label('Tipo de Presentación')
+                    ->label('Tipo de Presentación')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('total_productos')
@@ -43,7 +43,7 @@ class PresentacionResource extends Resource
             ])
             ->recordUrl(function (ProductoPresentacion $record): ?string {
                 $tipoPresentacion = $record->tipo_presentacion;
-                $productos = \App\Models\Producto::query()
+                $productos = Producto::query()
                     ->where('empresa_id', auth()->user()->empresa_id)
                     ->whereHas('presentaciones', fn ($q) => $q->where('tipo_presentacion', $tipoPresentacion))
                     ->get();
@@ -58,10 +58,10 @@ class PresentacionResource extends Resource
                 Action::make('ver_productos')
                     ->label('Ver Productos')
                     ->icon('heroicon-o-eye')
-                    ->modalHeading(fn (ProductoPresentacion $record): string => 'Productos con presentación: ' . $record->tipo_presentacion)
+                    ->modalHeading(fn (ProductoPresentacion $record): string => 'Productos con presentación: '.$record->tipo_presentacion)
                     ->modalContent(function (ProductoPresentacion $record) {
                         $tipoPresentacion = $record->tipo_presentacion;
-                        $productos = \App\Models\Producto::query()
+                        $productos = Producto::query()
                             ->where('empresa_id', auth()->user()->empresa_id)
                             ->whereHas('presentaciones', fn ($q) => $q->where('tipo_presentacion', $tipoPresentacion))
                             ->get();

@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->dateTime('fecha_apertura');
-            $table->decimal('saldo_inicial',12,2);
+            $table->decimal('saldo_inicial', 12, 2);
             $table->dateTime('fecha_cierre')->nullable();
-            $table->decimal('saldo_teorico',12,2)->nullable();
-            $table->decimal('saldo_real',12,2)->nullable();
-            $table->decimal('diferencia',12,2)->nullable();
+            $table->decimal('saldo_teorico', 12, 2)->nullable();
+            $table->decimal('saldo_real', 12, 2)->nullable();
+            $table->decimal('diferencia', 12, 2)->nullable();
             $table->boolean('estado')->default(true);
             $table->text('observaciones')->nullable();
             $table->timestamps();

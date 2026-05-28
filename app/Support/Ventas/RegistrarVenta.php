@@ -2,6 +2,7 @@
 
 namespace App\Support\Ventas;
 
+use App\Jobs\ProcesarFacturaSunat;
 use App\Models\Cliente;
 use App\Models\DetalleDocumento;
 use App\Models\Documento;
@@ -13,6 +14,7 @@ use App\Models\Serie;
 use App\Models\Sucursal;
 use App\Models\User;
 use App\Support\Facturacion\FacturacionService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
 class RegistrarVenta
@@ -225,10 +227,10 @@ class RegistrarVenta
         ])->render();
         $this->fileService->guardarTicketHtml($documento, $htmlTicket);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+        $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
         $this->fileService->guardarPdf($documento, $pdf->output());
 
-        \App\Jobs\ProcesarFacturaSunat::dispatch($documento);
+        ProcesarFacturaSunat::dispatch($documento);
 
         return $documento->fresh([
             'cliente',
@@ -507,7 +509,7 @@ class RegistrarVenta
             MovimientoInventario::create([
                 'empresa_id' => $empresaId,
                 'sucursal_id' => $sucursalId,
-                'producto_nombre' => $parentPres->producto?->nombre . ' (' . $parentPres->tipo_presentacion . ')',
+                'producto_nombre' => $parentPres->producto?->nombre.' ('.$parentPres->tipo_presentacion.')',
                 'producto_presentacion_id' => $parentPres->id,
                 'tipo' => 'salida_descompresion',
                 'cantidad' => -$cajasADescomprimir,
@@ -521,7 +523,7 @@ class RegistrarVenta
             MovimientoInventario::create([
                 'empresa_id' => $empresaId,
                 'sucursal_id' => $sucursalId,
-                'producto_nombre' => $basePres->producto?->nombre . ' (' . $basePres->tipo_presentacion . ')',
+                'producto_nombre' => $basePres->producto?->nombre.' ('.$basePres->tipo_presentacion.')',
                 'producto_presentacion_id' => $productoPresentacionId,
                 'tipo' => 'entrada_descompresion',
                 'cantidad' => $cantidadAdicionada,
@@ -534,7 +536,6 @@ class RegistrarVenta
             $acumulado += $cantidadAdicionada;
         }
     }
-
 
     protected function seriePorDefecto(string $tipoComprobante): string
     {

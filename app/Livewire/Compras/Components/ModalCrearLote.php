@@ -5,9 +5,7 @@ namespace App\Livewire\Compras\Components;
 use App\Models\Lote;
 use App\Models\LotePresentacion;
 use App\Models\Producto;
-use App\Models\ProductoPresentacion;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class ModalCrearLote extends Component
@@ -15,18 +13,29 @@ class ModalCrearLote extends Component
     public bool $showModal = false;
 
     public ?int $sucursalId = null;
+
     public ?int $productoId = null;
+
     public ?int $productoPresentacionId = null;
+
     public string $codigoLote = '';
+
     public ?string $fechaFabricacion = null;
+
     public ?string $fechaVencimiento = null;
+
     public ?string $ubicacion = null;
+
     public ?float $precioCompra = null;
+
     public ?string $observaciones = null;
 
     public string $searchProducto = '';
+
     public array $productosResultados = [];
+
     public bool $showProductoDropdown = false;
+
     public ?string $productoNombre = null;
 
     protected $listeners = ['abrirModalCrearLote' => 'abrir'];
@@ -59,13 +68,14 @@ class ModalCrearLote extends Component
         if (strlen($this->searchProducto) < 2) {
             $this->productosResultados = [];
             $this->showProductoDropdown = false;
+
             return;
         }
 
         $this->productosResultados = Producto::where('activo', true)
             ->where(function ($q) {
                 $q->where('nombre', 'like', "%{$this->searchProducto}%")
-                  ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");
+                    ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");
             })
             ->limit(10)
             ->get()
@@ -74,7 +84,7 @@ class ModalCrearLote extends Component
                     'id' => $p->id,
                     'nombre' => $p->nombre,
                     'codigo' => $p->codigo_interno,
-                    'presentaciones' => $p->presentaciones->map(fn($pr) => [
+                    'presentaciones' => $p->presentaciones->map(fn ($pr) => [
                         'id' => $pr->id,
                         'nombre' => "{$pr->tipo_presentacion} x {$pr->cantidad} {$pr->unidadMedida?->abreviatura}",
                     ])->toArray(),

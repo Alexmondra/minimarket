@@ -20,7 +20,7 @@ class PresentacionSearchController extends Controller
         $results = DB::table('producto_presentacion')
             ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
             ->where('productos.empresa_id', $empresaId)
-            ->where('producto_presentacion.tipo_presentacion', 'like', '%' . $query . '%')
+            ->where('producto_presentacion.tipo_presentacion', 'like', '%'.$query.'%')
             ->whereNull('producto_presentacion.deleted_at')
             ->whereNull('productos.deleted_at')
             ->distinct()

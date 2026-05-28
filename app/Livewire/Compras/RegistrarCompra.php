@@ -9,6 +9,7 @@ use App\Support\SucursalContext;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -23,30 +24,68 @@ class RegistrarCompra extends Component
 
     // Datos de la compra (cabecera)
     public ?int $compraId = null;
+
     public ?int $proveedorId = null;
+
     public ?int $sucursalId = null;
+
     public string $tipoComprobante = 'factura';
+
     public ?string $numeroFactura = null;
+
     public string $fechaRecepcion;
+
     public ?string $observaciones = null;
 
     // Archivo comprobante
     public $archivoComprobante = null;
+
     public ?string $archivoComprobanteNombre = null;
 
     // Búsqueda de proveedor
     public string $searchProveedor = '';
+
     public array $proveedoresResultados = [];
+
     public bool $showProveedorDropdown = false;
+
+    // Modal de registrar nuevo proveedor
+    public bool $showRegistrarProveedorModal = false;
+
+    public string $nuevoProveedorTipoDocumento = 'RUC';
+
+    public string $nuevoProveedorDocumento = '';
+
+    public string $nuevoProveedorNombre = '';
+
+    public string $nuevoProveedorRazonSocial = '';
+
+    public string $nuevoProveedorDireccion = '';
+
+    public string $nuevoProveedorTelefono = '';
+
+    public string $nuevoProveedorEmail = '';
+
+    public string $nuevoProveedorContactoPrincipal = '';
+
+    public string $nuevoProveedorTelefonoContacto = '';
+
+    public string $nuevoProveedorRubro = '';
+
+    public string $nuevoProveedorObservaciones = '';
 
     // Detalles agregados (para mostrar en resumen)
     public array $detalles = [];
 
     // Resumen
     public float $totalUnidades = 0;
+
     public float $subtotalCompra = 0;
+
     public float $impuestoPorcentaje = 0;
+
     public float $totalImpuesto = 0;
+
     public float $totalFinal = 0;
 
     protected function rules()
@@ -115,7 +154,7 @@ class RegistrarCompra extends Component
         $context = app(SucursalContext::class);
         $this->sucursalId = $context->resolveSucursalForWrite($this->sucursalId);
 
-        if (!$this->sucursalId) {
+        if (! $this->sucursalId) {
             $this->addError('sucursalId', 'Selecciona una sucursal para registrar esta compra.');
 
             Notification::make()
@@ -130,15 +169,11 @@ class RegistrarCompra extends Component
 
         $proveedorValido = Proveedor::query()
             ->where('empresa_id', Auth::user()->empresa_id)
-            ->where(function ($query) {
-                $query->whereNull('sucursal_id')
-                    ->orWhere('sucursal_id', $this->sucursalId);
-            })
             ->whereKey($this->proveedorId)
             ->exists();
 
-        if (!$proveedorValido) {
-            $this->addError('proveedorId', 'El proveedor no pertenece a esta sucursal.');
+        if (! $proveedorValido) {
+            $this->addError('proveedorId', 'El proveedor seleccionado no es válido o no pertenece a la empresa.');
 
             return;
         }
@@ -199,7 +234,7 @@ class RegistrarCompra extends Component
 
     public function finalizarCompra(): void
     {
-        if (!$this->compraId) {
+        if (! $this->compraId) {
             return;
         }
 
@@ -236,8 +271,9 @@ class RegistrarCompra extends Component
 
     protected function cargarDetalles(): void
     {
-        if (!$this->compraId) {
+        if (! $this->compraId) {
             $this->detalles = [];
+
             return;
         }
 
@@ -287,41 +323,254 @@ class RegistrarCompra extends Component
         $this->paso = 1;
     }
 
-    // Buscador de proveedores
     public function updatedSearchProveedor(): void
     {
         if (strlen($this->searchProveedor) < 2) {
             $this->proveedoresResultados = [];
             $this->showProveedorDropdown = false;
+
             return;
         }
 
-        $query = Proveedor::query()
+        $this->proveedoresResultados = Proveedor::query()
             ->where('estado', true)
-            ->where('empresa_id', Auth::user()->empresa_id);
-
-        $sucursalId = app(SucursalContext::class)->resolveSucursalForWrite($this->sucursalId);
-
-        if ($sucursalId) {
-            $query->where(function ($query) use ($sucursalId) {
-                $query->whereNull('sucursal_id')
-                    ->orWhere('sucursal_id', $sucursalId);
-            });
-        } else {
-            app(SucursalContext::class)->applyNullableToQuery($query);
-        }
-
-        $this->proveedoresResultados = $query
+            ->where('empresa_id', Auth::user()->empresa_id)
             ->where(function ($q) {
                 $q->where('nombre', 'like', "%{$this->searchProveedor}%")
-                  ->orWhere('numero_documento', 'like', "%{$this->searchProveedor}%")
-                  ->orWhere('razon_social', 'like', "%{$this->searchProveedor}%");
+                    ->orWhere('numero_documento', 'like', "%{$this->searchProveedor}%")
+                    ->orWhere('razon_social', 'like', "%{$this->searchProveedor}%");
             })
             ->limit(10)
             ->get()
             ->toArray();
 
         $this->showProveedorDropdown = count($this->proveedoresResultados) > 0;
+    }
+
+    /**
+     * Abre el modal para registrar un nuevo proveedor, inicializando las variables.
+     */
+    public function abrirRegistrarProveedorModal(): void
+    {
+        $this->nuevoProveedorTipoDocumento = 'RUC';
+        $this->nuevoProveedorDocumento = '';
+        $this->nuevoProveedorNombre = '';
+        $this->nuevoProveedorRazonSocial = '';
+        $this->nuevoProveedorDireccion = '';
+        $this->nuevoProveedorTelefono = '';
+        $this->nuevoProveedorEmail = '';
+        $this->nuevoProveedorContactoPrincipal = '';
+        $this->nuevoProveedorTelefonoContacto = '';
+        $this->nuevoProveedorRubro = '';
+        $this->nuevoProveedorObservaciones = '';
+
+        $term = trim($this->searchProveedor);
+        if (is_numeric($term)) {
+            $this->nuevoProveedorDocumento = $term;
+            if (strlen($term) === 8) {
+                $this->nuevoProveedorTipoDocumento = 'DNI';
+            } elseif (strlen($term) === 11) {
+                $this->nuevoProveedorTipoDocumento = 'RUC';
+            }
+        }
+
+        $this->showRegistrarProveedorModal = true;
+    }
+
+    /**
+     * Consulta el número de documento del nuevo proveedor contra la API externa (RENIEC/SUNAT).
+     */
+    public function buscarNuevoProveedor(): void
+    {
+        $term = trim($this->nuevoProveedorDocumento);
+        if ($term === '') {
+            Notification::make()
+                ->title('Debe ingresar un número de documento.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        if (! ctype_digit($term) || ($this->nuevoProveedorTipoDocumento === 'DNI' && strlen($term) !== 8) || ($this->nuevoProveedorTipoDocumento === 'RUC' && strlen($term) !== 11)) {
+            Notification::make()
+                ->title('Error en la digitación: El documento debe tener 8 dígitos para DNI o 11 dígitos para RUC.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        // Primero verificar si el proveedor ya existe en la base de datos local para esta empresa
+        $proveedorExistente = Proveedor::query()
+            ->where('empresa_id', Auth::user()->empresa_id)
+            ->where('numero_documento', $term)
+            ->first();
+
+        if ($proveedorExistente) {
+            $this->seleccionarProveedor($proveedorExistente->id, $proveedorExistente->nombre);
+            $this->showRegistrarProveedorModal = false;
+            Notification::make()
+                ->title('El proveedor ya existe y ha sido seleccionado.')
+                ->success()
+                ->send();
+
+            return;
+        }
+
+        $key = config('services.datos.key');
+        $dniUrl = config('services.datos.dni_url');
+        $rucUrl = config('services.datos.ruc_url');
+
+        if (empty($key) || ($this->nuevoProveedorTipoDocumento === 'DNI' && empty($dniUrl)) || ($this->nuevoProveedorTipoDocumento === 'RUC' && empty($rucUrl))) {
+            Notification::make()
+                ->title('Error: Configuración de API externa no encontrada.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $url = $this->nuevoProveedorTipoDocumento === 'DNI' ? ($dniUrl.$term) : ($rucUrl.$term);
+
+        try {
+            $response = Http::timeout(15)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'X-API-KEY' => $key,
+                    'Accept' => 'application/json',
+                ])
+                ->get($url);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                $data = $responseData['data'] ?? $responseData;
+
+                $nombre = $data['nombres'] ?? $data['nombre'] ?? null;
+                $apellidoPaterno = $data['apellido_paterno'] ?? $data['apellidoPaterno'] ?? '';
+                $apellidoMaterno = $data['apellido_materno'] ?? $data['apellidoMaterno'] ?? '';
+                $apellido = trim($apellidoPaterno.' '.$apellidoMaterno);
+                if (empty($apellido) && isset($data['apellidos'])) {
+                    $apellido = $data['apellidos'];
+                }
+
+                $razonSocial = $data['razon_social'] ?? $data['razonSocial'] ?? $data['nombre_o_razon_social'] ?? null;
+                if ($this->nuevoProveedorTipoDocumento === 'RUC' && empty($razonSocial)) {
+                    $razonSocial = $data['nombre'] ?? $data['nombres'] ?? null;
+                }
+
+                $direccion = $data['direccion'] ?? $data['domicilio_fiscal'] ?? $data['direccion_completa'] ?? null;
+
+                $hasName = ($this->nuevoProveedorTipoDocumento === 'DNI' && ! empty($nombre)) || ($this->nuevoProveedorTipoDocumento === 'RUC' && ! empty($razonSocial));
+
+                if ($hasName) {
+                    if ($this->nuevoProveedorTipoDocumento === 'RUC') {
+                        $this->nuevoProveedorNombre = $razonSocial;
+                        $this->nuevoProveedorRazonSocial = $razonSocial;
+                    } else {
+                        $this->nuevoProveedorNombre = trim($nombre.' '.$apellido);
+                        $this->nuevoProveedorRazonSocial = '';
+                    }
+                    $this->nuevoProveedorDireccion = $direccion ?? '';
+                    $this->nuevoProveedorTelefono = $data['telefono'] ?? '';
+                    $this->nuevoProveedorEmail = $data['correo'] ?? $data['email'] ?? '';
+
+                    Notification::make()
+                        ->title('Datos obtenidos del servicio externo con éxito.')
+                        ->success()
+                        ->send();
+                } else {
+                    Notification::make()
+                        ->title('No se encontraron datos para el documento ingresado.')
+                        ->danger()
+                        ->send();
+                }
+            } else {
+                Notification::make()
+                    ->title('Error al consultar el servicio externo de datos.')
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            Notification::make()
+                ->title('Error al conectar con la API externa: '.$e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Registra manualmente el proveedor ingresado en el modal y lo selecciona.
+     */
+    public function registrarProveedorManual(): void
+    {
+        $this->validate([
+            'nuevoProveedorNombre' => 'required|string|max:255',
+            'nuevoProveedorTipoDocumento' => 'required|string|in:RUC,DNI,CE,OTRO',
+            'nuevoProveedorDocumento' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('proveedores', 'numero_documento')
+                    ->where('empresa_id', Auth::user()->empresa_id)
+                    ->whereNull('deleted_at'),
+            ],
+            'nuevoProveedorRazonSocial' => 'nullable|string|max:255',
+            'nuevoProveedorDireccion' => 'nullable|string|max:255',
+            'nuevoProveedorTelefono' => 'nullable|string|max:20',
+            'nuevoProveedorEmail' => 'nullable|email|max:255',
+            'nuevoProveedorContactoPrincipal' => 'nullable|string|max:255',
+            'nuevoProveedorTelefonoContacto' => 'nullable|string|max:20',
+            'nuevoProveedorRubro' => 'nullable|string|max:255',
+            'nuevoProveedorObservaciones' => 'nullable|string|max:1000',
+        ], [
+            'nuevoProveedorNombre.required' => 'El nombre del proveedor es obligatorio.',
+            'nuevoProveedorDocumento.required' => 'El número de documento es obligatorio.',
+            'nuevoProveedorDocumento.unique' => 'Ya existe un proveedor registrado con este número de documento.',
+            'nuevoProveedorEmail.email' => 'El formato del correo electrónico es inválido.',
+        ]);
+
+        DB::transaction(function () {
+            $proveedor = Proveedor::create([
+                'empresa_id' => Auth::user()->empresa_id,
+                'sucursal_id' => $this->sucursalId,
+                'nombre' => $this->nuevoProveedorNombre,
+                'tipo_documento' => $this->nuevoProveedorTipoDocumento,
+                'numero_documento' => $this->nuevoProveedorDocumento,
+                'razon_social' => $this->nuevoProveedorRazonSocial,
+                'direccion' => $this->nuevoProveedorDireccion,
+                'telefono' => $this->nuevoProveedorTelefono,
+                'email' => $this->nuevoProveedorEmail,
+                'contacto_principal' => $this->nuevoProveedorContactoPrincipal,
+                'telefono_contacto' => $this->nuevoProveedorTelefonoContacto,
+                'rubro' => $this->nuevoProveedorRubro,
+                'observaciones' => $this->nuevoProveedorObservaciones,
+                'estado' => true,
+            ]);
+
+            $this->seleccionarProveedor($proveedor->id, $proveedor->nombre);
+        });
+
+        // Reset fields
+        $this->nuevoProveedorTipoDocumento = 'RUC';
+        $this->nuevoProveedorDocumento = '';
+        $this->nuevoProveedorNombre = '';
+        $this->nuevoProveedorRazonSocial = '';
+        $this->nuevoProveedorDireccion = '';
+        $this->nuevoProveedorTelefono = '';
+        $this->nuevoProveedorEmail = '';
+        $this->nuevoProveedorContactoPrincipal = '';
+        $this->nuevoProveedorTelefonoContacto = '';
+        $this->nuevoProveedorRubro = '';
+        $this->nuevoProveedorObservaciones = '';
+
+        $this->showRegistrarProveedorModal = false;
+
+        Notification::make()
+            ->title('Proveedor registrado y seleccionado con éxito.')
+            ->success()
+            ->send();
     }
 
     public function seleccionarProveedor(int $id, string $nombre): void

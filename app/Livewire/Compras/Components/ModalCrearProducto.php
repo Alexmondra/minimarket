@@ -18,22 +18,33 @@ class ModalCrearProducto extends Component
 
     // Datos del producto
     public ?int $empresaId = null;
+
     public ?string $nombre = null;
+
     public ?int $categoriaId = null;
+
     public ?int $marcaId = null;
+
     public ?string $codigoInterno = null;
+
     public bool $afectoIgv = true;
 
     // Datos de presentación
     public ?int $unidadMedidaId = null;
+
     public int $cantidadPorEmpaque = 1;
+
     public ?string $tipoPresentacion = null;
+
     public ?string $codigoBarra = null;
 
     // Nuevos: crear categoría/marca al vuelo
     public bool $showCrearCategoria = false;
+
     public ?string $nuevaCategoria = null;
+
     public bool $showCrearMarca = false;
+
     public ?string $nuevaMarca = null;
 
     protected $listeners = ['abrirModalCrearProducto' => 'abrir'];
@@ -63,13 +74,13 @@ class ModalCrearProducto extends Component
 
     public function toggleCrearCategoria(): void
     {
-        $this->showCrearCategoria = !$this->showCrearCategoria;
+        $this->showCrearCategoria = ! $this->showCrearCategoria;
         $this->nuevaCategoria = null;
     }
 
     public function toggleCrearMarca(): void
     {
-        $this->showCrearMarca = !$this->showCrearMarca;
+        $this->showCrearMarca = ! $this->showCrearMarca;
         $this->nuevaMarca = null;
     }
 
@@ -126,7 +137,7 @@ class ModalCrearProducto extends Component
                 'empresa_id' => $empresaId,
                 'categoria_id' => $this->categoriaId,
                 'marca_id' => $this->marcaId,
-                'codigo_interno' => $this->codigoInterno ?? 'PROD-' . strtoupper(substr(md5(uniqid()), 0, 8)),
+                'codigo_interno' => $this->codigoInterno ?? 'PROD-'.strtoupper(substr(md5(uniqid()), 0, 8)),
                 'nombre' => $this->nombre,
                 'slug' => str($this->nombre)->slug(),
                 'afecto_igv' => $this->afectoIgv,
@@ -143,7 +154,7 @@ class ModalCrearProducto extends Component
 
             if (filled($this->codigoBarra)) {
                 $pres->barras()->create([
-                    'codigo_barra' => trim($this->codigoBarra)
+                    'codigo_barra' => trim($this->codigoBarra),
                 ]);
             }
 

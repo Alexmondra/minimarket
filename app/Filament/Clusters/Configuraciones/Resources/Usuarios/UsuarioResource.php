@@ -11,12 +11,12 @@ use App\Filament\Clusters\Configuraciones\Resources\Usuarios\Schemas\UsuarioInfo
 use App\Filament\Clusters\Configuraciones\Resources\Usuarios\Tables\UsuariosTable;
 use App\Models\User;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class UsuarioResource extends Resource
 {

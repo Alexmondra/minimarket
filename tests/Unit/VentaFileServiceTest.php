@@ -71,7 +71,7 @@ class VentaFileServiceTest extends TestCase
         ]);
 
         $pdfContent = 'fake_pdf_content';
-        $fileService = new VentaFileService();
+        $fileService = new VentaFileService;
 
         $archivo = $fileService->guardarPdf($documento, $pdfContent);
 
@@ -79,11 +79,11 @@ class VentaFileServiceTest extends TestCase
         $this->assertSame('pdf', $archivo->tipo_archivo);
         $this->assertSame('local', $archivo->proveedor_almacenamiento);
         $this->assertSame('private', $archivo->bucket);
-        
+
         $expectedFilename = '20123456789-F001-00000001-pdf.pdf';
         $this->assertSame($expectedFilename, $archivo->nombre_archivo);
-        
-        $expectedPath = 'ventas/' . $empresa->id . '/' . now()->format('Y/m') . '/factura/' . $expectedFilename;
+
+        $expectedPath = 'ventas/'.$empresa->id.'/'.now()->format('Y/m').'/factura/'.$expectedFilename;
         $this->assertSame($expectedPath, $archivo->ruta_archivo);
 
         Storage::disk('local')->assertExists($expectedPath);

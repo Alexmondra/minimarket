@@ -24,7 +24,7 @@ class CreateProducto extends CreateRecord
         $slug = $baseSlug;
         $counter = 1;
         while (Producto::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
         $data['slug'] = $slug;
@@ -36,24 +36,24 @@ class CreateProducto extends CreateRecord
             $length = strlen($cleanName);
             $halfLength = max(1, (int) ceil($length / 2));
             $halfName = strtoupper(substr($cleanName, 0, $halfLength));
-            
+
             // Limitar a máximo 8 caracteres la porción del nombre
             if (strlen($halfName) > 8) {
                 $halfName = substr($halfName, 0, 8);
             }
-            
+
             // Generar 3 dígitos aleatorios
             $randomDigits = str_pad((string) rand(0, 999), 3, '0', STR_PAD_LEFT);
-            $codigo = $halfName . $randomDigits;
-            
+            $codigo = $halfName.$randomDigits;
+
             // Asegurar unicidad del código interno en la base de datos
             $baseCodigo = $codigo;
             $counter = 1;
             while (Producto::where('codigo_interno', $codigo)->exists()) {
-                $codigo = $baseCodigo . '-' . $counter;
+                $codigo = $baseCodigo.'-'.$counter;
                 $counter++;
             }
-            
+
             $data['codigo_interno'] = $codigo;
         }
 

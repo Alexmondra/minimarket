@@ -5,9 +5,10 @@ namespace App\Filament\Clusters\Almacen\Resources\Productos;
 use App\Filament\Clusters\Almacen\Resources\Productos\Pages\CreateProducto;
 use App\Filament\Clusters\Almacen\Resources\Productos\Pages\EditProducto;
 use App\Filament\Clusters\Almacen\Resources\Productos\Pages\ListProductos;
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -17,8 +18,6 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -26,8 +25,6 @@ use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -40,8 +37,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Livewire\Component;
+use UnitEnum;
 
 class ProductoResource extends Resource
 {
@@ -83,12 +80,13 @@ class ProductoResource extends Resource
                         ->default(true),
                 ])
                 ->createOptionUsing(function (array $data): int {
-                    $categoria = \App\Models\Categoria::create([
+                    $categoria = Categoria::create([
                         'empresa_id' => auth()->user()->empresa_id,
                         'nombre' => $data['nombre'],
                         'descripcion' => $data['descripcion'] ?? null,
                         'estado' => $data['estado'] ?? true,
                     ]);
+
                     return $categoria->id;
                 }),
             Select::make('marca_id')
@@ -105,11 +103,12 @@ class ProductoResource extends Resource
                         ->maxLength(65535),
                 ])
                 ->createOptionUsing(function (array $data): int {
-                    $marca = \App\Models\Marca::create([
+                    $marca = Marca::create([
                         'empresa_id' => auth()->user()->empresa_id,
                         'nombre' => $data['nombre'],
                         'descripcion' => $data['descripcion'] ?? null,
                     ]);
+
                     return $marca->id;
                 }),
             TextInput::make('codigo_interno')
@@ -202,12 +201,14 @@ class ProductoResource extends Resource
                     ->width(50)
                     ->height(50)
                     ->defaultImageUrl(fn () => url('/images/no-image.svg'))
-                    ->action(function ($record, \Livewire\Component $livewire): void {
+                    ->action(function ($record, Component $livewire): void {
                         $presentacionPrioritaria = $record->presentacionPrioritaria();
-                        if (!$presentacionPrioritaria) return;
+                        if (! $presentacionPrioritaria) {
+                            return;
+                        }
 
                         $imagenUrl = $presentacionPrioritaria->imagen_url;
-                        
+
                         $presentaciones = $record->presentaciones_con_imagen->map(function ($p) {
                             return [
                                 'imagen' => $p->imagen_url,

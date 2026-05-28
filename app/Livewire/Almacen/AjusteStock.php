@@ -15,23 +15,32 @@ use Livewire\Component;
 class AjusteStock extends Component
 {
     public bool $showModal = false;
+
     public string $tipoAjuste = 'entrada'; // 'entrada' o 'salida'
 
     // Datos del formulario
     public ?int $sucursalId = null;
+
     public ?int $productoId = null;
+
     public ?int $presentacionId = null;
+
     public ?int $lotePresentacionId = null;
+
     public int $cantidad = 1;
+
     public string $motivo = '';
 
     // Búsqueda de producto
     public string $searchProducto = '';
+
     public array $productosResultados = [];
+
     public bool $showProductoDropdown = false;
 
     // Presentaciones del producto seleccionado
     public array $presentaciones = [];
+
     public array $lotesDisponibles = [];
 
     protected function rules()
@@ -96,13 +105,14 @@ class AjusteStock extends Component
         if (strlen($this->searchProducto) < 2) {
             $this->productosResultados = [];
             $this->showProductoDropdown = false;
+
             return;
         }
 
         $this->productosResultados = Producto::where('activo', true)
             ->where(function ($q) {
                 $q->where('nombre', 'like', "%{$this->searchProducto}%")
-                  ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");
+                    ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");
             })
             ->limit(10)
             ->get()
@@ -135,8 +145,9 @@ class AjusteStock extends Component
 
     protected function cargarLotesDisponibles(): void
     {
-        if (!$this->sucursalId || !$this->presentacionId) {
+        if (! $this->sucursalId || ! $this->presentacionId) {
             $this->lotesDisponibles = [];
+
             return;
         }
 
@@ -162,11 +173,12 @@ class AjusteStock extends Component
             $lotePresentacion = LotePresentacion::with('lote', 'productoPresentacion.producto')
                 ->find($this->lotePresentacionId);
 
-            if (!$lotePresentacion || $lotePresentacion->lote?->sucursal_id !== $this->sucursalId) {
+            if (! $lotePresentacion || $lotePresentacion->lote?->sucursal_id !== $this->sucursalId) {
                 Notification::make()
                     ->title('Error: El lote seleccionado no pertenece a esta sucursal')
                     ->danger()
                     ->send();
+
                 return;
             }
 
@@ -176,6 +188,7 @@ class AjusteStock extends Component
                         ->title("Error: Stock insuficiente en el lote {$lotePresentacion->lote?->codigo_lote}. Stock actual: {$lotePresentacion->stock}")
                         ->danger()
                         ->send();
+
                     return;
                 }
 
@@ -216,7 +229,7 @@ class AjusteStock extends Component
         });
 
         Notification::make()
-            ->title('Ajuste de ' . ($this->tipoAjuste === 'entrada' ? 'entrada' : 'salida') . ' registrado correctamente')
+            ->title('Ajuste de '.($this->tipoAjuste === 'entrada' ? 'entrada' : 'salida').' registrado correctamente')
             ->success()
             ->send();
 

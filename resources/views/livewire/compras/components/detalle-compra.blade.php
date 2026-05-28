@@ -7,39 +7,166 @@
         <div class="p-4 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="relative">
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Producto</label>
-                    <input type="text"
-                           wire:model.live.debounce.300ms="searchProducto"
-                           placeholder="Buscar medicamento o producto..."
-                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                        Producto
+                    </label>
+
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="searchProducto"
+
+                        @focus="$wire.set('showProductoDropdown', true)"
+
+                        @keydown.arrow-down.prevent="
+                            const first = $el.closest('.relative').querySelector('.dropdown-item');
+
+                            if (first) first.focus();
+                        "
+
+                        @keydown.enter.prevent="
+                            const results = $el.closest('.relative').querySelectorAll('.dropdown-item');
+
+                            if (results.length === 1) {
+                                results[0].click();
+                            } else if (results.length > 0) {
+                                results[0].focus();
+                            }
+                        "
+
+                        @keydown.escape="$wire.set('showProductoDropdown', false)"
+
+                        placeholder="Buscar medicamento o producto..."
+
+                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
+                    >
 
                     @if($showProductoDropdown && count($productosResultados) > 0)
-                        <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-56 overflow-y-auto">
-                            @foreach($productosResultados as $resultado)
-                                <button type="button"
-                                        wire:click="seleccionarPresentacion({{ $resultado['id'] }})"
-                                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-0">
-                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ $resultado['label'] }}</span>
-                                    @if($resultado['codigo'])
-                                        <span class="text-gray-400 ml-2">{{ $resultado['codigo'] }}</span>
-                                    @endif
+
+                        <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-56 overflow-y-auto p-1">
+
+                            @foreach($productosResultados as $index => $resultado)
+
+                                <button
+                                    type="button"
+                                    tabindex="0"
+
+                                    wire:key="prod-btn-{{ $resultado['id'] }}"
+
+                                    wire:click="seleccionarPresentacion({{ $resultado['id'] }})"
+
+                                    @keydown.arrow-down.prevent="
+                                        const next = $el.nextElementSibling;
+
+                                        if (
+                                            next &&
+                                            next.classList.contains('dropdown-item')
+                                        ) {
+                                            next.focus();
+                                        }
+                                    "
+
+                                    @keydown.arrow-up.prevent="
+                                        const prev = $el.previousElementSibling;
+
+                                        if (
+                                            prev &&
+                                            prev.classList.contains('dropdown-item')
+                                        ) {
+                                            prev.focus();
+                                        } else {
+                                            const input = $el.closest('.relative').querySelector('input');
+
+                                            if (input) input.focus();
+                                        }
+                                    "
+
+                                    @keydown.enter.prevent="$el.click()"
+
+                                    @keydown.escape="
+                                        const input = $el.closest('.relative').querySelector('input');
+
+                                        if (input) {
+                                            input.focus();
+                                            $wire.set('showProductoDropdown', false);
+                                        }
+                                    "
+
+                                    class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
+                                        transition-all duration-150
+
+                                        hover:bg-blue-500
+                                        hover:text-white
+
+                                        focus:bg-blue-600
+                                        focus:text-white
+                                        focus:outline-none
+                                        focus:ring-2
+                                        focus:ring-blue-300
+                                        focus:shadow-lg
+                                        focus:shadow-blue-500/30
+                                        focus:scale-[1.01]"
+                                >
+
+                                    <div class="flex flex-col">
+
+                                        <span
+                                            class="font-medium text-gray-900 dark:text-gray-100
+                                                group-hover:text-white
+                                                group-focus:text-white
+                                                group-focus:font-semibold"
+                                        >
+                                            {{ $resultado['label'] }}
+                                        </span>
+
+                                        @if($resultado['codigo'])
+
+                                            <span
+                                                class="text-[11px] text-gray-400
+                                                    group-hover:text-blue-100
+                                                    group-focus:text-blue-100"
+                                            >
+                                                {{ $resultado['codigo'] }}
+                                            </span>
+
+                                        @endif
+
+                                    </div>
+
                                 </button>
+
                             @endforeach
+
                         </div>
+
                     @endif
+
                     @if(strlen($searchProducto) >= 2 && !$showProductoDropdown)
-                        <button type="button"
-                                wire:click="abrirCrearPresentacionModal"
-                                class="mt-1 mr-3 text-xs text-amber-600 hover:text-amber-700">
+
+                        <button
+                            type="button"
+                            wire:click="abrirCrearPresentacionModal"
+                            class="mt-1 mr-3 text-xs text-amber-600 hover:text-amber-700"
+                        >
                             + Crear presentación no encontrada
                         </button>
+
                     @endif
-                    <button type="button"
-                            wire:click="$dispatch('abrirModalCrearProducto')"
-                            class="mt-1 text-xs text-primary-600 hover:text-primary-700">
+
+                    <button
+                        type="button"
+                        wire:click="$dispatch('abrirModalCrearProducto')"
+                        class="mt-1 text-xs text-primary-600 hover:text-primary-700"
+                    >
                         + Crear producto
                     </button>
-                    @error('productoId') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+
+                    @error('productoId')
+                        <p class="mt-1 text-xs text-red-500">
+                            {{ $message }}
+                        </p>
+                    @enderror
+
                 </div>
 
                 <div>
@@ -302,17 +429,23 @@
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Producto existente</label>
                             <input type="text"
                                    wire:model.live.debounce.300ms="modalSearchProducto"
+                                   @keydown.arrow-down.prevent="const first = $el.closest('.relative').querySelector('.dropdown-item'); if (first) first.focus();"
+                                   @keydown.enter.prevent="const results = $el.closest('.relative').querySelectorAll('.dropdown-item'); if (results.length === 1) { results[0].click(); } else if (results.length > 0) { results[0].focus(); }"
                                    placeholder="Buscar producto..."
                                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                             @if($modalShowProductoDropdown && count($modalProductosResultados) > 0)
-                                <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                <div class="dropdown-container absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                     @foreach($modalProductosResultados as $producto)
                                         <button type="button"
+                                                wire:key="modal-prod-btn-{{ $producto['id'] }}"
                                                 wire:click="seleccionarProductoParaPresentacion({{ $producto['id'] }}, @js($producto['nombre']))"
-                                                class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-0">
-                                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ $producto['nombre'] }}</span>
+                                                @keydown.arrow-down.prevent="const next = $el.nextElementSibling; if (next && next.classList.contains('dropdown-item')) next.focus();"
+                                                @keydown.arrow-up.prevent="const prev = $el.previousElementSibling; if (prev && prev.classList.contains('dropdown-item')) { prev.focus(); } else { const input = $el.closest('.relative').querySelector('input'); if (input) input.focus(); }"
+                                                @keydown.escape="const input = $el.closest('.relative').querySelector('input'); if (input) { input.focus(); $wire.set('modalShowProductoDropdown', false); }"
+                                                class="group dropdown-item w-full text-left px-3 py-2 text-xs border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-blue-600 focus:bg-blue-600 dark:hover:bg-blue-500 dark:focus:bg-blue-500 focus:outline-none transition-colors">
+                                            <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white group-focus:text-white">{{ $producto['nombre'] }}</span>
                                             @if($producto['codigo'])
-                                                <span class="text-gray-400 ml-2">{{ $producto['codigo'] }}</span>
+                                                <span class="text-gray-400 ml-2 group-hover:text-blue-100 group-focus:text-blue-100">{{ $producto['codigo'] }}</span>
                                             @endif
                                         </button>
                                     @endforeach

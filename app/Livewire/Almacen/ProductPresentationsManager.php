@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Almacen;
 
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\ProductoPresentacion;
 use App\Models\ProductoPresentacionBarra;
@@ -24,27 +26,43 @@ class ProductPresentationsManager extends Component
 
     // Control de UI
     public bool $showModal = false;
+
     public ?int $editingPresentationId = null;
+
     public bool $showProductModal = false;
 
     // Campos del Formulario (Presentación)
     public ?string $tipo_presentacion = null;
+
     public int $cantidad = 1;
+
     public ?int $unidad_medida_id = null;
+
     public ?int $presentacion_base_id = null;
+
     public bool $es_pesable = false;
+
     public mixed $imagen = null;
+
     public ?string $existingImagen = null;
+
     public array $barras = [];
+
     public ?string $nuevo_codigo_barra = null;
 
     // Campos del Formulario (Producto)
     public ?string $product_nombre = null;
+
     public ?int $product_categoria_id = null;
+
     public ?int $product_marca_id = null;
+
     public ?string $product_codigo_interno = null;
+
     public ?string $product_descripcion = null;
+
     public bool $product_afecto_igv = true;
+
     public bool $product_activo = true;
 
     // Búsqueda de autocompletado
@@ -65,7 +83,7 @@ class ProductPresentationsManager extends Component
             'unidad_medida_id' => 'required|exists:unidades_medida,id',
             'presentacion_base_id' => 'nullable|exists:producto_presentacion,id',
             'es_pesable' => 'boolean',
-            'imagen' => $this->imagen && !is_string($this->imagen) ? 'nullable|image|max:2048' : 'nullable',
+            'imagen' => $this->imagen && ! is_string($this->imagen) ? 'nullable|image|max:2048' : 'nullable',
         ];
     }
 
@@ -94,7 +112,7 @@ class ProductPresentationsManager extends Component
     {
         $this->resetForm();
         $this->editingPresentationId = null;
-        
+
         // Predeterminar la unidad de medida más común (ej. Unidad) si existe
         $unidadDefault = UniMedida::where('abreviatura', 'und')->first();
         if ($unidadDefault) {
@@ -169,7 +187,7 @@ class ProductPresentationsManager extends Component
     public function agregarCodigoBarra(): void
     {
         $this->nuevo_codigo_barra = trim($this->nuevo_codigo_barra);
-        
+
         if (blank($this->nuevo_codigo_barra)) {
             return;
         }
@@ -177,6 +195,7 @@ class ProductPresentationsManager extends Component
         // Validación de duplicados locales
         if (in_array($this->nuevo_codigo_barra, $this->barras)) {
             $this->addError('nuevo_codigo_barra', 'Este código ya está agregado en la presentación.');
+
             return;
         }
 
@@ -190,6 +209,7 @@ class ProductPresentationsManager extends Component
 
         if ($exists) {
             $this->addError('nuevo_codigo_barra', 'Este código de barras ya está asignado a otro producto o presentación.');
+
             return;
         }
 
@@ -244,7 +264,7 @@ class ProductPresentationsManager extends Component
             );
 
             // Gestionar imagen
-            if ($this->imagen && !is_string($this->imagen)) {
+            if ($this->imagen && ! is_string($this->imagen)) {
                 // Eliminar imagen anterior si existe
                 if ($presentation->imagen) {
                     Storage::disk('public')->delete($presentation->imagen);
@@ -328,7 +348,7 @@ class ProductPresentationsManager extends Component
             'product_nombre' => 'required|string|max:255',
             'product_categoria_id' => 'required|exists:categorias,id',
             'product_marca_id' => 'required|exists:marcas,id',
-            'product_codigo_interno' => 'nullable|string|max:255|unique:productos,codigo_interno,' . $this->record->id,
+            'product_codigo_interno' => 'nullable|string|max:255|unique:productos,codigo_interno,'.$this->record->id,
             'product_descripcion' => 'nullable|string',
             'product_afecto_igv' => 'boolean',
             'product_activo' => 'boolean',
@@ -363,7 +383,7 @@ class ProductPresentationsManager extends Component
      */
     public function getCategoriasProperty()
     {
-        return \App\Models\Categoria::where('empresa_id', auth()->user()->empresa_id)->orderBy('nombre')->get();
+        return Categoria::where('empresa_id', auth()->user()->empresa_id)->orderBy('nombre')->get();
     }
 
     /**
@@ -371,7 +391,7 @@ class ProductPresentationsManager extends Component
      */
     public function getMarcasProperty()
     {
-        return \App\Models\Marca::where('empresa_id', auth()->user()->empresa_id)->orderBy('nombre')->get();
+        return Marca::where('empresa_id', auth()->user()->empresa_id)->orderBy('nombre')->get();
     }
 
     /**
@@ -395,7 +415,7 @@ class ProductPresentationsManager extends Component
                 $query->where('id', '!=', $this->editingPresentationId);
             })
             ->when(filled($this->searchBaseTerm), function ($query) {
-                $query->where('tipo_presentacion', 'like', '%' . $this->searchBaseTerm . '%');
+                $query->where('tipo_presentacion', 'like', '%'.$this->searchBaseTerm.'%');
             })
             ->get();
     }
@@ -423,7 +443,7 @@ class ProductPresentationsManager extends Component
             ->get();
 
         return view('livewire.almacen.product-presentations-manager', [
-            'presentaciones' => $presentaciones
+            'presentaciones' => $presentaciones,
         ]);
     }
 }

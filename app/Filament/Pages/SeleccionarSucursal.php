@@ -33,7 +33,7 @@ class SeleccionarSucursal extends Page
             ->values()
             ->all();
 
-        if (!$context->requiresSelectionPage($user) && !$context->isAdmin($user)) {
+        if (! $context->requiresSelectionPage($user) && ! $context->isAdmin($user)) {
             $this->redirect(Filament::getUrl());
         }
     }

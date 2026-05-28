@@ -15,9 +15,13 @@ class ManagePermisos extends Page
     protected string $view = 'filament.clusters.configuraciones.resources.roles.pages.manage-permisos';
 
     public ?int $roleId = null;
+
     public $roles;
+
     public ?string $selectedRoleId = null;
+
     public array $groupedPermissions = [];
+
     public array $rolePermissions = [];
 
     // Define las acciones principales que van en la cabecera
@@ -50,7 +54,7 @@ class ManagePermisos extends Page
     public function mount(): void
     {
         $this->roles = Role::all();
-        
+
         $queryRoleId = request()->query('roleId');
         if ($queryRoleId) {
             $this->roleId = (int) $queryRoleId;
@@ -69,10 +73,14 @@ class ManagePermisos extends Page
         $this->groupedPermissions = [];
         $this->rolePermissions = [];
 
-        if (!$this->selectedRoleId) return;
+        if (! $this->selectedRoleId) {
+            return;
+        }
 
         $role = Role::find($this->selectedRoleId);
-        if (!$role) return;
+        if (! $role) {
+            return;
+        }
 
         $this->rolePermissions = $role->permissions->pluck('name')->toArray();
 
@@ -84,7 +92,7 @@ class ManagePermisos extends Page
         foreach ($allPermissions as $perm) {
             [$module, $action] = explode('.', $perm);
 
-            if (!isset($tempGrouped[$module])) {
+            if (! isset($tempGrouped[$module])) {
                 $tempGrouped[$module] = [];
             }
             $tempGrouped[$module][] = $action;
@@ -94,21 +102,21 @@ class ManagePermisos extends Page
         foreach ($tempGrouped as $module => $actions) {
             $this->groupedPermissions[$module] = [
                 'main' => [],      // acciones principales
-                'special' => []    // permisos especiales
+                'special' => [],    // permisos especiales
             ];
 
             // Inicializar acciones principales (solo si existen en este módulo)
             foreach ($this->mainActions as $action) {
                 if (in_array($action, $actions)) {
-                    $permName = $module . '.' . $action;
+                    $permName = $module.'.'.$action;
                     $this->groupedPermissions[$module]['main'][$action] = in_array($permName, $this->rolePermissions);
                 }
             }
 
             // Agregar permisos especiales (los que no son main actions)
             foreach ($actions as $action) {
-                if (!in_array($action, $this->mainActions)) {
-                    $permName = $module . '.' . $action;
+                if (! in_array($action, $this->mainActions)) {
+                    $permName = $module.'.'.$action;
                     $this->groupedPermissions[$module]['special'][$action] = in_array($permName, $this->rolePermissions);
                 }
             }
@@ -117,10 +125,14 @@ class ManagePermisos extends Page
 
     public function togglePermission(string $permName): void
     {
-        if (!$this->selectedRoleId) return;
+        if (! $this->selectedRoleId) {
+            return;
+        }
 
         $role = Role::find($this->selectedRoleId);
-        if (!$role) return;
+        if (! $role) {
+            return;
+        }
 
         if ($role->hasPermissionTo($permName)) {
             $role->revokePermissionTo($permName);

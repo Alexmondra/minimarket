@@ -3,13 +3,12 @@
 namespace App\Filament\Clusters\Configuraciones\Resources\Usuarios\Schemas;
 
 use App\Models\Empresa;
-use App\Models\Sucursal;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rules\Password;
-use Spatie\Permission\Models\Role;
 
 class UsuarioForm
 {
@@ -35,7 +34,7 @@ class UsuarioForm
                     ->maxLength(255),
                 TextInput::make('password')
                     ->password()
-                    ->required(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
+                    ->required(fn ($livewire) => $livewire instanceof CreateRecord)
                     ->rule(Password::min(8)->mixedCase()->numbers())
                     ->same('password_confirmation')
                     ->dehydrated(fn ($state) => filled($state))

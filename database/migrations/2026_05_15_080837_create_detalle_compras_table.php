@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('compra_id')->constrained('compras')->cascadeOnDelete();
             $table->foreignId('lote_id')->constrained('lotes')->cascadeOnDelete(); // <- esto es clave
-            $table->decimal('precio_compra', 12,2);
+            $table->decimal('precio_compra', 12, 2);
             $table->timestamps();
             $table->softDeletes();
         });

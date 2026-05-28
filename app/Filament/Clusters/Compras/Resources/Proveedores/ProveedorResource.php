@@ -10,16 +10,15 @@ use App\Filament\Clusters\Compras\Resources\Proveedores\Tables\ProveedoresTable;
 use App\Models\Proveedor;
 use App\Support\SucursalContext;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class ProveedorResource extends Resource
 {
-
     protected static ?string $model = Proveedor::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-truck';

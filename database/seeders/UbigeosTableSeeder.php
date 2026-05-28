@@ -21,8 +21,9 @@ class UbigeosTableSeeder extends Seeder
         // Ruta al archivo SQL
         $sqlFile = database_path('seeders/data/ubigeos_202605182054.sql');
 
-        if (!File::exists($sqlFile)) {
+        if (! File::exists($sqlFile)) {
             $this->command->error("Archivo SQL no encontrado: {$sqlFile}");
+
             return;
         }
 

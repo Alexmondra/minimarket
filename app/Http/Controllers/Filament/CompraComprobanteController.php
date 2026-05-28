@@ -13,7 +13,7 @@ class CompraComprobanteController
     {
         abort_unless(app(SucursalContext::class)->canAccessSucursal((int) $compra->sucursal_id), 403);
 
-        if (!$compra->archivo_comprobante || !Storage::disk('local')->exists($compra->archivo_comprobante)) {
+        if (! $compra->archivo_comprobante || ! Storage::disk('local')->exists($compra->archivo_comprobante)) {
             abort(404);
         }
 
@@ -31,7 +31,7 @@ class CompraComprobanteController
 
         return response()->file($path, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
         ]);
     }
 }

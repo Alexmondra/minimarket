@@ -77,6 +77,7 @@ class SucursalForm
                                         } else {
                                             $set('impuesto_porcentaje', '18.00');
                                         }
+
                                         return;
                                     }
                                 }

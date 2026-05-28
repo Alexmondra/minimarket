@@ -5,17 +5,15 @@ namespace App\Filament\Clusters\Sunat\Resources\EnviosSunat;
 use App\Filament\Clusters\Sunat\Resources\EnviosSunat\Pages\ListEnviosSunat;
 use App\Models\Sunat;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 class EnvioSunatResource extends Resource
 {
-
     protected static ?string $model = Sunat::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-globe-alt';
@@ -36,8 +34,8 @@ class EnvioSunatResource extends Resource
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('documento', function (Builder $q) use ($search) {
                             $q->where('serie', 'like', "%{$search}%")
-                              ->orWhere('numero', 'like', "%{$search}%")
-                              ->orWhere('tipo_comprobante', 'like', "%{$search}%");
+                                ->orWhere('numero', 'like', "%{$search}%")
+                                ->orWhere('tipo_comprobante', 'like', "%{$search}%");
                         });
                     }),
                 TextColumn::make('estado_sunat')

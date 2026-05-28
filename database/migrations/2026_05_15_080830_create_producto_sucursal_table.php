@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('producto_sucursal', function (Blueprint $table) {
             $table->id();
             $table->foreignId('producto_id')->constrained('productos')->cascadeOnDelete();
-            $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();  
+            $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
             $table->foreignId('lote_presentacion_id')->constrained('lote_presentacion')->onDelete('cascade');
             $table->integer('stock_minimo')->default(0);
             $table->decimal('precio', 10, 2);

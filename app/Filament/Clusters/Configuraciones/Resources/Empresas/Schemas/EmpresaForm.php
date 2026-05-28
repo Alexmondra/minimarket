@@ -3,7 +3,6 @@
 namespace App\Filament\Clusters\Configuraciones\Resources\Empresas\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\ImageEntry;
@@ -47,6 +46,7 @@ class EmpresaForm
                             ->label('Certificado Digital (.pfx)')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->certificado
                                     ? 'CERTIFICADO CARGADO'
                                     : 'SIN CERTIFICADO CONFIGURADO';
@@ -153,6 +153,7 @@ class EmpresaForm
                             ->label('Tipo de Certificado')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->tipo_certificado
                                     ? $config->tipo_certificado
                                     : '— No configurado';
@@ -180,6 +181,7 @@ class EmpresaForm
                             ->label('Contraseña del Certificado')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->certificado_pass ? '••••••••' : '— No configurado';
                             })
                             ->visible(fn (Livewire $livewire): bool => ! $livewire->isEditing)
@@ -206,6 +208,7 @@ class EmpresaForm
                             ->label('Usuario SOL')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->user_sol ? 'Usuario secundario configurado' : '— No configurado';
                             })
                             ->badge()
@@ -216,6 +219,7 @@ class EmpresaForm
                             ->label('Contraseña SOL')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->pass_sol ? '••••••••' : '— No configurado';
                             })
                             ->visible(fn (Livewire $livewire): bool => ! $livewire->isEditing)
@@ -225,6 +229,7 @@ class EmpresaForm
                             ->label('Client ID SUNAT')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->sunat_client_id ? 'API Client ID configurado' : '— No configurado';
                             })
                             ->badge()
@@ -235,6 +240,7 @@ class EmpresaForm
                             ->label('Client Secret SUNAT')
                             ->state(function ($record): string {
                                 $config = $record?->empresaConfig;
+
                                 return $config?->sunat_client_secret ? '••••••••' : '— No configurado';
                             })
                             ->visible(fn (Livewire $livewire): bool => ! $livewire->isEditing)

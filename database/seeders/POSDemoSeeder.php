@@ -33,6 +33,7 @@ class POSDemoSeeder extends Seeder
 
         if ($sucursales->isEmpty()) {
             $this->command->error('No se encontraron sucursales para la empresa ID 1. Ejecuta primero EmpresaSucursalSeeder.');
+
             return;
         }
 
@@ -180,7 +181,7 @@ class POSDemoSeeder extends Seeder
             foreach ($sucursales as $sucursal) {
                 $lote = Lote::create([
                     'sucursal_id' => $sucursal->id,
-                    'codigo_lote' => 'LOTE-' . strtoupper(Str::random(6)),
+                    'codigo_lote' => 'LOTE-'.strtoupper(Str::random(6)),
                     'producto_nombre' => $producto->nombre,
                     'fecha_fabricacion' => now()->subMonths(1),
                     'fecha_vencimiento' => now()->addYear(),

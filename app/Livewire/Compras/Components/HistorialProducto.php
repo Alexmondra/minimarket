@@ -8,7 +8,9 @@ use Livewire\Component;
 class HistorialProducto extends Component
 {
     public bool $showModal = false;
+
     public ?int $productoId = null;
+
     public array $historialCompras = [];
 
     protected $listeners = ['verHistorialProducto' => 'cargarHistorial'];

@@ -6,18 +6,17 @@ use App\Filament\Clusters\Almacen\Resources\StockSucursal\Pages\ListStockSucursa
 use App\Models\ProductoSucursal;
 use App\Support\SucursalContext;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 class StockSucursalResource extends Resource
 {
-
     protected static ?string $model = ProductoSucursal::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
@@ -53,8 +52,7 @@ class StockSucursalResource extends Resource
                 TextColumn::make('stock')
                     ->label('Stock Actual')
                     ->numeric()
-                    ->color(fn (int $state, $record): string => 
-                        $state <= $record->stock_minimo ? 'danger' : 'success'
+                    ->color(fn (int $state, $record): string => $state <= $record->stock_minimo ? 'danger' : 'success'
                     ),
                 TextColumn::make('stock_minimo')
                     ->label('Stock Mínimo')

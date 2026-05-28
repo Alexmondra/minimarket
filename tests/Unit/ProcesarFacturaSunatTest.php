@@ -30,19 +30,19 @@ class ProcesarFacturaSunatTest extends TestCase
         ]);
 
         $empresa = Empresa::create(['ruc' => '20123456789', 'razon_social' => 'Test Empresa']);
-        
+
         $sucursal = Sucursal::create([
             'empresa_id' => $empresa->id,
             'codigo' => '0001',
             'ubigeo' => $ubigeo->id,
             'direccion' => 'Dir',
             'nombre_sucursal' => 'Suc',
-            'impuesto_porcentaje' => 18
+            'impuesto_porcentaje' => 18,
         ]);
-        
+
         $cliente = Cliente::create(['nombre' => 'Test Cliente']);
         $user = User::create(['name' => 'Test User', 'email' => 'test@test.com', 'password' => 'pass']);
-        
+
         $documento = Documento::create([
             'sucursal_id' => $sucursal->id,
             'empresa_id' => $empresa->id,
@@ -76,19 +76,19 @@ class ProcesarFacturaSunatTest extends TestCase
         ]);
 
         $empresa = Empresa::create(['ruc' => '20123456789', 'razon_social' => 'Test Empresa']);
-        
+
         $sucursal = Sucursal::create([
             'empresa_id' => $empresa->id,
             'codigo' => '0001',
             'ubigeo' => $ubigeo->id,
             'direccion' => 'Dir',
             'nombre_sucursal' => 'Suc',
-            'impuesto_porcentaje' => 18
+            'impuesto_porcentaje' => 18,
         ]);
-        
+
         $cliente = Cliente::create(['nombre' => 'Test Cliente']);
         $user = User::create(['name' => 'Test User', 'email' => 'test@test.com', 'password' => 'pass']);
-        
+
         $documento = Documento::create([
             'sucursal_id' => $sucursal->id,
             'empresa_id' => $empresa->id,

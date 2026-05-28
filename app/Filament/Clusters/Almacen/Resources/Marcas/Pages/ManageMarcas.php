@@ -16,6 +16,7 @@ class ManageMarcas extends ManageRecords
             CreateAction::make()
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['empresa_id'] = auth()->user()->empresa_id;
+
                     return $data;
                 }),
         ];

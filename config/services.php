@@ -34,12 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-    
+
     'datos' => [
-        'key'     => env('API_KEY'),
+        'key' => env('API_KEY'),
         'dni_url' => env('API_DNI_URL'),
         'ruc_url' => env('API_RUC_URL'),
     ],
-
 
 ];

@@ -2,18 +2,18 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\User;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesPermisosSeeder extends Seeder
 {
-
     public function run(): void
     {
         // Limpia cache de permisos
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // === LISTA LIMPIA DE PERMISOS PARA FARMACIA ===
         $permisos = [
@@ -39,7 +39,7 @@ class RolesPermisosSeeder extends Seeder
             'reportes.ver',
             'reportes.ventas',
             'reportes.inventario',
-            //5.5. Ajustes
+            // 5.5. Ajustes
             'lotes.ver',
             'stock.crear',
 
@@ -62,7 +62,7 @@ class RolesPermisosSeeder extends Seeder
             'categorias.editar',
             'categorias.eliminar',
 
-               // 9 CATEGORÍAS
+            // 9 CATEGORÍAS
             'marcas.ver',
             'marcas.crear',
             'marcas.editar',

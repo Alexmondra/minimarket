@@ -5,7 +5,6 @@ namespace App\Filament\Clusters\Almacen\Resources\Marcas;
 use App\Filament\Clusters\Almacen\Resources\Marcas\Pages\ManageMarcas;
 use App\Models\Marca;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -15,8 +14,8 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -25,10 +24,10 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class MarcaResource extends Resource
 {
-
     protected static ?string $model = Marca::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bookmark';

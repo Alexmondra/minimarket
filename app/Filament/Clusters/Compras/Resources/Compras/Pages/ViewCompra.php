@@ -7,10 +7,10 @@ use App\Models\Compra;
 use App\Support\SucursalContext;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +25,8 @@ class ViewCompra extends ViewRecord
     public function getTitle(): string
     {
         $compra = $this->getRecord();
-        return ($compra->proveedor?->nombre ?? 'Sin proveedor');
+
+        return $compra->proveedor?->nombre ?? 'Sin proveedor';
     }
 
     public static function getNavigationLabel(): string
@@ -39,6 +40,7 @@ class ViewCompra extends ViewRecord
     public function getEstadoLabel(): string
     {
         $estado = $this->getRecord()->estado;
+
         return match (true) {
             $estado === 'anulada' || $estado === false || $estado === 0 => 'Anulada',
             $estado === true || $estado === 1 || $estado === 'completada' || $estado === 'recibida' => 'Recibida',
@@ -53,6 +55,7 @@ class ViewCompra extends ViewRecord
     public function getEstadoColor(): string
     {
         $estado = $this->getRecord()->estado;
+
         return match (true) {
             $estado === 'anulada' || $estado === false || $estado === 0 => 'danger',
             $estado === true || $estado === 1 || $estado === 'completada' || $estado === 'recibida' => 'success',
@@ -67,6 +70,7 @@ class ViewCompra extends ViewRecord
     public function getEstadoIcon(): string
     {
         $estado = $this->getRecord()->estado;
+
         return match (true) {
             $estado === 'anulada' || $estado === false || $estado === 0 => 'o-x-circle',
             $estado === true || $estado === 1 || $estado === 'completada' || $estado === 'recibida' => 'o-check-circle',
@@ -81,7 +85,10 @@ class ViewCompra extends ViewRecord
     public function getComprobanteExtension(): ?string
     {
         $compra = $this->getRecord();
-        if (!$compra->archivo_comprobante) return null;
+        if (! $compra->archivo_comprobante) {
+            return null;
+        }
+
         return strtolower(pathinfo($compra->archivo_comprobante, PATHINFO_EXTENSION));
     }
 
@@ -106,9 +113,10 @@ class ViewCompra extends ViewRecord
     public function getComprobanteUrl(): ?string
     {
         $compra = $this->getRecord();
-        if (!$compra->archivo_comprobante) {
+        if (! $compra->archivo_comprobante) {
             return null;
         }
+
         return route('filament.compras.comprobante', $compra);
     }
 
@@ -238,5 +246,4 @@ class ViewCompra extends ViewRecord
             'No tienes acceso a esta compra.'
         );
     }
-
 }

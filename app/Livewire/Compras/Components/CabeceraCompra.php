@@ -9,16 +9,24 @@ use Livewire\Component;
 class CabeceraCompra extends Component
 {
     public ?int $proveedorId = null;
+
     public ?int $sucursalId = null;
+
     public string $tipoComprobante = 'factura';
+
     public ?string $numeroFactura = null;
+
     public string $fechaRecepcion;
+
     public ?string $observaciones = null;
 
     // Búsqueda de proveedor
     public string $searchProveedor = '';
+
     public array $proveedoresResultados = [];
+
     public bool $showProveedorDropdown = false;
+
     public ?string $proveedorNombre = null;
 
     public function mount(): void
@@ -31,14 +39,15 @@ class CabeceraCompra extends Component
         if (strlen($this->searchProveedor) < 2) {
             $this->proveedoresResultados = [];
             $this->showProveedorDropdown = false;
+
             return;
         }
 
         $this->proveedoresResultados = Proveedor::where('estado', true)
             ->where(function ($q) {
                 $q->where('nombre', 'like', "%{$this->searchProveedor}%")
-                  ->orWhere('numero_documento', 'like', "%{$this->searchProveedor}%")
-                  ->orWhere('razon_social', 'like', "%{$this->searchProveedor}%");
+                    ->orWhere('numero_documento', 'like', "%{$this->searchProveedor}%")
+                    ->orWhere('razon_social', 'like', "%{$this->searchProveedor}%");
             })
             ->limit(10)
             ->get()

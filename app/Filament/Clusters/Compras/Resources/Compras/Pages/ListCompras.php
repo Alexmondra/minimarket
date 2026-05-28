@@ -3,12 +3,12 @@
 namespace App\Filament\Clusters\Compras\Resources\Compras\Pages;
 
 use App\Filament\Clusters\Compras\Resources\Compras\CompraResource;
+use App\Support\SucursalContext;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use App\Support\SucursalContext;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 
 class ListCompras extends ListRecords
@@ -60,7 +60,7 @@ class ListCompras extends ListRecords
                 TextColumn::make('archivo_comprobante')
                     ->label('Comprobante')
                     ->formatStateUsing(function ($state, $record) {
-                        if (!$state) {
+                        if (! $state) {
                             return '<span class="text-gray-400">—</span>';
                         }
 

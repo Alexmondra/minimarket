@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Almacen\Resources\Productos\Pages;
 
 use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Table;
@@ -29,7 +30,7 @@ class ListProductos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\Action::make('toggleView')
+            Action::make('toggleView')
                 ->label($this->viewMode === 'cards' ? 'Vista Tabla' : 'Vista Cards')
                 ->icon($this->viewMode === 'cards' ? 'heroicon-o-table-cells' : 'heroicon-o-squares-2x2')
                 ->color('gray')
@@ -96,7 +97,7 @@ class ListProductos extends ListRecords
 
     public function renderProductImageModal()
     {
-        if (!$this->modalImageUrl) {
+        if (! $this->modalImageUrl) {
             return '';
         }
 
