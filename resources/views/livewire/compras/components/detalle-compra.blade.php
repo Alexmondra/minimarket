@@ -12,154 +12,120 @@
                         Producto
                     </label>
 
-                    <input
-                        type="text"
-                        wire:model.live.debounce.300ms="searchProducto"
-
-                        @focus="$wire.set('showProductoDropdown', true)"
-
-                        @keydown.arrow-down.prevent="
-                            const first = $el.closest('.relative').querySelector('.dropdown-item');
-
-                            if (first) first.focus();
-                        "
-
-                        @keydown.enter.prevent="
-                            const results = $el.closest('.relative').querySelectorAll('.dropdown-item');
-
-                            if (results.length === 1) {
-                                results[0].click();
-                            } else if (results.length > 0) {
-                                results[0].focus();
-                            }
-                        "
-
-                        @keydown.escape="$wire.set('showProductoDropdown', false)"
-
-                        placeholder="Buscar medicamento o producto..."
-
-                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
-                    >
-
-                    @if($showProductoDropdown && count($productosResultados) > 0)
-
-                        <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-56 overflow-y-auto p-1">
-
-                            @foreach($productosResultados as $index => $resultado)
-
-                                <button
-                                    type="button"
-                                    tabindex="0"
-
-                                    wire:key="prod-btn-{{ $resultado['id'] }}"
-
-                                    wire:click="seleccionarPresentacion({{ $resultado['id'] }})"
-
-                                    @keydown.arrow-down.prevent="
-                                        const next = $el.nextElementSibling;
-
-                                        if (
-                                            next &&
-                                            next.classList.contains('dropdown-item')
-                                        ) {
-                                            next.focus();
-                                        }
-                                    "
-
-                                    @keydown.arrow-up.prevent="
-                                        const prev = $el.previousElementSibling;
-
-                                        if (
-                                            prev &&
-                                            prev.classList.contains('dropdown-item')
-                                        ) {
-                                            prev.focus();
-                                        } else {
-                                            const input = $el.closest('.relative').querySelector('input');
-
-                                            if (input) input.focus();
-                                        }
-                                    "
-
-                                    @keydown.enter.prevent="$el.click()"
-
-                                    @keydown.escape="
-                                        const input = $el.closest('.relative').querySelector('input');
-
-                                        if (input) {
-                                            input.focus();
-                                            $wire.set('showProductoDropdown', false);
-                                        }
-                                    "
-
-                                    class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
-                                        transition-all duration-150
-
-                                        hover:bg-blue-500
-                                        hover:text-white
-
-                                        focus:bg-blue-600
-                                        focus:text-white
-                                        focus:outline-none
-                                        focus:ring-2
-                                        focus:ring-blue-300
-                                        focus:shadow-lg
-                                        focus:shadow-blue-500/30
-                                        focus:scale-[1.01]"
-                                >
-
-                                    <div class="flex flex-col">
-
-                                        <span
-                                            class="font-medium text-gray-900 dark:text-gray-100
-                                                group-hover:text-white
-                                                group-focus:text-white
-                                                group-focus:font-semibold"
+                    <div class="flex items-center gap-1.5">
+                        <div class="relative flex-1">
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="searchProducto"
+                                @focus="$wire.set('showProductoDropdown', true)"
+                                @keydown.arrow-down.prevent="
+                                    const first = $el.closest('.relative').querySelector('.dropdown-item');
+                                    if (first) first.focus();
+                                "
+                                @keydown.enter.prevent="
+                                    const results = $el.closest('.relative').querySelectorAll('.dropdown-item');
+                                    if (results.length === 1) {
+                                        results[0].click();
+                                    } else if (results.length > 0) {
+                                        results[0].focus();
+                                    }
+                                "
+                                @keydown.escape="$wire.set('showProductoDropdown', false)"
+                                placeholder="Buscar medicamento o producto..."
+                                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
+                            >
+                            @if($showProductoDropdown && count($productosResultados) > 0)
+                                <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-56 overflow-y-auto p-1">
+                                    @foreach($productosResultados as $index => $resultado)
+                                        <button
+                                            type="button"
+                                            tabindex="0"
+                                            wire:key="prod-btn-{{ $resultado['id'] }}"
+                                            wire:click="seleccionarPresentacion({{ $resultado['id'] }})"
+                                            @keydown.arrow-down.prevent="
+                                                const next = $el.nextElementSibling;
+                                                if (next && next.classList.contains('dropdown-item')) {
+                                                    next.focus();
+                                                }
+                                            "
+                                            @keydown.arrow-up.prevent="
+                                                const prev = $el.previousElementSibling;
+                                                if (prev && prev.classList.contains('dropdown-item')) {
+                                                    prev.focus();
+                                                } else {
+                                                    const input = $el.closest('.relative').querySelector('input');
+                                                    if (input) input.focus();
+                                                }
+                                            "
+                                            @keydown.enter.prevent="$el.click()"
+                                            @keydown.escape="
+                                                const input = $el.closest('.relative').querySelector('input');
+                                                if (input) {
+                                                    input.focus();
+                                                    $wire.set('showProductoDropdown', false);
+                                                }
+                                            "
+                                            class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
+                                                transition-all duration-150
+                                                hover:bg-blue-500 hover:text-white
+                                                focus:bg-blue-600 focus:text-white
+                                                focus:outline-none focus:ring-2 focus:ring-blue-300 focus:shadow-lg focus:shadow-blue-500/30 focus:scale-[1.01]"
                                         >
-                                            {{ $resultado['label'] }}
-                                        </span>
-
-                                        @if($resultado['codigo'])
-
-                                            <span
-                                                class="text-[11px] text-gray-400
-                                                    group-hover:text-blue-100
-                                                    group-focus:text-blue-100"
-                                            >
-                                                {{ $resultado['codigo'] }}
-                                            </span>
-
-                                        @endif
-
-                                    </div>
-
-                                </button>
-
-                            @endforeach
-
+                                            <div class="flex flex-col">
+                                                <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white group-focus:text-white group-focus:font-semibold">
+                                                    {{ $resultado['label'] }}
+                                                </span>
+                                                @if($resultado['codigo'])
+                                                    <span class="text-[11px] text-gray-400 group-hover:text-blue-100 group-focus:text-blue-100">
+                                                        {{ $resultado['codigo'] }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
-
-                    @endif
-
-                    @if(strlen($searchProducto) >= 2 && !$showProductoDropdown)
-
                         <button
                             type="button"
-                            wire:click="abrirCrearPresentacionModal"
-                            class="mt-1 mr-3 text-xs text-amber-600 hover:text-amber-700"
+                            wire:click="abrirCrearPresentacionModal()"
+                            class="inline-flex items-center justify-center p-2 rounded-md bg-primary-600 hover:bg-primary-700 text-white transition-colors h-[34px] w-[34px] flex-shrink-0"
+                            title="Registrar nuevo producto o presentación"
                         >
-                            + Crear presentación no encontrada
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
                         </button>
+                    </div>
 
+                    @if(strlen($searchProducto) >= 2 && count($productosResultados) === 0)
+                        <div class="mt-1.5 flex items-center justify-between p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-xs">
+                            <span class="text-amber-800 dark:text-amber-300 font-medium">Producto no encontrado</span>
+                            <button
+                                type="button"
+                                wire:click="abrirCrearPresentacionModal()"
+                                class="text-primary-600 dark:text-primary-400 font-semibold hover:underline flex items-center gap-1"
+                            >
+                                <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Registrar
+                            </button>
+                        </div>
                     @endif
 
-                    <button
-                        type="button"
-                        wire:click="$dispatch('abrirModalCrearProducto')"
-                        class="mt-1 text-xs text-primary-600 hover:text-primary-700"
-                    >
-                        + Crear producto
-                    </button>
+                    @if($productoId)
+                        <div class="mt-1.5 flex items-center justify-between text-xs">
+                            <span class="text-gray-500 dark:text-gray-400">Producto: <strong class="text-gray-800 dark:text-gray-200">{{ $productoNombre }}</strong></span>
+                            <button
+                                type="button"
+                                wire:click="abrirCrearPresentacionModal()"
+                                class="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-0.5"
+                            >
+                                + Agregar presentación
+                            </button>
+                        </div>
+                    @endif
 
                     @error('productoId')
                         <p class="mt-1 text-xs text-red-500">
@@ -609,19 +575,65 @@
                     <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
                         <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Datos de presentación</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
+                            <div class="relative">
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de presentación</label>
                                 <input type="text"
-                                       wire:model="modalTipoPresentacion"
+                                       wire:model.live.debounce.150ms="modalTipoPresentacion"
                                        placeholder="Ej: Blíster, Caja, Frasco"
                                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100">
+                                
+                                @if($showModalPresentacionDropdown && count($modalPresentacionesResultados) > 0)
+                                    <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto p-1">
+                                        @foreach($modalPresentacionesResultados as $pRes)
+                                            <button type="button"
+                                                    wire:click="seleccionarPresentacionDesdeModal({{ $pRes['id'] }})"
+                                                    class="group w-full text-left rounded px-3 py-2 text-xs hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-150 focus:outline-none flex items-center justify-between">
+                                                <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white">{{ $pRes['tipo_presentacion'] }}</span>
+                                                <span class="text-[11px] text-gray-500 dark:text-gray-400 group-hover:text-blue-100">({{ $pRes['cantidad'] }} {{ $pRes['unidad_medida_abreviatura'] }})</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                
                                 @error('modalTipoPresentacion') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Código de barra</label>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Código de barra principal</label>
                                 <input type="text"
                                        wire:model="modalCodigoBarra"
                                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100">
+                                @error('modalCodigoBarra') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Códigos de barra adicionales</label>
+                                <div class="flex items-center gap-1.5">
+                                    <input type="text"
+                                           wire:model="modalNuevoCodigoBarra"
+                                           placeholder="Escanear o escribir código adicional..."
+                                           wire:keydown.enter.prevent="agregarCodigoBarraDesdeModal"
+                                           class="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100">
+                                    <button type="button"
+                                            wire:click="agregarCodigoBarraDesdeModal"
+                                            class="inline-flex items-center justify-center rounded-md bg-primary-600 hover:bg-primary-700 text-white font-bold transition-colors h-[34px] w-[34px] flex-shrink-0"
+                                            title="Agregar código adicional"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                @error('modalNuevoCodigoBarra') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+
+                                @if(count($modalBarras) > 0)
+                                    <div class="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
+                                        @foreach($modalBarras as $iBarra => $code)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                {{ $code }}
+                                                <button type="button" 
+                                                        wire:click="removerCodigoBarraDesdeModal({{ $iBarra }})" 
+                                                        class="text-blue-500 hover:text-blue-700 font-bold focus:outline-none ml-1">&times;</button>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Unidad de medida</label>
@@ -638,13 +650,77 @@
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad por empaque</label>
                                 <input type="number"
                                        min="1"
-                                       wire:model="modalCantidadPorEmpaque"
+                                       wire:model.live="modalCantidadPorEmpaque"
                                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100">
                             </div>
+                            @if($modalCantidadPorEmpaque > 1)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Presentación base</label>
+                                    @if($modoProductoPresentacion === 'existente' && $modalProductoId)
+                                        @php
+                                            $basePresentaciones = $this->basePresentaciones;
+                                        @endphp
+                                        @if($basePresentaciones->isNotEmpty())
+                                            <select wire:model="modalPresentacionBaseId"
+                                                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100">
+                                                <option value="">Seleccionar presentación base</option>
+                                                @foreach($basePresentaciones as $basePres)
+                                                    <option value="{{ $basePres->id }}">
+                                                        {{ $basePres->tipo_presentacion }} ({{ $basePres->cantidad }} {{ $basePres->unidadMedida?->abreviatura }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('modalPresentacionBaseId') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                        @else
+                                            <div class="w-full rounded-md border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                                                No hay otras presentaciones para este producto.
+                                            </div>
+                                        @endif
+                                    @else
+                                        <div class="w-full rounded-md border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-400" title="Para asociar una presentación base, el producto debe ser existente y tener presentaciones registradas.">
+                                            No disponible para producto nuevo.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                             <div class="md:col-span-2 flex items-center gap-2">
                                 <input type="checkbox" wire:model="modalEsPesable" id="modalEsPesable"
                                        class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
                                 <label for="modalEsPesable" class="text-xs text-gray-700 dark:text-gray-300">Es pesable</label>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Imagen de la presentación (Opcional)</label>
+                                <div class="flex items-center gap-3 p-3 border border-dashed border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800">
+                                    @if ($modalImagen)
+                                        <div class="relative w-16 h-16 rounded bg-gray-100 dark:bg-gray-900 overflow-hidden border border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                                            <img src="{{ $modalImagen->temporaryUrl() }}" class="object-cover w-full h-full">
+                                            <button type="button" 
+                                                    wire:click="$set('modalImagen', null)" 
+                                                    class="absolute top-0 right-0 bg-red-600 hover:bg-red-700 text-white rounded-bl p-1 text-[10px] line-none leading-none">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    @else
+                                        <div class="w-16 h-16 rounded border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    @endif
+                                    <div class="flex-1 min-w-0">
+                                        <input type="file" 
+                                               wire:model="modalImagen" 
+                                               id="modalImagen" 
+                                               accept="image/*" 
+                                               class="hidden">
+                                        <label for="modalImagen" 
+                                               class="inline-flex items-center px-2.5 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none cursor-pointer transition-colors">
+                                            {{ $modalImagen ? 'Cambiar imagen' : 'Seleccionar imagen' }}
+                                        </label>
+                                        <p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">PNG, JPG, GIF hasta 2MB</p>
+                                        @error('modalImagen') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

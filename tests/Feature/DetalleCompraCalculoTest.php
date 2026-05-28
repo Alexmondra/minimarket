@@ -144,4 +144,153 @@ class DetalleCompraCalculoTest extends TestCase
             'precio_compra' => 6.00, // 120.00 / 20
         ]);
     }
+
+    public function test_it_creates_presentation_from_modal(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Create base presentation
+        $unidad = UniMedida::where('abreviatura', 'und')->first();
+
+        // 2. Use Livewire to create presentation
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $file = \Illuminate\Http\UploadedFile::fake()->image('presentacion.jpg');
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('modoProductoPresentacion', 'existente')
+        ->set('modalProductoId', $this->producto->id)
+        ->set('modalUnidadMedidaId', $unidad->id)
+        ->set('modalCantidadPorEmpaque', 12)
+        ->set('modalTipoPresentacion', 'Caja de 12')
+        ->set('modalCodigoBarra', '7750123456789')
+        ->set('modalPresentacionBaseId', $this->presentacion->id)
+        ->set('modalImagen', $file)
+        ->call('crearPresentacionDesdeModal')
+        ->assertHasNoErrors();
+
+        // Assert DB records
+        $this->assertDatabaseHas('producto_presentacion', [
+            'producto_id' => $this->producto->id,
+            'unidad_medida_id' => $unidad->id,
+            'cantidad' => 12,
+            'tipo_presentacion' => 'Caja de 12',
+            'presentacion_base_id' => $this->presentacion->id,
+        ]);
+
+        $this->assertDatabaseHas('producto_presentacion_barras', [
+            'codigo_barra' => '7750123456789',
+        ]);
+
+        // Assert file exists in fake storage
+        $newPresentation = ProductoPresentacion::where('cantidad', 12)->first();
+        $this->assertNotNull($newPresentation->imagen);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($newPresentation->imagen);
+    }
+
+    public function test_it_validates_unique_barcode_on_presentation_creation(): void
+    {
+        $this->actingAs($this->user);
+
+        // Register the barcode on the existing presentation
+        $this->presentacion->barras()->create([
+            'codigo_barra' => '7750123456789',
+        ]);
+
+        $unidad = UniMedida::where('abreviatura', 'und')->first();
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('modoProductoPresentacion', 'existente')
+        ->set('modalProductoId', $this->producto->id)
+        ->set('modalUnidadMedidaId', $unidad->id)
+        ->set('modalCantidadPorEmpaque', 6)
+        ->set('modalTipoPresentacion', 'Paquete de 6')
+        ->set('modalCodigoBarra', '7750123456789') // duplicate
+        ->call('crearPresentacionDesdeModal')
+        ->assertHasErrors(['modalCodigoBarra' => 'unique']);
+    }
+
+    public function test_it_detects_barcode_vs_text_name_in_modal_open(): void
+    {
+        $this->actingAs($this->user);
+
+        // Scenario 1: Numeric search term (scanned barcode)
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('searchProducto', '7750123456789')
+        ->call('abrirCrearPresentacionModal')
+        ->assertSet('modalCodigoBarra', '7750123456789')
+        ->assertSet('modalSearchProducto', '')
+        ->assertSet('modoProductoPresentacion', 'nuevo');
+
+        // Scenario 2: Text search term (product name)
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('searchProducto', 'Chocolate Vicio')
+        ->call('abrirCrearPresentacionModal')
+        ->assertSet('modalCodigoBarra', null)
+        ->assertSet('modalSearchProducto', 'Chocolate Vicio')
+        ->assertSet('modalNuevoProductoNombre', 'Chocolate Vicio')
+        ->assertSet('modoProductoPresentacion', 'nuevo');
+    }
+
+    public function test_it_can_update_existing_presentation_with_additional_barcodes(): void
+    {
+        $this->actingAs($this->user);
+
+        $unidad = UniMedida::where('abreviatura', 'und')->first();
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('modoProductoPresentacion', 'existente')
+        ->set('modalProductoId', $this->producto->id)
+        ->set('modalTipoPresentacion', 'Ca')
+        ->assertSet('showModalPresentacionDropdown', true)
+        ->call('seleccionarPresentacionDesdeModal', $this->presentacion->id)
+        ->assertSet('modalEditingPresentationId', $this->presentacion->id)
+        ->assertSet('modalUnidadMedidaId', $unidad->id)
+        ->assertSet('modalCantidadPorEmpaque', 1)
+        ->set('modalNuevoCodigoBarra', '88888888')
+        ->call('agregarCodigoBarraDesdeModal')
+        ->assertSet('modalBarras', ['88888888'])
+        ->call('crearPresentacionDesdeModal')
+        ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('producto_presentacion_barras', [
+            'producto_presentacion_id' => $this->presentacion->id,
+            'codigo_barra' => '88888888',
+        ]);
+    }
+
+    public function test_it_resets_editing_presentation_id_when_name_changes(): void
+    {
+        $this->actingAs($this->user);
+
+        $unidad = UniMedida::where('abreviatura', 'und')->first();
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('modoProductoPresentacion', 'existente')
+        ->set('modalProductoId', $this->producto->id)
+        ->set('modalTipoPresentacion', 'Ca')
+        ->call('seleccionarPresentacionDesdeModal', $this->presentacion->id)
+        ->assertSet('modalEditingPresentationId', $this->presentacion->id)
+        // Now change the input text
+        ->set('modalTipoPresentacion', 'Caja Nueva')
+        ->assertSet('modalEditingPresentationId', null);
+    }
 }
+

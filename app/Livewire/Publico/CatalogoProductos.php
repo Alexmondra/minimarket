@@ -30,6 +30,8 @@ class CatalogoProductos extends Component
 
     public bool $showProductModal = false;
 
+    public ?int $empresaId = null;
+
     protected ?bool $databaseReady = null;
 
     public function mount(): void
@@ -40,6 +42,7 @@ class CatalogoProductos extends Component
 
         $this->sucursalId = (string) (Sucursal::query()
             ->where('activo', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->orderBy('nombre_sucursal')
             ->value('id') ?? '');
     }
@@ -91,6 +94,7 @@ class CatalogoProductos extends Component
 
         $exists = Producto::query()
             ->where('activo', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->whereKey($productId)
             ->exists();
 
@@ -163,14 +167,16 @@ class CatalogoProductos extends Component
     {
         return Sucursal::query()
             ->where('activo', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->orderBy('nombre_sucursal')
-            ->get(['id', 'nombre_sucursal', 'direccion', 'telefono']);
+            ->get(['id', 'empresa_id', 'nombre_sucursal', 'direccion', 'telefono']);
     }
 
     protected function categorias(): Collection
     {
         return Categoria::query()
             ->where('estado', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
     }
@@ -178,6 +184,7 @@ class CatalogoProductos extends Component
     protected function marcas(): Collection
     {
         return Marca::query()
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->orderBy('nombre')
             ->get(['id', 'nombre']);
     }
@@ -202,6 +209,7 @@ class CatalogoProductos extends Component
 
         return Producto::query()
             ->where('activo', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->whereHas('productoSucursales', function (Builder $query) use ($sucursalId): void {
                 $query
                     ->where('activo', true)
@@ -258,6 +266,7 @@ class CatalogoProductos extends Component
 
         $producto = Producto::query()
             ->where('activo', true)
+            ->when($this->empresaId, fn ($q) => $q->where('empresa_id', $this->empresaId))
             ->whereKey($this->selectedProductId)
             ->with([
                 'categoria:id,nombre',

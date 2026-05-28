@@ -35,167 +35,167 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Proveedor -->
                     <div>
-    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-        Proveedor <span class="text-red-400">*</span>
-    </label>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Proveedor <span class="text-red-400">*</span>
+                        </label>
 
-    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2">
 
-        <div class="relative flex-1">
+                            <div class="relative flex-1">
 
-            <input
-                type="text"
-                wire:model.live.debounce.300ms="searchProveedor"
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="searchProveedor"
 
-                @focus="$wire.set('showProveedorDropdown', true)"
+                                    @focus="$wire.set('showProveedorDropdown', true)"
 
-                @keydown.arrow-down.prevent="
-                    const first = $el.closest('.relative').querySelector('.dropdown-item');
-                    if (first) first.focus();
-                "
+                                    @keydown.arrow-down.prevent="
+                                        const first = $el.closest('.relative').querySelector('.dropdown-item');
+                                        if (first) first.focus();
+                                    "
 
-                @keydown.enter.prevent="
-                    const results = $el.closest('.relative').querySelectorAll('.dropdown-item');
+                                    @keydown.enter.prevent="
+                                        const results = $el.closest('.relative').querySelectorAll('.dropdown-item');
 
-                    if (results.length === 1) {
-                        results[0].click();
-                    } else if (results.length > 0) {
-                        results[0].focus();
-                    }
-                "
+                                        if (results.length === 1) {
+                                            results[0].click();
+                                        } else if (results.length > 0) {
+                                            results[0].focus();
+                                        }
+                                    "
 
-                @keydown.escape="$wire.set('showProveedorDropdown', false)"
+                                    @keydown.escape="$wire.set('showProveedorDropdown', false)"
 
-                placeholder="Buscar proveedor por nombre, RUC..."
+                                    placeholder="Buscar proveedor por nombre, RUC..."
 
-                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
-            >
-
-            @if($showProveedorDropdown && count($proveedoresResultados) > 0)
-
-                <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-48 overflow-y-auto p-1">
-
-                    @foreach($proveedoresResultados as $index => $prov)
-
-                        <button
-                            type="button"
-                            tabindex="0"
-
-                            wire:key="prov-btn-{{ $prov['id'] }}"
-
-                            wire:click="seleccionarProveedor(
-                                {{ $prov['id'] }},
-                                '{{ $prov['nombre'] }}'
-                            )"
-
-                            @keydown.arrow-down.prevent="
-                                const next = $el.nextElementSibling;
-
-                                if (
-                                    next &&
-                                    next.classList.contains('dropdown-item')
-                                ) {
-                                    next.focus();
-                                }
-                            "
-
-                            @keydown.arrow-up.prevent="
-                                const prev = $el.previousElementSibling;
-
-                                if (
-                                    prev &&
-                                    prev.classList.contains('dropdown-item')
-                                ) {
-                                    prev.focus();
-                                } else {
-                                    const input = $el.closest('.relative').querySelector('input');
-
-                                    if (input) input.focus();
-                                }
-                            "
-
-                            @keydown.enter.prevent="$el.click()"
-
-                            @keydown.escape="
-                                const input = $el.closest('.relative').querySelector('input');
-
-                                if (input) {
-                                    input.focus();
-                                    $wire.set('showProveedorDropdown', false);
-                                }
-                            "
-
-                            class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
-                                   transition-all duration-150
-
-                                   hover:bg-blue-500
-                                   hover:text-white
-
-                                   focus:bg-blue-600
-                                   focus:text-white
-                                   focus:outline-none
-                                   focus:ring-2
-                                   focus:ring-blue-300
-                                   focus:shadow-lg
-                                   focus:shadow-blue-500/30
-                                   focus:scale-[1.01]"
-                        >
-
-                            <div class="flex flex-col">
-
-                                <span
-                                    class="font-medium text-gray-900 dark:text-gray-100
-                                           group-hover:text-white
-                                           group-focus:text-white
-                                           group-focus:font-semibold"
+                                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
                                 >
-                                    {{ $prov['nombre'] }}
-                                </span>
 
-                                <span
-                                    class="text-[11px] text-gray-400
-                                           group-hover:text-blue-100
-                                           group-focus:text-blue-100"
-                                >
-                                    {{ $prov['numero_documento'] }}
-                                </span>
+                                @if($showProveedorDropdown && count($proveedoresResultados) > 0)
+
+                                    <div class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-48 overflow-y-auto p-1">
+
+                                        @foreach($proveedoresResultados as $index => $prov)
+
+                                            <button
+                                                type="button"
+                                                tabindex="0"
+
+                                                wire:key="prov-btn-{{ $prov['id'] }}"
+
+                                                wire:click="seleccionarProveedor(
+                                                    {{ $prov['id'] }},
+                                                    '{{ $prov['nombre'] }}'
+                                                )"
+
+                                                @keydown.arrow-down.prevent="
+                                                    const next = $el.nextElementSibling;
+
+                                                    if (
+                                                        next &&
+                                                        next.classList.contains('dropdown-item')
+                                                    ) {
+                                                        next.focus();
+                                                    }
+                                                "
+
+                                                @keydown.arrow-up.prevent="
+                                                    const prev = $el.previousElementSibling;
+
+                                                    if (
+                                                        prev &&
+                                                        prev.classList.contains('dropdown-item')
+                                                    ) {
+                                                        prev.focus();
+                                                    } else {
+                                                        const input = $el.closest('.relative').querySelector('input');
+
+                                                        if (input) input.focus();
+                                                    }
+                                                "
+
+                                                @keydown.enter.prevent="$el.click()"
+
+                                                @keydown.escape="
+                                                    const input = $el.closest('.relative').querySelector('input');
+
+                                                    if (input) {
+                                                        input.focus();
+                                                        $wire.set('showProveedorDropdown', false);
+                                                    }
+                                                "
+
+                                                class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
+                                                    transition-all duration-150
+
+                                                    hover:bg-blue-500
+                                                    hover:text-white
+
+                                                    focus:bg-blue-600
+                                                    focus:text-white
+                                                    focus:outline-none
+                                                    focus:ring-2
+                                                    focus:ring-blue-300
+                                                    focus:shadow-lg
+                                                    focus:shadow-blue-500/30
+                                                    focus:scale-[1.01]"
+                                            >
+
+                                                <div class="flex flex-col">
+
+                                                    <span
+                                                        class="font-medium text-gray-900 dark:text-gray-100
+                                                            group-hover:text-white
+                                                            group-focus:text-white
+                                                            group-focus:font-semibold"
+                                                    >
+                                                        {{ $prov['nombre'] }}
+                                                    </span>
+
+                                                    <span
+                                                        class="text-[11px] text-gray-400
+                                                            group-hover:text-blue-100
+                                                            group-focus:text-blue-100"
+                                                    >
+                                                        {{ $prov['numero_documento'] }}
+                                                    </span>
+
+                                                </div>
+
+                                            </button>
+
+                                        @endforeach
+
+                                    </div>
+
+                                @endif
 
                             </div>
 
-                        </button>
+                            <button
+                                type="button"
+                                wire:click="abrirRegistrarProveedorModal"
+                                class="inline-flex items-center justify-center p-2 rounded-md bg-primary-600 hover:bg-primary-700 text-white transition-colors h-[34px] w-[34px]"
+                                title="Agregar Proveedor"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 4v16m8-8H4"
+                                    />
+                                </svg>
+                            </button>
 
-                    @endforeach
+                        </div>
 
-                </div>
-
-            @endif
-
-        </div>
-
-        <button
-            type="button"
-            wire:click="abrirRegistrarProveedorModal"
-            class="inline-flex items-center justify-center p-2 rounded-md bg-primary-600 hover:bg-primary-700 text-white transition-colors h-[34px] w-[34px]"
-            title="Agregar Proveedor"
-        >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4v16m8-8H4"
-                />
-            </svg>
-        </button>
-
-    </div>
-
-    @error('proveedorId')
-        <p class="mt-1 text-xs text-red-400">
-            {{ $message }}
-        </p>
-    @enderror
-</div>
+                        @error('proveedorId')
+                            <p class="mt-1 text-xs text-red-400">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
 
                     <!-- Sucursal -->
                     <div>

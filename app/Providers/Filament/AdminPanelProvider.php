@@ -33,6 +33,15 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->navigationGroups([
+                'Compras',
+                'Almacén',
+                'Movimientos',
+                'Reportes',
+                'Sunat',
+                'Ventas',
+                'Configuraciones',
+            ])
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('18.5rem')
             ->collapsedSidebarWidth('5rem')

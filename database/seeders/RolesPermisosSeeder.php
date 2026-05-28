@@ -42,6 +42,7 @@ class RolesPermisosSeeder extends Seeder
             // 5.5. Ajustes
             'lotes.ver',
             'stock.crear',
+            'movimientos.ver',
 
             // 6. CLIENTES
             'clientes.ver',

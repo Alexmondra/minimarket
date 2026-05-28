@@ -1,14 +1,8 @@
 @php
-    $empresa = [
-        'nombre' => config('app.name', 'Mini Market'),
-        'slogan' => 'Productos frescos, precios claros y atencion cercana.',
-        'telefono' => '+51 999 999 999',
-        'whatsapp' => '51999999999',
-        'email' => 'ventas@minimarket.local',
-        'direccion' => 'Av. Principal 123',
-        'horario' => 'Lunes a domingo, 8:00 a.m. - 9:00 p.m.',
-        'nosotros' => 'Somos un minimarket local enfocado en surtido diario, buena atencion y disponibilidad por sucursal.',
-    ];
+    $nombre = $empresa?->razon_social ?? config('app.name', 'Mini Market');
+    $direccion = $empresa?->direccion_fiscal ?? '';
+    $logo = $empresa?->logo;
+    $sucursalPrincipal = $empresa?->sucursales()->where('activo', true)->orderBy('id')->first();
 @endphp
 
 <!DOCTYPE html>
@@ -17,8 +11,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ $empresa['nombre'] }}</title>
-        <meta name="description" content="{{ $empresa['slogan'] }}">
+        <title>{{ $nombre }}</title>
+        <meta name="description" content="Catalogo de productos de {{ $nombre }}">
 
         @fonts
 
@@ -32,10 +26,14 @@
         <header class="fixed inset-x-0 top-0 z-40 border-b border-white/20 bg-white/90 backdrop-blur">
             <nav class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 <a href="#inicio" class="flex items-center gap-3">
-                    <span class="flex size-10 items-center justify-center rounded-md bg-emerald-700 text-lg font-black text-white">
-                        {{ mb_substr($empresa['nombre'], 0, 1) }}
-                    </span>
-                    <span class="text-base font-black text-gray-950">{{ $empresa['nombre'] }}</span>
+                    @if ($logo)
+                        <img src="{{ asset('storage/'.$logo) }}" alt="{{ $nombre }}" class="size-10 rounded-md object-cover">
+                    @else
+                        <span class="flex size-10 items-center justify-center rounded-md bg-emerald-700 text-lg font-black text-white">
+                            {{ mb_substr($nombre, 0, 1) }}
+                        </span>
+                    @endif
+                    <span class="text-base font-black text-gray-950">{{ $nombre }}</span>
                 </a>
 
                 <div class="hidden items-center gap-7 text-sm font-semibold text-gray-700 md:flex">
@@ -59,17 +57,17 @@
                     <div class="max-w-2xl text-white">
                         <p class="text-sm font-bold uppercase tracking-wide text-amber-300">Catalogo por sucursal</p>
                         <h1 class="mt-4 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                            {{ $empresa['nombre'] }}
+                            {{ $nombre }}
                         </h1>
                         <p class="mt-5 max-w-xl text-base leading-7 text-white/85 sm:text-lg">
-                            {{ $empresa['slogan'] }}
+                            Productos frescos, precios claros y atencion cercana.
                         </p>
 
                         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                             <a href="#productos" class="rounded-md bg-amber-400 px-5 py-3 text-center text-sm font-black text-gray-950 transition hover:bg-amber-300">
                                 Ver productos
                             </a>
-                            <a href="https://wa.me/{{ $empresa['whatsapp'] }}" target="_blank" class="rounded-md border border-white/60 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-white hover:text-gray-950">
+                            <a href="https://wa.me/{{ $sucursalPrincipal?->telefono ?? '51999999999' }}" target="_blank" class="rounded-md border border-white/60 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-white hover:text-gray-950">
                                 Consultar por WhatsApp
                             </a>
                         </div>
@@ -94,7 +92,13 @@
                 </div>
             </section>
 
-            <livewire:publico.catalogo-productos />
+            @if ($empresa)
+                <livewire:publico.catalogo-productos :empresaId="$empresa->id" />
+            @else
+                <section class="bg-white py-20 text-center">
+                    <p class="text-gray-500">No hay productos disponibles.</p>
+                </section>
+            @endif
 
             <section id="nosotros" class="bg-gray-50">
                 <div class="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
@@ -105,7 +109,7 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                             <p class="text-lg font-black text-gray-950">Surtido diario</p>
-                            <p class="mt-2 text-sm leading-6 text-gray-600">{{ $empresa['nosotros'] }}</p>
+                            <p class="mt-2 text-sm leading-6 text-gray-600">Somos un minimarket local enfocado en surtido diario, buena atencion y disponibilidad por sucursal.</p>
                         </div>
                         <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                             <p class="text-lg font-black text-gray-950">Precios por sucursal</p>
@@ -120,21 +124,21 @@
                     <div>
                         <p class="text-sm font-bold uppercase tracking-wide text-emerald-700">Contactanos</p>
                         <h2 class="mt-3 text-3xl font-black text-gray-950">Estamos listos para atenderte.</h2>
-                        <p class="mt-4 max-w-xl text-sm leading-6 text-gray-600">Actualiza estos datos con la informacion real de tu negocio cuando lo desees.</p>
+                        <p class="mt-4 max-w-xl text-sm leading-6 text-gray-600">Visitanos en nuestra tienda o contactanos por telefono.</p>
                     </div>
 
                     <div class="grid gap-3">
                         <div class="rounded-lg border border-gray-200 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Telefono</p>
-                            <p class="mt-1 font-bold text-gray-950">{{ $empresa['telefono'] }}</p>
+                            <p class="mt-1 font-bold text-gray-950">{{ $sucursalPrincipal?->telefono ?? 'Por definir' }}</p>
                         </div>
                         <div class="rounded-lg border border-gray-200 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Direccion</p>
-                            <p class="mt-1 font-bold text-gray-950">{{ $empresa['direccion'] }}</p>
+                            <p class="mt-1 font-bold text-gray-950">{{ $direccion ?: 'Por definir' }}</p>
                         </div>
                         <div class="rounded-lg border border-gray-200 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Horario</p>
-                            <p class="mt-1 font-bold text-gray-950">{{ $empresa['horario'] }}</p>
+                            <p class="mt-1 font-bold text-gray-950">Lunes a domingo, 8:00 a.m. - 9:00 p.m.</p>
                         </div>
                     </div>
                 </div>
@@ -143,8 +147,8 @@
 
         <footer class="border-t border-gray-200 bg-gray-950">
             <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-white/70 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                <p class="font-semibold text-white">{{ $empresa['nombre'] }}</p>
-                <p>{{ $empresa['email'] }} / {{ $empresa['telefono'] }}</p>
+                <p class="font-semibold text-white">{{ $nombre }}</p>
+                <p>{{ $sucursalPrincipal?->email ?? 'contacto@minimarket.local' }} / {{ $sucursalPrincipal?->telefono ?? '' }}</p>
             </div>
         </footer>
 

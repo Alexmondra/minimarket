@@ -34,6 +34,11 @@ class MovimientoInventario extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
+    public function productoPresentacion()
+    {
+        return $this->belongsTo(ProductoPresentacion::class, 'producto_presentacion_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

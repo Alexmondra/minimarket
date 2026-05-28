@@ -9,6 +9,7 @@
 /* --- GLASSMORPHIC SIDEBAR MAIN CONTAINER --- */
 .fi-sidebar.fi-main-sidebar {
     @apply bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl border-r border-slate-200/40 dark:border-slate-800/40 shadow-2xl ring-1 ring-slate-950/5 dark:ring-white/5 transition-all duration-300;
+    z-index: 40 !important;
 }
 
 .fi-body:not(.fi-body-has-top-navigation) .fi-sidebar.fi-main-sidebar {
@@ -123,6 +124,7 @@
 /* --- GLASSMORPHIC TOPBAR --- */
 .fi-topbar {
     @apply bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 transition-all duration-300;
+    z-index: 50 !important;
 }
 
 .fi-topbar-open-collapse-sidebar-btn,
