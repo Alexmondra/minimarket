@@ -80,6 +80,98 @@ class ListLotes extends ListRecords
                         ->sucursalesForWrite()
                         ->pluck('nombre_sucursal', 'id')
                         ->all()),
+            ])
+            ->actions([
+                \Filament\Tables\Actions\Action::make('registrarMerma')
+                    ->label('Registrar Merma')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->modalHeading('Registrar Merma / Pérdida')
+                    ->modalSubmitButtonLabel('Registrar')
+                    ->form(fn (\App\Models\Lote $record): array => [
+                        \Filament\Forms\Components\Select::make('lote_presentacion_id')
+                            ->label('Presentación')
+                            ->options(
+                                $record->lotePresentaciones()
+                                    ->with('productoPresentacion')
+                                    ->get()
+                                    ->mapWithKeys(fn ($lp) => [
+                                        $lp->id => ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . " (Stock: {$lp->stock})"
+                                    ])
+                                    ->all()
+                            )
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(fn ($state, callable $set) => 
+                                $set('max_cantidad', \App\Models\LotePresentacion::find($state)?->stock ?? 0)
+                            ),
+                        \Filament\Forms\Components\TextInput::make('cantidad')
+                            ->label('Cantidad')
+                            ->numeric()
+                            ->integer()
+                            ->required()
+                            ->min(1)
+                            ->maxValue(fn (callable $get) => $get('max_cantidad') ?? 1000)
+                            ->helperText(fn (callable $get) => "Stock disponible: " . ($get('max_cantidad') ?? 0)),
+                        \Filament\Forms\Components\Select::make('tipo_merma')
+                            ->label('Tipo de Merma')
+                            ->options([
+                                'vencido' => 'Vencido / Expirado',
+                                'roto' => 'Roto / Dañado',
+                                'robo' => 'Robo / Pérdida',
+                                'otro' => 'Otro motivo',
+                            ])
+                            ->required(),
+                        \Filament\Forms\Components\Textarea::make('motivo')
+                            ->label('Observación / Motivo')
+                            ->placeholder('Describa brevemente la razón de la pérdida')
+                            ->maxLength(500),
+                    ])
+                    ->action(function (array $data): void {
+                        $lotePresentacion = \App\Models\LotePresentacion::with('lote.sucursal', 'productoPresentacion.producto')->findOrFail($data['lote_presentacion_id']);
+                        $cantidad = (int) $data['cantidad'];
+
+                        if ($lotePresentacion->stock < $cantidad) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Error: Stock insuficiente')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($lotePresentacion, $cantidad, $data) {
+                            $nuevoStock = $lotePresentacion->stock - $cantidad;
+                            $lotePresentacion->update(['stock' => $nuevoStock]);
+
+                            // Crear registro de merma
+                            \App\Models\LotePresentacionMerma::create([
+                                'lote_presentacion_id' => $lotePresentacion->id,
+                                'cantidad' => $cantidad,
+                                'tipo_merma' => $data['tipo_merma'],
+                                'motivo' => $data['motivo'] ?? null,
+                                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                            ]);
+
+                            // Registrar en Kardex
+                            \App\Models\MovimientoInventario::create([
+                                'empresa_id' => \Illuminate\Support\Facades\Auth::user()->empresa_id ?? 1,
+                                'sucursal_id' => $lotePresentacion->lote->sucursal_id,
+                                'producto_nombre' => $lotePresentacion->productoPresentacion?->producto?->nombre ?? $lotePresentacion->lote->producto_nombre,
+                                'producto_presentacion_id' => $lotePresentacion->producto_presentacion_id,
+                                'tipo' => 'salida_merma',
+                                'cantidad' => -$cantidad,
+                                'motivo' => "Merma ({$data['tipo_merma']}) - Lote {$lotePresentacion->lote->codigo_lote}: " . ($data['motivo'] ?? ''),
+                                'referencia' => "LotePresentacion:{$lotePresentacion->id}",
+                                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                'stock_final' => $nuevoStock,
+                            ]);
+                        });
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Merma registrada correctamente')
+                            ->success()
+                            ->send();
+                    })
             ]);
     }
 }

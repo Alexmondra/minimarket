@@ -162,6 +162,7 @@ class DetalleCompra extends Component
                         return [
                             'id' => $lp->id,
                             'stock' => (int) $lp->stock,
+                            'precio_compra' => (float) $lp->precio_compra,
                             'precio_oferta' => $lp->precio_oferta !== null ? (float) $lp->precio_oferta : null,
                             'nombre' => $presentacion?->tipo_presentacion ?: 'Presentación',
                             'cantidad' => $presentacion?->cantidad ?? 1,
@@ -288,6 +289,8 @@ class DetalleCompra extends Component
                     'id' => $presentacion->id,
                     'label' => trim(($presentacion->tipo_presentacion ?: 'Presentación').' x '.$presentacion->cantidad.' '.($presentacion->unidadMedida?->abreviatura ?? 'und')),
                     'cantidad' => $actual['cantidad'] ?? null,
+                    'total_pagado' => $actual['total_pagado'] ?? null,
+                    'precio_compra' => $actual['precio_compra'] ?? 0,
                     'precio_especial' => $actual['precio_especial'] ?? null,
                     'mostrar_precio_venta' => $actual['mostrar_precio_venta'] ?? false,
                     'precio_venta' => $actual['precio_venta'] ?? $precioVenta['precio'],
@@ -318,6 +321,33 @@ class DetalleCompra extends Component
     {
         $this->mostrarTodasPresentaciones = true;
         $this->cargarPresentaciones();
+    }
+
+    public function updatedPresentacionesDisponibles($value, $key): void
+    {
+        $parts = explode('.', $key);
+        if (count($parts) >= 2) {
+            $index = (int) $parts[0];
+            $field = $parts[1];
+
+            if ($field === 'cantidad' || $field === 'total_pagado') {
+                $qty = (int) ($this->presentacionesDisponibles[$index]['cantidad'] ?? 0);
+                $totalPagado = (float) ($this->presentacionesDisponibles[$index]['total_pagado'] ?? 0);
+
+                if ($qty > 0 && $totalPagado > 0) {
+                    $this->presentacionesDisponibles[$index]['precio_compra'] = round($totalPagado / $qty, 4);
+                } else {
+                    $this->presentacionesDisponibles[$index]['precio_compra'] = 0;
+                }
+            }
+        }
+
+        // Recalcular total general del lote
+        $total = 0;
+        foreach ($this->presentacionesDisponibles as $pres) {
+            $total += (float) ($pres['total_pagado'] ?? 0);
+        }
+        $this->precioCompraTotal = $total > 0 ? round($total, 2) : null;
     }
 
     public function togglePrecioVenta(int $index): void
@@ -354,6 +384,8 @@ class DetalleCompra extends Component
         $presentaciones = collect($this->presentacionesDisponibles)
             ->map(function (array $item): array {
                 $item['cantidad'] = (int) ($item['cantidad'] ?? 0);
+                $item['total_pagado'] = is_numeric($item['total_pagado'] ?? null) ? (float) $item['total_pagado'] : 0.00;
+                $item['precio_compra'] = $item['cantidad'] > 0 ? round($item['total_pagado'] / $item['cantidad'], 4) : 0.00;
                 $item['precio_especial'] = $item['precio_especial'] === '' ? null : $item['precio_especial'];
                 $item['precio_especial'] = is_numeric($item['precio_especial']) ? (float) $item['precio_especial'] : null;
                 $item['precio_venta'] = is_numeric($item['precio_venta'] ?? null) ? (float) $item['precio_venta'] : 0;
@@ -410,7 +442,9 @@ class DetalleCompra extends Component
                 $lotePresentacion = LotePresentacion::create([
                     'lote_id' => $lote->id,
                     'producto_presentacion_id' => $item['id'],
+                    'stock_inicial' => $item['cantidad'],
                     'stock' => $item['cantidad'],
+                    'precio_compra' => $item['precio_compra'],
                     'precio_oferta' => $item['precio_especial'],
                 ]);
 

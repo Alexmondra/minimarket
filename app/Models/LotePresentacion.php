@@ -11,9 +11,19 @@ class LotePresentacion extends Model
     protected $fillable = [
         'lote_id',
         'producto_presentacion_id',
+        'stock_inicial',
         'stock',
+        'precio_compra',
         'precio_oferta',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'precio_compra' => 'decimal:2',
+            'precio_oferta' => 'decimal:2',
+        ];
+    }
 
     public function lote()
     {
@@ -28,5 +38,10 @@ class LotePresentacion extends Model
     public function productoSucursal()
     {
         return $this->hasOne(ProductoSucursal::class, 'lote_presentacion_id');
+    }
+
+    public function mermas()
+    {
+        return $this->hasMany(LotePresentacionMerma::class, 'lote_presentacion_id');
     }
 }

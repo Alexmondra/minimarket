@@ -208,7 +208,9 @@
                            min="0"
                            wire:model="precioCompraTotal"
                            placeholder="0.00"
-                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                           readonly
+                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 placeholder-gray-400 cursor-not-allowed">
+                    <p class="mt-1 text-[10px] text-gray-400 dark:text-gray-500">Se calcula automáticamente sumando el total pagado de las presentaciones.</p>
                     @error('precioCompraTotal') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
@@ -249,6 +251,7 @@
                                 <tr class="bg-gray-50 dark:bg-gray-700/40 text-gray-500 uppercase tracking-wide">
                                     <th class="px-3 py-2 text-left font-medium">Presentación</th>
                                     <th class="px-3 py-2 text-right font-medium">Cantidad recibida</th>
+                                    <th class="px-3 py-2 text-right font-medium">Total pagado pres.</th>
                                     <th class="px-3 py-2 text-right font-medium">Precio oferta</th>
                                     <th class="px-3 py-2 text-right font-medium">Venta</th>
                                 </tr>
@@ -266,12 +269,48 @@
                                                    class="ml-auto w-28 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-right text-xs text-gray-900 dark:text-gray-100">
                                         </td>
                                         <td class="px-3 py-2">
-                                            <input type="number"
-                                                   step="0.01"
-                                                   min="0"
-                                                   wire:model.live="presentacionesDisponibles.{{ $index }}.precio_especial"
-                                                   placeholder="0.00"
-                                                   class="ml-auto w-28 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-right text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400">
+                                            <div class="flex flex-col items-end">
+                                                <input type="number"
+                                                       step="0.01"
+                                                       min="0"
+                                                       wire:model.live="presentacionesDisponibles.{{ $index }}.total_pagado"
+                                                       placeholder="0.00"
+                                                       class="ml-auto w-28 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-right text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400">
+                                                @if(($presentacion['precio_compra'] ?? 0) > 0)
+                                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 font-medium">
+                                                        Costo u.: S/ {{ number_format($presentacion['precio_compra'], 2) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <div class="flex flex-col items-end">
+                                                <input type="number"
+                                                       step="0.01"
+                                                       min="0"
+                                                       wire:model.live="presentacionesDisponibles.{{ $index }}.precio_especial"
+                                                       placeholder="0.00"
+                                                       class="ml-auto w-28 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-right text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400">
+                                                @php
+                                                    $costoUnit = (float) ($presentacion['precio_compra'] ?? 0);
+                                                    $pOferta = (float) ($presentacion['precio_especial'] ?? 0);
+                                                @endphp
+                                                @if($costoUnit > 0 && $pOferta > 0)
+                                                    @if($pOferta < $costoUnit)
+                                                        <span class="text-[10px] text-red-600 dark:text-red-400 mt-0.5 font-semibold">
+                                                            ⚠️ Pérdida
+                                                        </span>
+                                                    @elseif($pOferta > $costoUnit)
+                                                        <span class="text-[10px] text-green-600 dark:text-green-400 mt-0.5 font-semibold">
+                                                            Ganancia: +S/ {{ number_format($pOferta - $costoUnit, 2) }}
+                                                        </span>
+                                                    @else
+                                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 font-medium">
+                                                            Sin ganancia
+                                                        </span>
+                                                    @endif
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-3 py-2 text-right">
                                             <button type="button"
@@ -283,7 +322,7 @@
                                     </tr>
                                     @if($presentacion['mostrar_precio_venta'] ?? false)
                                         <tr class="bg-gray-50 dark:bg-gray-700/30">
-                                            <td colspan="4" class="px-3 py-3">
+                                            <td colspan="5" class="px-4 py-3">
                                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                     <div>
                                                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Precio venta</label>
@@ -309,6 +348,73 @@
                                                                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-right text-xs text-gray-900 dark:text-gray-100">
                                                     </div>
                                                 </div>
+
+                                                @php
+                                                    $costoUnit = (float) ($presentacion['precio_compra'] ?? 0);
+                                                    $pVenta = (float) ($presentacion['precio_venta'] ?? 0);
+                                                    $pMayorista = (float) ($presentacion['precio_mayorista'] ?? 0);
+                                                    $qty = (int) ($presentacion['cantidad'] ?? 0);
+                                                @endphp
+
+                                                @if($costoUnit > 0 && ($pVenta > 0 || $pMayorista > 0))
+                                                    <div class="mt-3 p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[11px] space-y-2">
+                                                        @if($pVenta > 0)
+                                                            <div class="flex items-center justify-between">
+                                                                <span class="text-gray-500 dark:text-gray-400">Margen de venta unitario:</span>
+                                                                @if($pVenta < $costoUnit)
+                                                                    <span class="text-red-600 dark:text-red-400 font-semibold flex items-center gap-1">
+                                                                        ⚠️ ¡Pérdida! -S/ {{ number_format($costoUnit - $pVenta, 2) }}
+                                                                    </span>
+                                                                @else
+                                                                    @php
+                                                                        $gain = $pVenta - $costoUnit;
+                                                                        $marginPct = ($gain / $pVenta) * 100;
+                                                                    @endphp
+                                                                    <span class="text-green-600 dark:text-green-400 font-semibold">
+                                                                        +S/ {{ number_format($gain, 2) }} ({{ number_format($marginPct, 1) }}%)
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+
+                                                        @if($pMayorista > 0)
+                                                            <div class="flex items-center justify-between">
+                                                                <span class="text-gray-500 dark:text-gray-400">Margen mayorista unitario:</span>
+                                                                @if($pMayorista < $costoUnit)
+                                                                    <span class="text-red-600 dark:text-red-400 font-semibold flex items-center gap-1">
+                                                                        ⚠️ ¡Pérdida! -S/ {{ number_format($costoUnit - $pMayorista, 2) }}
+                                                                    </span>
+                                                                @else
+                                                                    @php
+                                                                        $gainM = $pMayorista - $costoUnit;
+                                                                        $marginMPct = ($gainM / $pMayorista) * 100;
+                                                                    @endphp
+                                                                    <span class="text-green-600 dark:text-green-400 font-semibold">
+                                                                        +S/ {{ number_format($gainM, 2) }} ({{ number_format($marginMPct, 1) }}%)
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+
+                                                        @if($pVenta > $costoUnit && $qty > 0)
+                                                            <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                                                                <span>Ganancia total estimada (venta normal):</span>
+                                                                <span class="font-bold text-primary-600 dark:text-primary-400 text-xs">
+                                                                    S/ {{ number_format(($pVenta - $costoUnit) * $qty, 2) }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
+
+                                                        @if($pMayorista > $costoUnit && $qty > 0)
+                                                            <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                                                                <span>Ganancia total estimada (venta mayorista):</span>
+                                                                <span class="font-bold text-teal-600 dark:text-teal-400 text-xs">
+                                                                    S/ {{ number_format(($pMayorista - $costoUnit) * $qty, 2) }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endif
@@ -368,8 +474,11 @@
                                         <div class="flex flex-wrap items-center gap-2 text-gray-600 dark:text-gray-300">
                                             <span>{{ $presentacion['nombre'] }} x {{ $presentacion['cantidad'] }} {{ $presentacion['unidad'] }}</span>
                                             <span class="font-semibold">{{ number_format($presentacion['stock'], 0) }} recib.</span>
+                                            @if(($presentacion['precio_compra'] ?? 0) > 0)
+                                                <span class="text-gray-400 dark:text-gray-500">| Costo u.: S/ {{ number_format($presentacion['precio_compra'], 2) }}</span>
+                                            @endif
                                             @if($presentacion['precio_oferta'] !== null)
-                                                <span class="text-primary-600">S/ {{ number_format($presentacion['precio_oferta'], 2) }}</span>
+                                                <span class="text-primary-600">| Oferta: S/ {{ number_format($presentacion['precio_oferta'], 2) }}</span>
                                             @endif
                                         </div>
                                     @endforeach
