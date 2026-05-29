@@ -8,6 +8,12 @@ use App\Models\Proveedor;
 use App\Models\Sucursal;
 use App\Models\Ubigeo;
 use App\Models\User;
+use App\Models\Producto;
+use App\Models\ProductoPresentacion;
+use App\Models\UniMedida;
+use App\Models\Lote;
+use App\Models\LotePresentacion;
+use App\Models\DetalleCompra;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -238,6 +244,110 @@ class RegistrarCompraTest extends TestCase
         Livewire::withQueryParams(['compra_id' => $compra->id])
             ->test(\App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::class)
             ->assertStatus(200);
+    }
+
+    public function test_it_counts_unique_products_and_excludes_editing_lote_recalculating_correctly(): void
+    {
+        $this->actingAs($this->user);
+
+        // Create supplier
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PROVEEDOR RESUMEN',
+            'tipo_documento' => 'RUC',
+            'numero_documento' => '20777777777',
+            'estado' => true,
+        ]);
+
+        // Create purchase
+        $compra = \App\Models\Compra::create([
+            'sucursal_id' => $this->sucursal->id,
+            'proveedor_id' => $proveedor->id,
+            'user_id' => $this->user->id,
+            'tipo_comprobante' => 'factura',
+            'fecha_recepcion' => now(),
+            'costo_total_factura' => 0.00,
+            'estado' => false,
+        ]);
+
+        // Create 2 products
+        $prod1 = Producto::create(['empresa_id' => $this->empresa->id, 'nombre' => 'Producto 1', 'slug' => 'producto-1', 'activo' => true]);
+        $prod2 = Producto::create(['empresa_id' => $this->empresa->id, 'nombre' => 'Producto 2', 'slug' => 'producto-2', 'activo' => true]);
+
+        $unidad = UniMedida::create(['nombre' => 'Unidad', 'abreviatura' => 'und', 'activo' => true]);
+
+        $pres1 = ProductoPresentacion::create(['producto_id' => $prod1->id, 'unidad_medida_id' => $unidad->id, 'cantidad' => 1, 'tipo_presentacion' => 'Caja']);
+        $pres2 = ProductoPresentacion::create(['producto_id' => $prod2->id, 'unidad_medida_id' => $unidad->id, 'cantidad' => 1, 'tipo_presentacion' => 'Bolsa']);
+
+        // Create lote 1 for prod 1
+        $lote1 = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-1',
+            'producto_nombre' => $prod1->nombre,
+            'precio_compra' => 50.00,
+            'estado_lote' => 'activo',
+        ]);
+        LotePresentacion::create([
+            'lote_id' => $lote1->id,
+            'producto_presentacion_id' => $pres1->id,
+            'stock_inicial' => 10,
+            'stock' => 10,
+            'precio_compra' => 5.00,
+        ]);
+        DetalleCompra::create([
+            'compra_id' => $compra->id,
+            'lote_id' => $lote1->id,
+            'precio_compra' => 50.00,
+        ]);
+
+        // Create lote 2 for prod 2
+        $lote2 = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-2',
+            'producto_nombre' => $prod2->nombre,
+            'precio_compra' => 100.00,
+            'estado_lote' => 'activo',
+        ]);
+        LotePresentacion::create([
+            'lote_id' => $lote2->id,
+            'producto_presentacion_id' => $pres2->id,
+            'stock_inicial' => 20,
+            'stock' => 20,
+            'precio_compra' => 5.00,
+        ]);
+        DetalleCompra::create([
+            'compra_id' => $compra->id,
+            'lote_id' => $lote2->id,
+            'precio_compra' => 100.00,
+        ]);
+
+        // Test RegistrarCompra summary behavior
+        Livewire::test(RegistrarCompra::class)
+            ->set('compraId', $compra->id)
+            ->set('sucursalId', $this->sucursal->id)
+            ->call('actualizarResumen')
+            ->assertSet('totalUnidades', 30.00)
+            ->assertSet('subtotalCompra', 150.00)
+            ->assertSet('totalFinal', 150.00)
+            ->assertSet('cantidadProductos', 2)
+            
+            // Simulating edit of lote 1
+            ->dispatch('loteEditando', $lote1->id)
+            ->assertSet('editingLoteId', $lote1->id)
+            // Lote 1 should be excluded from totals now
+            ->assertSet('totalUnidades', 20.00)
+            ->assertSet('subtotalCompra', 100.00)
+            ->assertSet('totalFinal', 100.00)
+            ->assertSet('cantidadProductos', 1)
+            
+            // Simulating cancel or save (which dispatches loteEditando with null)
+            ->dispatch('loteEditando', null)
+            ->assertSet('editingLoteId', null)
+            // Totales should recover
+            ->assertSet('totalUnidades', 30.00)
+            ->assertSet('subtotalCompra', 150.00)
+            ->assertSet('totalFinal', 150.00)
+            ->assertSet('cantidadProductos', 2);
     }
 }
 

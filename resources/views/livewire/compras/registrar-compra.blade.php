@@ -317,12 +317,10 @@
                                 <span class="text-gray-400">Total declarado en lotes</span>
                                 <span class="font-medium text-gray-900 dark:text-gray-100">S/ {{ number_format($subtotalCompra, 2) }}</span>
                             </div>
-                            @if($impuestoPorcentaje > 0)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">IGV ({{ $impuestoPorcentaje }}%)</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100">S/ {{ number_format($totalImpuesto, 2) }}</span>
-                                </div>
-                            @endif
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Productos diferentes</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $cantidadProductos }}</span>
+                            </div>
                             <hr class="border-gray-100 dark:border-gray-700">
                             <div class="flex justify-between text-sm font-semibold">
                                 <span class="text-gray-700 dark:text-gray-300">Total compra</span>

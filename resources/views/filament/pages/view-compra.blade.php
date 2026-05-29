@@ -348,8 +348,25 @@
             </div>
 
             {{-- ═══════════════════════════════════════════════════════════════
-                 5. FOOTER DE TOTALES (DASHBOARD) - 4 TARJETAS
+                 5. FOOTER DE TOTALES (DASHBOARD) - ALERTA Y 4 TARJETAS
                  ═══════════════════════════════════════════════════════════════ --}}
+            @if($compra->estado === 'pendiente' || $diferencia != 0)
+                <div class="lg:col-span-12 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 flex items-start gap-3 shadow-sm mb-4">
+                    <div class="text-amber-600 dark:text-amber-500 mt-0.5">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-amber-800 dark:text-amber-400">Compra no Finalizada / Descuadre Detectado</h4>
+                        <p class="mt-1 text-xs text-amber-700 dark:text-amber-400/80 leading-relaxed">
+                            Esta compra se encuentra en estado <strong class="uppercase font-extrabold text-amber-900 dark:text-amber-300">{{ $estadoLabel }}</strong> y presenta una diferencia de <strong>S/ {{ number_format(abs($diferencia), 2) }}</strong>. 
+                            Esto indica que no se completó el flujo presionando <strong>"Finalizar Compra"</strong>, por lo que el total oficial de la factura quedó registrado en S/ {{ number_format($totalFactura, 2) }}.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {{-- Tarjeta 1: Total Items --}}
@@ -370,21 +387,21 @@
                     </div>
                 </div>
 
-                {{-- Tarjeta 2: Total Factura --}}
+                {{-- Tarjeta 2: Suma de Lotes --}}
                 <div class="{{ $bgCard }} border {{ $borderCard }} rounded-2xl p-4 flex items-center gap-4 relative overflow-hidden group shadow-sm">
                     <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform">
                         <svg class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                         </svg>
                     </div>
                     <div class="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-500">
                         <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0a2.25 2.25 0 0 1 2.247-2.118L3.75 3h16.5l.603 8.382A2.25 2.25 0 0 1 18.6 13.5M2.25 13.5l.603 8.382A2.25 2.25 0 0 0 5.1 24h13.8a2.25 2.25 0 0 0 2.247-2.118L21.75 13.5" />
                         </svg>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black {{ $textMuted }} uppercase tracking-widest mb-1">Total Factura</p>
-                        <p class="text-2xl font-black italic {{ $textPrimary }}">S/ {{ number_format($totalFactura, 2) }}</p>
+                        <p class="text-[10px] font-black {{ $textMuted }} uppercase tracking-widest mb-1">Suma de Lotes</p>
+                        <p class="text-2xl font-black italic {{ $textPrimary }}">S/ {{ number_format($totalCalculado, 2) }}</p>
                     </div>
                 </div>
 

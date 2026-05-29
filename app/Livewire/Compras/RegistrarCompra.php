@@ -88,6 +88,10 @@ class RegistrarCompra extends Component
 
     public float $totalFinal = 0;
 
+    public int $cantidadProductos = 0;
+
+    public ?int $editingLoteId = null;
+
     protected function rules()
     {
         $allowedSucursalIds = app(SucursalContext::class)->allowedSucursalIds()->all();
@@ -110,6 +114,7 @@ class RegistrarCompra extends Component
         'productoCreado' => 'onProductoCreado',
         'detalleAgregado' => 'actualizarResumen',
         'detalleEliminado' => 'actualizarResumen',
+        'loteEditando' => 'onLoteEditando',
     ];
 
     public function mount(): void
@@ -259,6 +264,12 @@ class RegistrarCompra extends Component
         $this->redirect(route('filament.admin.resources.compras.index'));
     }
 
+    public function onLoteEditando(?int $loteId): void
+    {
+        $this->editingLoteId = $loteId;
+        $this->actualizarResumen();
+    }
+
     public function actualizarResumen(): void
     {
         $this->cargarDetalles();
@@ -267,6 +278,18 @@ class RegistrarCompra extends Component
         $this->subtotalCompra = $totales['subtotal'];
         $this->totalImpuesto = $totales['impuesto'];
         $this->totalFinal = $totales['totalFinal'];
+
+        // Calcular la cantidad de productos únicos, excluyendo el que se está editando
+        $query = DetalleCompra::where('compra_id', $this->compraId);
+        if ($this->editingLoteId) {
+            $query->where('lote_id', '!=', $this->editingLoteId);
+        }
+        $detallesCalculo = $query->with('lote.lotePresentaciones.productoPresentacion')->get();
+        $this->cantidadProductos = $detallesCalculo->flatMap(fn($d) => $d->lote?->lotePresentaciones ?? [])
+            ->map(fn($lp) => $lp->productoPresentacion?->producto_id)
+            ->filter()
+            ->unique()
+            ->count();
     }
 
     protected function cargarDetalles(): void
@@ -277,8 +300,12 @@ class RegistrarCompra extends Component
             return;
         }
 
-        $this->detalles = DetalleCompra::where('compra_id', $this->compraId)
-            ->with([
+        $query = DetalleCompra::where('compra_id', $this->compraId);
+        if ($this->editingLoteId) {
+            $query->where('lote_id', '!=', $this->editingLoteId);
+        }
+
+        $this->detalles = $query->with([
                 'lote',
                 'lote.lotePresentaciones.productoPresentacion',
             ])
@@ -288,7 +315,12 @@ class RegistrarCompra extends Component
 
     protected function calcularTotales(): array
     {
-        $detalles = DetalleCompra::where('compra_id', $this->compraId)->get();
+        $query = DetalleCompra::where('compra_id', $this->compraId);
+        if ($this->editingLoteId) {
+            $query->where('lote_id', '!=', $this->editingLoteId);
+        }
+
+        $detalles = $query->get();
 
         $detalles->loadMissing('lote.lotePresentaciones');
 

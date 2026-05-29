@@ -3,11 +3,15 @@
 namespace App\Filament\Clusters\Compras\Resources\Lotes\Pages;
 
 use App\Filament\Clusters\Compras\Resources\Lotes\LoteResource;
+use App\Models\Lote;
 use App\Support\SucursalContext;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListLotes extends ListRecords
 {
@@ -42,6 +46,10 @@ class ListLotes extends ListRecords
                     ->label('Total pagado')
                     ->money('PEN')
                     ->sortable(),
+                TextColumn::make('fecha_fabricacion')
+                    ->label('Fabricación')
+                    ->date('d/m/Y')
+                    ->sortable(),
                 TextColumn::make('fecha_vencimiento')
                     ->label('Vence')
                     ->date('d/m/Y')
@@ -67,6 +75,15 @@ class ListLotes extends ListRecords
             ->modifyQueryUsing(fn ($query) => $query->with(['lotePresentaciones.productoPresentacion.unidadMedida']))
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('producto_nombre')
+                    ->label('Producto')
+                    ->options(fn (): array => Lote::query()
+                        ->select('producto_nombre')
+                        ->whereNotNull('producto_nombre')
+                        ->distinct()
+                        ->orderBy('producto_nombre')
+                        ->pluck('producto_nombre', 'producto_nombre')
+                        ->all()),
                 SelectFilter::make('estado_lote')
                     ->label('Estado')
                     ->options([
@@ -80,14 +97,44 @@ class ListLotes extends ListRecords
                         ->sucursalesForWrite()
                         ->pluck('nombre_sucursal', 'id')
                         ->all()),
+                Filter::make('fecha_fabricacion')
+                    ->label('Fabricación')
+                    ->form([
+                        DatePicker::make('desde')
+                            ->label('Desde')
+                            ->displayFormat('d/m/Y'),
+                        DatePicker::make('hasta')
+                            ->label('Hasta')
+                            ->displayFormat('d/m/Y'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['desde'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_fabricacion', '>=', $date))
+                            ->when($data['hasta'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_fabricacion', '<=', $date));
+                    }),
+                Filter::make('fecha_vencimiento')
+                    ->label('Vencimiento')
+                    ->form([
+                        DatePicker::make('desde')
+                            ->label('Desde')
+                            ->displayFormat('d/m/Y'),
+                        DatePicker::make('hasta')
+                            ->label('Hasta')
+                            ->displayFormat('d/m/Y'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['desde'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_vencimiento', '>=', $date))
+                            ->when($data['hasta'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_vencimiento', '<=', $date));
+                    }),
             ])
             ->actions([
-                \Filament\Tables\Actions\Action::make('registrarMerma')
+                \Filament\Actions\Action::make('registrarMerma')
                     ->label('Registrar Merma')
                     ->icon('heroicon-o-trash')
                     ->color('danger')
                     ->modalHeading('Registrar Merma / Pérdida')
-                    ->modalSubmitButtonLabel('Registrar')
+                    ->modalSubmitActionLabel('Registrar')
                     ->form(fn (\App\Models\Lote $record): array => [
                         \Filament\Forms\Components\Select::make('lote_presentacion_id')
                             ->label('Presentación')
@@ -101,8 +148,8 @@ class ListLotes extends ListRecords
                                     ->all()
                             )
                             ->required()
-                            ->reactive()
-                            ->afterStateUpdated(fn ($state, callable $set) => 
+                            ->live()
+                            ->afterStateUpdated(fn ($state, \Filament\Forms\Set $set) =>
                                 $set('max_cantidad', \App\Models\LotePresentacion::find($state)?->stock ?? 0)
                             ),
                         \Filament\Forms\Components\TextInput::make('cantidad')
@@ -111,8 +158,8 @@ class ListLotes extends ListRecords
                             ->integer()
                             ->required()
                             ->min(1)
-                            ->maxValue(fn (callable $get) => $get('max_cantidad') ?? 1000)
-                            ->helperText(fn (callable $get) => "Stock disponible: " . ($get('max_cantidad') ?? 0)),
+                            ->maxValue(fn (\Filament\Forms\Get $get) => $get('max_cantidad') ?? 1000)
+                            ->helperText(fn (\Filament\Forms\Get $get) => "Stock disponible: " . ($get('max_cantidad') ?? 0)),
                         \Filament\Forms\Components\Select::make('tipo_merma')
                             ->label('Tipo de Merma')
                             ->options([

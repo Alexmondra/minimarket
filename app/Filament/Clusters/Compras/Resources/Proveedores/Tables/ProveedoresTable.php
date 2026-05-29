@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Compras\Resources\Proveedores\Tables;
 
+use App\Support\SucursalContext;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,10 +20,17 @@ class ProveedoresTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(fn ($record) => route('filament.admin.resources.compras.index', ['proveedor_id' => $record->id]))
             ->columns([
                 TextColumn::make('nombre')
                     ->searchable()
                     ->label('Nombre'),
+                TextColumn::make('compras_count')
+                    ->label('Compras')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
                 TextColumn::make('tipo_documento')
                     ->label('Tipo doc.')
                     ->badge(),
@@ -32,8 +41,7 @@ class ProveedoresTable
                     ->searchable()
                     ->label('Razón social')
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('sucursal.nombre_sucursal')
-                    ->label('Sucursal'),
+                
                 TextColumn::make('telefono')
                     ->searchable(),
                 TextColumn::make('email')
@@ -44,8 +52,6 @@ class ProveedoresTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('rubro')
                     ->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('estado')
-                    ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -63,6 +69,11 @@ class ProveedoresTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('verCompras')
+                    ->label('Ver Compras')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->color('primary')
+                    ->url(fn ($record) => route('filament.admin.resources.compras.index', ['proveedor_id' => $record->id])),
                 ViewAction::make(),
                 EditAction::make(),
             ])

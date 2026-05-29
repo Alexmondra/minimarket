@@ -112,6 +112,20 @@ class DetalleCompra extends Component
 
     public ?string $modalNuevoCodigoBarra = null;
 
+    public array $lotesResultados = [];
+
+    public bool $showLotesDropdown = false;
+
+    public bool $showLoteExistenteModal = false;
+
+    public array $modalLoteDetalles = [];
+
+    public ?int $selectedLoteId = null;
+
+    public ?int $editingLoteId = null;
+
+    public ?int $editingDetalleId = null;
+
     public ?int $historialProductoId = null;
 
     public array $historialCompras = [];
@@ -283,6 +297,14 @@ class DetalleCompra extends Component
             return;
         }
 
+        $lotePresMap = [];
+        if ($this->editingLoteId) {
+            $lotePresMap = LotePresentacion::where('lote_id', $this->editingLoteId)
+                ->get()
+                ->keyBy('producto_presentacion_id')
+                ->toArray();
+        }
+
         $actuales = collect($this->presentacionesDisponibles)->keyBy('id');
 
         $baseQuery = ProductoPresentacion::query()
@@ -299,17 +321,30 @@ class DetalleCompra extends Component
         }
 
         $this->presentacionesDisponibles = $query->get()
-            ->map(function (ProductoPresentacion $presentacion) use ($actuales): array {
+            ->map(function (ProductoPresentacion $presentacion) use ($actuales, $lotePresMap): array {
                 $actual = $actuales->get($presentacion->id, []);
                 $precioVenta = $this->obtenerPrecioVentaActual($presentacion->id);
+
+                $lotePres = $lotePresMap[$presentacion->id] ?? null;
+                $cantidad = null;
+                $totalPagado = null;
+                $precioCompra = 0;
+                $precioEspecial = null;
+
+                if ($lotePres) {
+                    $cantidad = (int) $lotePres['stock_inicial'];
+                    $precioCompra = (float) $lotePres['precio_compra'];
+                    $totalPagado = round($precioCompra * $cantidad, 2);
+                    $precioEspecial = $lotePres['precio_oferta'] !== null ? (float) $lotePres['precio_oferta'] : null;
+                }
 
                 return [
                     'id' => $presentacion->id,
                     'label' => trim(($presentacion->tipo_presentacion ?: 'Presentación').' x '.$presentacion->cantidad.' '.($presentacion->unidadMedida?->abreviatura ?? 'und')),
-                    'cantidad' => $actual['cantidad'] ?? null,
-                    'total_pagado' => $actual['total_pagado'] ?? null,
-                    'precio_compra' => $actual['precio_compra'] ?? 0,
-                    'precio_especial' => $actual['precio_especial'] ?? null,
+                    'cantidad' => $actual['cantidad'] ?? $cantidad,
+                    'total_pagado' => $actual['total_pagado'] ?? $totalPagado,
+                    'precio_compra' => $actual['precio_compra'] ?? $precioCompra,
+                    'precio_especial' => $actual['precio_especial'] ?? $precioEspecial,
                     'mostrar_precio_venta' => $actual['mostrar_precio_venta'] ?? false,
                     'precio_venta' => $actual['precio_venta'] ?? $precioVenta['precio'],
                     'precio_mayorista' => $actual['precio_mayorista'] ?? $precioVenta['precio_mayorista'],
@@ -438,23 +473,58 @@ class DetalleCompra extends Component
                 ->where('empresa_id', Auth::user()?->empresa_id)
                 ->findOrFail($this->productoId);
 
-            $lote = Lote::create([
-                'sucursal_id' => $this->sucursalId,
-                'codigo_lote' => $this->codigoLote,
-                'producto_nombre' => $producto->nombre,
-                'fecha_fabricacion' => $this->fechaFabricacion,
-                'fecha_vencimiento' => $this->fechaVencimiento,
-                'ubicacion' => $this->ubicacion,
-                'precio_compra' => $this->precioCompraTotal,
-                'observaciones' => $this->observaciones,
-                'estado_lote' => 'activo',
-            ]);
+            if ($this->editingLoteId) {
+                // UPDATE existing lot
+                $lote = Lote::findOrFail($this->editingLoteId);
+                $lote->update([
+                    'codigo_lote' => $this->codigoLote,
+                    'producto_nombre' => $producto->nombre,
+                    'fecha_fabricacion' => $this->fechaFabricacion,
+                    'fecha_vencimiento' => $this->fechaVencimiento,
+                    'ubicacion' => $this->ubicacion,
+                    'precio_compra' => $this->precioCompraTotal,
+                    'observaciones' => $this->observaciones,
+                ]);
 
-            DetalleCompraModel::create([
-                'compra_id' => $this->compraId,
-                'lote_id' => $lote->id,
-                'precio_compra' => $this->precioCompraTotal,
-            ]);
+                if ($this->editingDetalleId) {
+                    $detalle = DetalleCompraModel::findOrFail($this->editingDetalleId);
+                    $detalle->update([
+                        'precio_compra' => $this->precioCompraTotal,
+                    ]);
+                } else {
+                    DetalleCompraModel::create([
+                        'compra_id' => $this->compraId,
+                        'lote_id' => $lote->id,
+                        'precio_compra' => $this->precioCompraTotal,
+                    ]);
+                }
+
+                // Clean old presentations, sucursales, and movements
+                foreach ($lote->lotePresentaciones as $lp) {
+                    ProductoSucursal::where('lote_presentacion_id', $lp->id)->delete();
+                    MovimientoInventario::where('referencia', "LotePresentacion:{$lp->id}")->delete();
+                    $lp->delete();
+                }
+            } else {
+                // CREATE new lot
+                $lote = Lote::create([
+                    'sucursal_id' => $this->sucursalId,
+                    'codigo_lote' => $this->codigoLote,
+                    'producto_nombre' => $producto->nombre,
+                    'fecha_fabricacion' => $this->fechaFabricacion,
+                    'fecha_vencimiento' => $this->fechaVencimiento,
+                    'ubicacion' => $this->ubicacion,
+                    'precio_compra' => $this->precioCompraTotal,
+                    'observaciones' => $this->observaciones,
+                    'estado_lote' => 'activo',
+                ]);
+
+                DetalleCompraModel::create([
+                    'compra_id' => $this->compraId,
+                    'lote_id' => $lote->id,
+                    'precio_compra' => $this->precioCompraTotal,
+                ]);
+            }
 
             foreach ($presentaciones as $item) {
                 $lotePresentacion = LotePresentacion::create([
@@ -484,7 +554,7 @@ class DetalleCompra extends Component
                     'producto_presentacion_id' => $item['id'],
                     'tipo' => 'entrada_compra',
                     'cantidad' => $item['cantidad'],
-                    'motivo' => "Compra #{$this->compraId} - lote {$this->codigoLote}",
+                    'motivo' => "Compra #{$this->compraId} - lote {$this->codigoLote}" . ($this->editingLoteId ? " (Editado)" : ""),
                     'referencia' => "LotePresentacion:{$lotePresentacion->id}",
                     'user_id' => Auth::id(),
                     'stock_final' => $item['cantidad'],
@@ -492,12 +562,15 @@ class DetalleCompra extends Component
             }
         });
 
+        $isEdit = (bool) $this->editingLoteId;
+
         $this->resetForm();
         $this->cargarDetalles();
+        $this->dispatch('loteEditando', loteId: null);
         $this->dispatch('detalleAgregado');
 
         Notification::make()
-            ->title('Lote agregado a la compra')
+            ->title($isEdit ? 'Lote actualizado correctamente' : 'Lote agregado a la compra')
             ->success()
             ->send();
     }
@@ -537,6 +610,7 @@ class DetalleCompra extends Component
         });
 
         $this->cargarDetalles();
+        $this->dispatch('loteEditando', loteId: null);
         $this->dispatch('detalleEliminado');
 
         Notification::make()
@@ -592,6 +666,13 @@ class DetalleCompra extends Component
             'precioCompraTotal',
             'observaciones',
             'presentacionesDisponibles',
+            'editingLoteId',
+            'editingDetalleId',
+            'lotesResultados',
+            'showLotesDropdown',
+            'showLoteExistenteModal',
+            'modalLoteDetalles',
+            'selectedLoteId',
         ]);
         $this->mostrarTodasPresentaciones = true;
         $this->totalPresentacionesProducto = 0;
@@ -962,6 +1043,146 @@ class DetalleCompra extends Component
     public function getUnidadesMedidaProperty()
     {
         return UniMedida::where('activo', true)->orderBy('nombre')->get();
+    }
+
+    public function updatedCodigoLote(): void
+    {
+        if (strlen($this->codigoLote) < 2) {
+            $this->lotesResultados = [];
+            $this->showLotesDropdown = false;
+            return;
+        }
+
+        $term = trim($this->codigoLote);
+
+        $this->lotesResultados = Lote::query()
+            ->where('codigo_lote', 'like', "%{$term}%")
+            ->where('sucursal_id', $this->sucursalId)
+            ->limit(8)
+            ->get()
+            ->map(fn (Lote $l): array => [
+                'id' => $l->id,
+                'codigo_lote' => $l->codigo_lote,
+                'producto_nombre' => $l->producto_nombre,
+                'fecha_vencimiento' => $l->fecha_vencimiento ? $l->fecha_vencimiento->format('d/m/Y') : 'Sin vencimiento',
+            ])
+            ->toArray();
+
+        $this->showLotesDropdown = count($this->lotesResultados) > 0;
+    }
+
+    public function verLoteExistente(int $loteId): void
+    {
+        $lote = Lote::with(['lotePresentaciones.productoPresentacion.unidadMedida'])->findOrFail($loteId);
+
+        $this->selectedLoteId = $lote->id;
+        $this->modalLoteDetalles = [
+            'id' => $lote->id,
+            'codigo_lote' => $lote->codigo_lote,
+            'producto_nombre' => $lote->producto_nombre,
+            'fecha_fabricacion' => $lote->fecha_fabricacion ? $lote->fecha_fabricacion->format('d/m/Y') : '—',
+            'fecha_vencimiento' => $lote->fecha_vencimiento ? $lote->fecha_vencimiento->format('d/m/Y') : '—',
+            'ubicacion' => $lote->ubicacion ?? '—',
+            'observaciones' => $lote->observaciones ?? '—',
+            'presentaciones' => $lote->lotePresentaciones->map(fn ($lp) => [
+                'nombre' => $lp->productoPresentacion?->tipo_presentacion ?? 'Presentación',
+                'cantidad' => $lp->productoPresentacion?->cantidad ?? 1,
+                'unidad' => $lp->productoPresentacion?->unidadMedida?->abreviatura ?? 'und',
+                'stock' => (int) $lp->stock,
+                'precio_compra' => (float) $lp->precio_compra,
+                'precio_oferta' => $lp->precio_oferta !== null ? (float) $lp->precio_oferta : null,
+            ])->toArray()
+        ];
+
+        $this->showLotesDropdown = false;
+        $this->showLoteExistenteModal = true;
+    }
+
+    public function cargarLoteExistenteParaEditar(): void
+    {
+        $lote = Lote::with(['lotePresentaciones.productoPresentacion'])->findOrFail($this->selectedLoteId);
+
+        $firstLp = $lote->lotePresentaciones->first();
+        $this->productoId = $firstLp?->productoPresentacion?->producto_id;
+        $this->productoNombre = $lote->producto_nombre;
+        $this->searchProducto = $lote->producto_nombre;
+        
+        $this->codigoLote = $lote->codigo_lote;
+        $this->fechaFabricacion = $lote->fecha_fabricacion ? $lote->fecha_fabricacion->format('Y-m-d') : null;
+        $this->fechaVencimiento = $lote->fecha_vencimiento ? $lote->fecha_vencimiento->format('Y-m-d') : null;
+        $this->ubicacion = $lote->ubicacion;
+        $this->precioCompraTotal = (float) $lote->precio_compra;
+        $this->observaciones = $lote->observaciones;
+
+        $this->editingLoteId = $lote->id;
+        
+        $detalle = DetalleCompraModel::where('compra_id', $this->compraId)
+            ->where('lote_id', $lote->id)
+            ->first();
+        $this->editingDetalleId = $detalle?->id ?? null;
+
+        $this->presentacionesDisponibles = [];
+        $this->cargarPresentaciones();
+        
+        $this->dispatch('loteEditando', loteId: $lote->id);
+        
+        $this->showLoteExistenteModal = false;
+        $this->selectedLoteId = null;
+        $this->modalLoteDetalles = [];
+        
+        Notification::make()
+            ->title('Lote cargado para editar')
+            ->info()
+            ->send();
+    }
+
+    public function editarDetalle(int $detalleId): void
+    {
+        $detalle = DetalleCompraModel::with([
+            'lote.lotePresentaciones.productoPresentacion.producto',
+            'lote.lotePresentaciones.productoPresentacion.unidadMedida',
+        ])
+        ->where('compra_id', $this->compraId)
+        ->findOrFail($detalleId);
+
+        $lote = $detalle->lote;
+        if (! $lote) {
+            return;
+        }
+
+        $firstLp = $lote->lotePresentaciones->first();
+
+        $this->editingDetalleId = $detalle->id;
+        $this->editingLoteId = $lote->id;
+        
+        $this->productoId = $firstLp?->productoPresentacion?->producto_id;
+        $this->productoNombre = $lote->producto_nombre;
+        $this->searchProducto = $lote->producto_nombre;
+        
+        $this->codigoLote = $lote->codigo_lote;
+        $this->fechaFabricacion = $lote->fecha_fabricacion ? $lote->fecha_fabricacion->format('Y-m-d') : null;
+        $this->fechaVencimiento = $lote->fecha_vencimiento ? $lote->fecha_vencimiento->format('Y-m-d') : null;
+        $this->ubicacion = $lote->ubicacion;
+        $this->precioCompraTotal = (float) $detalle->precio_compra;
+        $this->observaciones = $lote->observaciones;
+
+        $this->presentacionesDisponibles = [];
+        $this->cargarPresentaciones();
+
+        $this->dispatch('loteEditando', loteId: $lote->id);
+
+        Notification::make()
+            ->title('Lote cargado para editar')
+            ->info()
+            ->send();
+    }
+
+    public function cancelarEdicion(): void
+    {
+        $this->resetForm();
+        $this->editingLoteId = null;
+        $this->editingDetalleId = null;
+        $this->dispatch('loteEditando', loteId: null);
     }
 
     public function render()

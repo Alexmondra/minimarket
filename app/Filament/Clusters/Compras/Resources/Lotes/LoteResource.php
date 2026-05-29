@@ -20,6 +20,8 @@ class LoteResource extends Resource
 
     protected static ?string $navigationLabel = 'Lotes';
 
+    protected static ?string $recordTitleAttribute = 'codigo_lote';
+
     public static function getPages(): array
     {
         return [

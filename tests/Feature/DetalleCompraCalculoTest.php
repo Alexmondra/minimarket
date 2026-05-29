@@ -12,6 +12,11 @@ use App\Models\Sucursal;
 use App\Models\Ubigeo;
 use App\Models\UniMedida;
 use App\Models\User;
+use App\Models\Lote;
+use App\Models\LotePresentacion;
+use App\Models\DetalleCompra as DetalleCompraModel;
+use App\Models\MovimientoInventario;
+use App\Models\ProductoSucursal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -291,6 +296,203 @@ class DetalleCompraCalculoTest extends TestCase
         // Now change the input text
         ->set('modalTipoPresentacion', 'Caja Nueva')
         ->assertSet('modalEditingPresentationId', null);
+    }
+
+    public function test_it_searches_existing_lots_by_code(): void
+    {
+        $this->actingAs($this->user);
+
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-EXISTENTE',
+            'producto_nombre' => $this->producto->nombre,
+            'estado_lote' => 'activo',
+            'precio_compra' => 50.00,
+        ]);
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->set('codigoLote', 'LOT-')
+        ->assertSet('showLotesDropdown', true)
+        ->assertCount('lotesResultados', 1)
+        ->assertSet('lotesResultados.0.codigo_lote', 'LOT-EXISTENTE');
+    }
+
+    public function test_it_opens_existing_lot_modal_and_loads_for_editing(): void
+    {
+        $this->actingAs($this->user);
+
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-EXIST-MODAL',
+            'producto_nombre' => $this->producto->nombre,
+            'estado_lote' => 'activo',
+            'precio_compra' => 120.00,
+        ]);
+
+        $lp = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'stock_inicial' => 15,
+            'stock' => 15,
+            'precio_compra' => 8.00,
+        ]);
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('verLoteExistente', $lote->id)
+        ->assertSet('showLoteExistenteModal', true)
+        ->assertSet('modalLoteDetalles.codigo_lote', 'LOT-EXIST-MODAL')
+        ->call('cargarLoteExistenteParaEditar')
+        ->assertSet('editingLoteId', $lote->id)
+        ->assertSet('codigoLote', 'LOT-EXIST-MODAL')
+        ->assertSet('presentacionesDisponibles.0.cantidad', 15)
+        ->assertSet('presentacionesDisponibles.0.precio_compra', 8.00);
+    }
+
+    public function test_it_loads_lot_details_from_added_batches_table_to_edit(): void
+    {
+        $this->actingAs($this->user);
+
+        $compraTest = Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('seleccionarProducto', $this->producto->id, $this->producto->nombre)
+        ->set('codigoLote', 'LOT-ADDED')
+        ->set('presentacionesDisponibles.0.cantidad', 5)
+        ->set('presentacionesDisponibles.0.total_pagado', 25.00)
+        ->call('agregarLote');
+
+        $detalle = DetalleCompraModel::where('compra_id', $this->compra->id)->first();
+        $this->assertNotNull($detalle);
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('editarDetalle', $detalle->id)
+        ->assertSet('editingLoteId', $detalle->lote_id)
+        ->assertSet('editingDetalleId', $detalle->id)
+        ->assertSet('codigoLote', 'LOT-ADDED')
+        ->assertSet('presentacionesDisponibles.0.cantidad', 5)
+        ->assertSet('presentacionesDisponibles.0.precio_compra', 5.00);
+    }
+
+    public function test_it_cancels_editing_mode(): void
+    {
+        $this->actingAs($this->user);
+
+        $compraTest = Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('seleccionarProducto', $this->producto->id, $this->producto->nombre)
+        ->set('codigoLote', 'LOT-CANCEL')
+        ->set('presentacionesDisponibles.0.cantidad', 5)
+        ->set('presentacionesDisponibles.0.total_pagado', 25.00)
+        ->call('agregarLote');
+
+        $detalle = DetalleCompraModel::where('compra_id', $this->compra->id)->first();
+
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('editarDetalle', $detalle->id)
+        ->assertSet('editingLoteId', $detalle->lote_id)
+        ->call('cancelarEdicion')
+        ->assertSet('editingLoteId', null)
+        ->assertSet('editingDetalleId', null)
+        ->assertSet('codigoLote', '');
+    }
+
+    public function test_it_updates_lote_and_details_atomically(): void
+    {
+        $this->actingAs($this->user);
+
+        $compraTest = Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('seleccionarProducto', $this->producto->id, $this->producto->nombre)
+        ->set('codigoLote', 'LOT-TO-EDIT')
+        ->set('presentacionesDisponibles.0.cantidad', 10)
+        ->set('presentacionesDisponibles.0.total_pagado', 100.00)
+        ->call('agregarLote');
+
+        $detalle = DetalleCompraModel::where('compra_id', $this->compra->id)->first();
+        $this->assertNotNull($detalle);
+        $originalLp = LotePresentacion::where('lote_id', $detalle->lote_id)->first();
+        $this->assertNotNull($originalLp);
+
+        // Verify initial counts in DB
+        $this->assertDatabaseHas('lotes', [
+            'id' => $detalle->lote_id,
+            'codigo_lote' => 'LOT-TO-EDIT',
+            'precio_compra' => 100.00,
+        ]);
+        $this->assertDatabaseHas('lote_presentacion', [
+            'lote_id' => $detalle->lote_id,
+            'stock' => 10,
+            'precio_compra' => 10.00,
+        ]);
+
+        // Load to edit and update
+        Livewire::test(DetalleCompra::class, [
+            'compraId' => $this->compra->id,
+            'sucursalId' => $this->sucursal->id
+        ])
+        ->call('editarDetalle', $detalle->id)
+        ->set('codigoLote', 'LOT-UPDATED')
+        ->set('presentacionesDisponibles.0.cantidad', 20)
+        ->set('presentacionesDisponibles.0.total_pagado', 180.00)
+        ->call('agregarLote')
+        ->assertHasNoErrors();
+
+        // Verify updated database records
+        $this->assertDatabaseHas('lotes', [
+            'id' => $detalle->lote_id,
+            'codigo_lote' => 'LOT-UPDATED',
+            'precio_compra' => 180.00,
+        ]);
+
+        // Old LotePresentacion should be deleted, new one created
+        $this->assertDatabaseMissing('lote_presentacion', [
+            'id' => $originalLp->id,
+        ]);
+        $this->assertDatabaseHas('lote_presentacion', [
+            'lote_id' => $detalle->lote_id,
+            'stock' => 20,
+            'precio_compra' => 9.00, // 180.00 / 20
+        ]);
+
+        // Old ProductoSucursal and movements should be cleaned and replaced
+        $this->assertDatabaseMissing('producto_sucursal', [
+            'lote_presentacion_id' => $originalLp->id,
+        ]);
+        $this->assertSoftDeleted('movimientos_inventario', [
+            'referencia' => "LotePresentacion:{$originalLp->id}",
+        ]);
+
+        $newLp = LotePresentacion::where('lote_id', $detalle->lote_id)->first();
+        $this->assertDatabaseHas('producto_sucursal', [
+            'lote_presentacion_id' => $newLp->id,
+        ]);
+        $this->assertDatabaseHas('movimientos_inventario', [
+            'referencia' => "LotePresentacion:{$newLp->id}",
+            'motivo' => "Compra #{$this->compra->id} - lote LOT-UPDATED (Editado)",
+            'cantidad' => 20,
+        ]);
+
+        $this->assertDatabaseHas('detalle_compras', [
+            'id' => $detalle->id,
+            'precio_compra' => 180.00,
+        ]);
     }
 }
 

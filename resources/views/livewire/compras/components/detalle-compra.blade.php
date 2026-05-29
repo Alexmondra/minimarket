@@ -135,13 +135,26 @@
 
                 </div>
 
-                <div>
+                <div class="relative">
                     <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Código de lote</label>
                     <input type="text"
-                           wire:model="codigoLote"
+                           wire:model.live.debounce.250ms="codigoLote"
                            placeholder="Ej: LOTE-2026-001"
                            class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                     @error('codigoLote') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+
+                    @if($showLotesDropdown && !empty($lotesResultados))
+                        <div class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                            @foreach($lotesResultados as $lote)
+                                <button type="button"
+                                        wire:click="verLoteExistente({{ $lote['id'] }})"
+                                        class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex flex-col gap-0.5">
+                                    <span class="font-bold text-gray-900 dark:text-white">{{ $lote['codigo_lote'] }}</span>
+                                    <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ $lote['producto_nombre'] }} (Vence: {{ $lote['fecha_vencimiento'] }})</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div>
@@ -395,14 +408,29 @@
                 @endif
             </div>
 
-            <div class="flex justify-end">
-                <button type="button"
-                        wire:click="agregarLote"
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
-                    <span wire:loading.remove wire:target="agregarLote">Agregar lote a la compra</span>
-                    <span wire:loading wire:target="agregarLote">Agregando...</span>
-                </button>
+            <div class="flex justify-end gap-2">
+                @if($editingLoteId)
+                    <button type="button"
+                            wire:click="cancelarEdicion"
+                            class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-md transition-colors">
+                        Cancelar edición
+                    </button>
+                    <button type="button"
+                            wire:click="agregarLote"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
+                        <span wire:loading.remove wire:target="agregarLote">Actualizar lote en la compra</span>
+                        <span wire:loading wire:target="agregarLote">Actualizando...</span>
+                    </button>
+                @else
+                    <button type="button"
+                            wire:click="agregarLote"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
+                        <span wire:loading.remove wire:target="agregarLote">Agregar lote a la compra</span>
+                        <span wire:loading wire:target="agregarLote">Agregando...</span>
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -425,7 +453,10 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    @forelse($detalles as $detalle)
+                    @php
+                        $visibleDetalles = collect($detalles)->filter(fn($d) => $d['id'] !== $editingDetalleId);
+                    @endphp
+                    @forelse($visibleDetalles as $detalle)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                             <td class="px-3 py-3 align-top">
                                 <div class="font-semibold text-gray-900 dark:text-gray-100">{{ $detalle['lote']['codigo_lote'] ?? '—' }}</div>
@@ -457,12 +488,21 @@
                                 S/ {{ number_format($detalle['precio_compra'], 2) }}
                             </td>
                             <td class="px-3 py-3 align-top text-center">
-                                <button type="button"
-                                        wire:click="eliminarDetalle({{ $detalle['id'] }})"
-                                        wire:confirm="¿Eliminar este lote de la compra?"
-                                        class="text-red-500 hover:text-red-700 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button type="button"
+                                            wire:click="editarDetalle({{ $detalle['id'] }})"
+                                            class="text-amber-500 hover:text-amber-700 transition-colors"
+                                            title="Editar Lote">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button type="button"
+                                            wire:click="eliminarDetalle({{ $detalle['id'] }})"
+                                            wire:confirm="¿Eliminar este lote de la compra?"
+                                            class="text-red-500 hover:text-red-700 transition-colors"
+                                            title="Eliminar Lote">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -766,6 +806,104 @@
                     @empty
                         <p class="text-gray-400 text-xs text-center py-4">Sin historial disponible</p>
                     @endforelse
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($showLoteExistenteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/60 dark:bg-gray-950/80 backdrop-blur-sm">
+            <div class="bg-white dark:bg-gray-900 ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl shadow-2xl max-w-lg w-full mx-auto max-h-[85vh] flex flex-col overflow-hidden">
+                <!-- Header -->
+                <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-white/5">
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white uppercase tracking-wide">
+                        Detalles de Lote Existente
+                    </h3>
+                    <button wire:click="$set('showLoteExistenteModal', false)" class="text-gray-400 hover:text-gray-505 dark:text-gray-500 dark:hover:text-gray-400 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Content (Scrollable) -->
+                <div class="p-6 space-y-5 overflow-y-auto flex-1">
+                    <!-- Info Grid -->
+                    <div class="grid grid-cols-2 gap-4 text-xs bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">Código Lote:</span>
+                            <strong class="text-gray-955 dark:text-white text-sm font-bold tracking-tight">{{ $modalLoteDetalles['codigo_lote'] }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">Producto:</span>
+                            <strong class="text-gray-955 dark:text-white text-sm font-bold tracking-tight">{{ $modalLoteDetalles['producto_nombre'] }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">F. Fabricación:</span>
+                            <span class="text-gray-955 dark:text-gray-200 font-semibold">{{ $modalLoteDetalles['fecha_fabricacion'] }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">F. Vencimiento:</span>
+                            <span class="text-gray-955 dark:text-gray-200 font-semibold">{{ $modalLoteDetalles['fecha_vencimiento'] }}</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">Ubicación:</span>
+                            <span class="text-gray-955 dark:text-gray-200 font-semibold">{{ $modalLoteDetalles['ubicacion'] }}</span>
+                        </div>
+                        <div class="col-span-2 border-t border-gray-100 dark:border-white/5 pt-3">
+                            <span class="text-gray-500 dark:text-gray-400 block mb-1 font-medium">Observaciones:</span>
+                            <span class="text-gray-955 dark:text-gray-200 block text-wrap leading-relaxed font-medium">{{ $modalLoteDetalles['observaciones'] }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Presentations Table -->
+                    <div>
+                        <h4 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Presentaciones y Stock en Sistema</h4>
+                        <div class="border border-gray-100 dark:border-white/5 rounded-xl overflow-hidden shadow-sm">
+                            <table class="w-full text-xs text-left">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 text-gray-500 dark:text-gray-400 font-semibold text-[10px] uppercase tracking-wider">
+                                        <th class="px-4 py-2.5">Presentación</th>
+                                        <th class="px-4 py-2.5 text-right">Stock Inicial</th>
+                                        <th class="px-4 py-2.5 text-right">Costo Unit.</th>
+                                        @if(Auth::user()->can('ventas.ver'))
+                                            <th class="px-4 py-2.5 text-right">Precio Oferta</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                                    @foreach($modalLoteDetalles['presentaciones'] as $pres)
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                            <td class="px-4 py-3 font-medium text-gray-955 dark:text-gray-100">
+                                                {{ $pres['nombre'] }} x {{ $pres['cantidad'] }} {{ $pres['unidad'] }}
+                                            </td>
+                                            <td class="px-4 py-3 text-right font-bold text-gray-955 dark:text-gray-100">
+                                                {{ number_format($pres['stock'], 0) }}
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-gray-955 dark:text-gray-100 font-medium">
+                                                S/ {{ number_format($pres['precio_compra'], 2) }}
+                                            </td>
+                                            @if(Auth::user()->can('ventas.ver'))
+                                                <td class="px-4 py-3 text-right text-primary-600 dark:text-primary-400 font-bold">
+                                                    {{ $pres['precio_oferta'] !== null ? 'S/ ' . number_format($pres['precio_oferta'], 2) : '—' }}
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+                    <button type="button" wire:click="$set('showLoteExistenteModal', false)" class="px-4 py-2 text-xs font-semibold text-gray-955 dark:text-white bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 rounded-lg shadow-sm transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" wire:click="cargarLoteExistenteParaEditar" class="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 rounded-lg transition-colors shadow-sm">
+                        Cargar Lote para Editar
+                    </button>
                 </div>
             </div>
         </div>

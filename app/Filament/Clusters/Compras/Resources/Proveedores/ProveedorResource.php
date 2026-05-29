@@ -66,7 +66,31 @@ class ProveedorResource extends Resource
         $query = parent::getEloquentQuery()
             ->where('empresa_id', auth()->user()->empresa_id);
 
-        return app(SucursalContext::class)->applyNullableToQuery($query);
+        $sucursalContext = app(SucursalContext::class);
+        $activeId = $sucursalContext->activeSucursalId();
+
+        $query->where(function (Builder $q) use ($sucursalContext, $activeId) {
+            $sucursalContext->applyNullableToQuery($q);
+
+            if ($activeId) {
+                $q->orWhereIn('id', function ($subquery) use ($activeId) {
+                    $subquery->select('proveedor_id')
+                        ->from('compras')
+                        ->where('sucursal_id', $activeId)
+                        ->whereNull('deleted_at');
+                });
+            }
+        });
+
+        $query->withCount(['compras' => function ($q) use ($sucursalContext, $activeId) {
+            if ($activeId) {
+                $q->where('sucursal_id', $activeId);
+            } else {
+                $sucursalContext->applyToQuery($q);
+            }
+        }]);
+
+        return $query;
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

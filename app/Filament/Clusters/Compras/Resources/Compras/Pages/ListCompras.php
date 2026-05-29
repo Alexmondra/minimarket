@@ -3,12 +3,14 @@
 namespace App\Filament\Clusters\Compras\Resources\Compras\Pages;
 
 use App\Filament\Clusters\Compras\Resources\Compras\CompraResource;
+use App\Models\Proveedor;
 use App\Support\SucursalContext;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ListCompras extends ListRecords
@@ -17,19 +19,47 @@ class ListCompras extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return Auth::user()->can('compras.crear') ? [
-            Action::make('crearCompra')
+        $actions = [];
+
+        if ($this->proveedorFiltrado) {
+            $actions[] = Action::make('volverProveedores')
+                ->label('Volver a Proveedores')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(route('filament.admin.resources.proveedores.index'));
+        }
+
+        if (Auth::user()->can('compras.crear')) {
+            $actions[] = Action::make('crearCompra')
                 ->label('Crear Compra')
                 ->icon('heroicon-o-plus')
                 ->url(route('filament.admin.resources.compras.registrar'))
                 ->color('primary')
-                ->size('lg'),
-        ] : [];
+                ->size('lg');
+        }
+
+        return $actions;
+    }
+
+    public ?Proveedor $proveedorFiltrado = null;
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        if ($proveedorId = request()->get('proveedor_id')) {
+            $this->proveedorFiltrado = Proveedor::find($proveedorId);
+        }
     }
 
     public function table(Table $table): Table
     {
-        return $table
+        $table = $table
+            ->modifyQueryUsing(function (Builder $query) {
+                if ($this->proveedorFiltrado) {
+                    $query->where('proveedor_id', $this->proveedorFiltrado->id);
+                }
+            })
             ->recordUrl(fn ($record) => route('filament.admin.resources.compras.view', $record))
             ->columns([
                 TextColumn::make('id')
@@ -125,5 +155,11 @@ class ListCompras extends ListRecords
                         ->pluck('nombre_sucursal', 'id')
                         ->all()),
             ]);
+
+        if ($this->proveedorFiltrado) {
+            $table->description('Mostrando compras del proveedor: ' . $this->proveedorFiltrado->nombre);
+        }
+
+        return $table;
     }
 }
