@@ -24,6 +24,10 @@ class RegistrarCompra extends Page
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->can('compras.crear'), 403, 'No tienes permiso para crear compras.');
+        if (request()->has('compra_id')) {
+            abort_unless(Auth::user()->can('compras.editar'), 403, 'No tienes permiso para editar compras.');
+        } else {
+            abort_unless(Auth::user()->can('compras.crear'), 403, 'No tienes permiso para crear compras.');
+        }
     }
 }

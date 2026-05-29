@@ -169,4 +169,75 @@ class RegistrarCompraTest extends TestCase
             'nombre' => 'NUEVO PROVEEDOR SAC',
         ]);
     }
+
+    public function test_it_authorizes_page_access_for_crear_permission_when_creating_compra(): void
+    {
+        $this->actingAs($this->user);
+
+        // Clear Spatie permission cache
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // Without permission, it should fail
+        Livewire::test(\App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::class)
+            ->assertStatus(403);
+
+        // With permission, it should succeed
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'compras.ver', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'compras.crear', 'guard_name' => 'web']);
+        $this->user->givePermissionTo(['compras.ver', 'compras.crear']);
+        
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Livewire::test(\App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::class)
+            ->assertStatus(200);
+    }
+
+    public function test_it_authorizes_page_access_for_editar_permission_when_editing_compra(): void
+    {
+        $this->actingAs($this->user);
+
+        // Clear Spatie permission cache
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // Create a dummy purchase
+        $proveedor = Proveedor::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PROVEEDOR TEST',
+            'tipo_documento' => 'RUC',
+            'numero_documento' => '20999999999',
+            'estado' => true,
+        ]);
+        $compra = \App\Models\Compra::create([
+            'sucursal_id' => $this->sucursal->id,
+            'proveedor_id' => $proveedor->id,
+            'user_id' => $this->user->id,
+            'tipo_comprobante' => 'factura',
+            'fecha_recepcion' => now(),
+            'costo_total_factura' => 0.00,
+            'estado' => false,
+        ]);
+
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'compras.ver', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'compras.crear', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'compras.editar', 'guard_name' => 'web']);
+
+        // Only with compras.ver and compras.crear, editing should fail
+        $this->user->givePermissionTo(['compras.ver', 'compras.crear']);
+        
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Livewire::withQueryParams(['compra_id' => $compra->id])
+            ->test(\App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::class)
+            ->assertStatus(403);
+
+        // With compras.editar, editing should succeed
+        $this->user->givePermissionTo('compras.editar');
+        
+        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Livewire::withQueryParams(['compra_id' => $compra->id])
+            ->test(\App\Filament\Clusters\Compras\Resources\Compras\Pages\RegistrarCompra::class)
+            ->assertStatus(200);
+    }
 }
+
