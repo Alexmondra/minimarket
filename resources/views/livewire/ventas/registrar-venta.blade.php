@@ -1148,6 +1148,44 @@
         </div>
     @endif
 
+    <!-- Modal de Advertencia Lote Vencido (POS) -->
+    @if ($showVencidoWarningModal)
+        <div 
+            x-data
+            x-init="setTimeout(() => $refs.entendidoBtn.focus(), 150)"
+            @keydown.window.enter.prevent="if ($refs.entendidoBtn) { $refs.entendidoBtn.click(); }"
+            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350" style="z-index: 99999 !important;"
+        >
+            <div class="pos-card p-6 max-w-md w-full mx-4 space-y-5 text-center shadow-2xl border pos-border bg-white/95 dark:bg-slate-900/95 rounded-2xl">
+                <!-- Warning Icon -->
+                <div class="h-16 w-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto border border-rose-500/30 shadow-inner">
+                    <svg class="h-8 w-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-lg font-black text-rose-600 dark:text-rose-400">⚠️ ¡Advertencia: Lote Expirado!</h3>
+                    <p class="text-xs pos-text font-medium leading-relaxed">
+                        {!! $vencidoWarningMessage !!}
+                    </p>
+                </div>
+
+                <div class="flex justify-center pt-2">
+                    <!-- Entendido / Continuar Button -->
+                    <button 
+                        type="button" 
+                        x-ref="entendidoBtn"
+                        wire:click="confirmarAgregarProducto"
+                        class="w-full px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-rose-500/10 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                        Entendido (Presione Enter)
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- 5. Date & Time Dynamic Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\SucursalContext;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -141,14 +142,37 @@ class MovimientoResource extends Resource
                         'salida' => 'Salida',
                     ]),
 
-                SelectFilter::make('motivo')
-                    ->options([
-                        'compra' => 'Compra',
-                        'venta' => 'Venta',
-                        'ajuste' => 'Ajuste',
-                        'merma' => 'Merma',
-                        'anulacion' => 'Anulacion',
-                    ]),
+                Filter::make('motivo')
+                    ->form([
+                        Select::make('motivo')
+                            ->label('Motivo')
+                            ->options([
+                                'compra' => 'Compra',
+                                'venta' => 'Venta',
+                                'ajuste' => 'Ajuste',
+                                'anulacion' => 'Anulacion',
+                                'merma_vencido' => 'Merma - Producto Vencido',
+                                'merma_roto' => 'Merma - Producto Dañado',
+                                'merma_robo' => 'Merma - Robo / Pérdida',
+                                'merma_otro' => 'Merma - Otro',
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['motivo'] ?? null) {
+                            'compra' => $query->where('motivo', 'compra'),
+                            'venta' => $query->where('motivo', 'venta'),
+                            'ajuste' => $query->where('motivo', 'ajuste'),
+                            'anulacion' => $query->where('motivo', 'anulacion'),
+                            'merma_vencido' => $query->where('motivo', 'like', '%vencido%'),
+                            'merma_roto' => $query->where('motivo', 'like', '%roto%'),
+                            'merma_robo' => $query->where('motivo', 'like', '%robo%'),
+                            'merma_otro' => $query->where('motivo', 'like', '%Merma%')
+                                ->where('motivo', 'not like', '%vencido%')
+                                ->where('motivo', 'not like', '%roto%')
+                                ->where('motivo', 'not like', '%robo%'),
+                            default => $query,
+                        };
+                    }),
 
                 SelectFilter::make('user_id')
                     ->label('Usuario')

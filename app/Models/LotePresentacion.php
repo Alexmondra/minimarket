@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class LotePresentacion extends Model
 {
+    public const ESTADO_ACTIVO = 'activo';
+    public const ESTADO_PENDIENTE = 'pendiente';
+    public const ESTADO_MERMA = 'merma';
+
     protected $table = 'lote_presentacion';
 
     protected $fillable = [
@@ -15,6 +19,7 @@ class LotePresentacion extends Model
         'stock',
         'precio_compra',
         'precio_oferta',
+        'estado',
     ];
 
     protected function casts(): array

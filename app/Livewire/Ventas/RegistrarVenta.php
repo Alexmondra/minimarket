@@ -86,6 +86,12 @@ trait RegistrarVentaBehavior
 
     public int $puntosDisponibles = 0;
 
+    public bool $showVencidoWarningModal = false;
+
+    public ?int $pendingPresentacionId = null;
+
+    public string $vencidoWarningMessage = '';
+
     public function mountRegistrarVenta(): void
     {
         $context = app(SucursalContext::class);
@@ -658,6 +664,46 @@ trait RegistrarVentaBehavior
     }
 
     public function agregarProducto(int $presentacionId): void
+    {
+        // Buscar si existe algún lote de la presentación que esté vencido y en estado pendiente de confirmar
+        $lotePendiente = \App\Models\LotePresentacion::query()
+            ->where('producto_presentacion_id', $presentacionId)
+            ->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)
+            ->whereHas('lote', function ($q) {
+                $q->where('sucursal_id', $this->sucursalId);
+            })
+            ->with(['lote', 'productoPresentacion.producto'])
+            ->first();
+
+        if ($lotePendiente) {
+            $this->pendingPresentacionId = $presentacionId;
+            $this->showVencidoWarningModal = true;
+            
+            $productoNombre = $lotePendiente->productoPresentacion?->producto?->nombre ?? 'Producto';
+            $presentacionNombre = $lotePendiente->productoPresentacion?->tipo_presentacion ?? 'Presentación';
+            
+            $daysExpired = 0;
+            if ($lotePendiente->lote?->fecha_vencimiento) {
+                $daysExpired = $lotePendiente->lote->fecha_vencimiento->startOfDay()->diffInDays(now()->startOfDay());
+            }
+
+            $this->vencidoWarningMessage = "Hay un lote de este mismo producto <strong>{$productoNombre} ({$presentacionNombre})</strong> que se ha vencido hace <strong>{$daysExpired}</strong> días, por favor verifique la fecha de vencimiento antes de vender - si ya verificaron por favor ir a lotes y confirmar el vencido (confirmar merma).";
+            return;
+        }
+
+        $this->agregarProductoDirecto($presentacionId);
+    }
+
+    public function confirmarAgregarProducto(): void
+    {
+        if ($this->pendingPresentacionId) {
+            $this->agregarProductoDirecto($this->pendingPresentacionId);
+            $this->pendingPresentacionId = null;
+        }
+        $this->showVencidoWarningModal = false;
+    }
+
+    public function agregarProductoDirecto(int $presentacionId): void
     {
         $producto = $this->obtenerDetalleProducto($presentacionId);
 

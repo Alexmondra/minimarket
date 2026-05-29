@@ -42,14 +42,6 @@ class ListLotes extends ListRecords
                 TextColumn::make('stock_total')
                     ->label('Stock total')
                     ->numeric(),
-                TextColumn::make('precio_compra')
-                    ->label('Total pagado')
-                    ->money('PEN')
-                    ->sortable(),
-                TextColumn::make('fecha_fabricacion')
-                    ->label('Fabricación')
-                    ->date('d/m/Y')
-                    ->sortable(),
                 TextColumn::make('fecha_vencimiento')
                     ->label('Vence')
                     ->date('d/m/Y')
@@ -72,8 +64,16 @@ class ListLotes extends ListRecords
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->modifyQueryUsing(fn ($query) => $query->with(['lotePresentaciones.productoPresentacion.unidadMedida']))
+            ->modifyQueryUsing(fn ($query) => 
+                $query->with(['lotePresentaciones.productoPresentacion.unidadMedida'])
+                    ->orderByRaw("CASE WHEN fecha_vencimiento <= ? AND estado_lote != 'agotado' THEN 0 ELSE 1 END ASC", [now()->toDateString()])
+            )
             ->defaultSort('created_at', 'desc')
+            ->recordClasses(fn (\App\Models\Lote $record): ?string => 
+                (($record->estado_lote === 'vencido' || $record->fecha_vencimiento->isPast()) && $record->stock_total > 0)
+                    ? 'bg-danger-50/40 dark:bg-danger-950/20 text-danger-700 dark:text-danger-300'
+                    : null
+            )
             ->filters([
                 SelectFilter::make('producto_nombre')
                     ->label('Producto')
@@ -130,51 +130,211 @@ class ListLotes extends ListRecords
             ])
             ->actions([
                 \Filament\Actions\Action::make('registrarMerma')
-                    ->label('Registrar Merma')
+                    ->label(fn (\App\Models\Lote $record): string => 
+                        $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists()
+                            ? 'Confirmar Merma'
+                            : 'Registrar Merma'
+                    )
                     ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->modalHeading('Registrar Merma / Pérdida')
-                    ->modalSubmitActionLabel('Registrar')
-                    ->form(fn (\App\Models\Lote $record): array => [
-                        \Filament\Forms\Components\Select::make('lote_presentacion_id')
-                            ->label('Presentación')
-                            ->options(
-                                $record->lotePresentaciones()
-                                    ->with('productoPresentacion')
-                                    ->get()
-                                    ->mapWithKeys(fn ($lp) => [
-                                        $lp->id => ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . " (Stock: {$lp->stock})"
-                                    ])
-                                    ->all()
-                            )
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(fn ($state, \Filament\Forms\Set $set) =>
-                                $set('max_cantidad', \App\Models\LotePresentacion::find($state)?->stock ?? 0)
-                            ),
-                        \Filament\Forms\Components\TextInput::make('cantidad')
-                            ->label('Cantidad')
-                            ->numeric()
-                            ->integer()
-                            ->required()
-                            ->min(1)
-                            ->maxValue(fn (\Filament\Forms\Get $get) => $get('max_cantidad') ?? 1000)
-                            ->helperText(fn (\Filament\Forms\Get $get) => "Stock disponible: " . ($get('max_cantidad') ?? 0)),
-                        \Filament\Forms\Components\Select::make('tipo_merma')
-                            ->label('Tipo de Merma')
-                            ->options([
-                                'vencido' => 'Vencido / Expirado',
-                                'roto' => 'Roto / Dañado',
-                                'robo' => 'Robo / Pérdida',
-                                'otro' => 'Otro motivo',
-                            ])
-                            ->required(),
-                        \Filament\Forms\Components\Textarea::make('motivo')
-                            ->label('Observación / Motivo')
-                            ->placeholder('Describa brevemente la razón de la pérdida')
-                            ->maxLength(500),
-                    ])
-                    ->action(function (array $data): void {
+                    ->color(fn (\App\Models\Lote $record): string => 
+                        $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists()
+                            ? 'warning'
+                            : 'danger'
+                    )
+                    ->modalHeading(fn (\App\Models\Lote $record): string => 
+                        $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists()
+                            ? 'Confirmar Merma de Lote Vencido'
+                            : 'Registrar Merma / Pérdida'
+                    )
+                    ->modalSubmitActionLabel(fn (\App\Models\Lote $record): string => 
+                        $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists()
+                            ? 'Confirmar'
+                            : 'Registrar'
+                    )
+                    ->form(function (\App\Models\Lote $record): array {
+                        $hasPending = $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists();
+                        if ($hasPending) {
+                            $pendingLps = $record->lotePresentaciones()
+                                ->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)
+                                ->with('productoPresentacion')
+                                ->get();
+                            
+                            $infoText = "Este lote está vencido y su stock se ha enviado a merma automáticamente en estado pendiente de confirmar. Las siguientes presentaciones serán confirmadas:<br><ul class='list-disc pl-5 mt-2'>";
+                            foreach ($pendingLps as $lp) {
+                                $mermaQty = \App\Models\LotePresentacionMerma::where('lote_presentacion_id', $lp->id)
+                                    ->whereNull('user_id')
+                                    ->value('cantidad') ?? 0;
+                                $infoText .= "<li><strong>" . ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . "</strong>: " . $mermaQty . " unidades</li>";
+                            }
+                            $infoText .= "</ul>";
+
+                            return [
+                                \Filament\Forms\Components\Placeholder::make('info_confirmacion')
+                                    ->label('')
+                                    ->content(new \Illuminate\Support\HtmlString($infoText)),
+                                \Filament\Forms\Components\Textarea::make('motivo')
+                                    ->label('Observación / Motivo de Confirmación')
+                                    ->placeholder('Observaciones sobre el lote vencido (opcional)')
+                                    ->maxLength(500),
+                            ];
+                        }
+
+                        $isExpired = ($record->fecha_vencimiento->isPast() || $record->estado_lote === 'vencido') && $record->stock_total > 0;
+                        if ($isExpired) {
+                            return [
+                                \Filament\Forms\Components\Placeholder::make('advertencia')
+                                    ->label('')
+                                    ->content("⚠️ Este lote está vencido. Al proceder, se registrará la totalidad del stock restante ({$record->stock_total} unidades) como merma automáticamente."),
+                            ];
+                        }
+
+                        return [
+                            \Filament\Forms\Components\Select::make('lote_presentacion_id')
+                                ->label('Presentación')
+                                ->options(
+                                    $record->lotePresentaciones()
+                                        ->with('productoPresentacion')
+                                        ->get()
+                                        ->mapWithKeys(fn ($lp) => [
+                                            $lp->id => ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . " (Stock: {$lp->stock})"
+                                        ])
+                                        ->all()
+                                )
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(fn ($state, $set) =>
+                                    $set('max_cantidad', \App\Models\LotePresentacion::find($state)?->stock ?? 0)
+                                ),
+                            \Filament\Forms\Components\TextInput::make('cantidad')
+                                ->label('Cantidad')
+                                ->numeric()
+                                ->integer()
+                                ->required()
+                                ->minValue(1)
+                                ->maxValue(fn ($get) => $get('max_cantidad') ?? 1000)
+                                ->validationMessages([
+                                    'max' => 'Cantidad excedida, no existe esta cantidad en el stock disponible.',
+                                ])
+                                ->helperText(fn ($get) => "Stock disponible: " . ($get('max_cantidad') ?? 0)),
+                            \Filament\Forms\Components\Select::make('tipo_merma')
+                                ->label('Tipo de Merma')
+                                ->options([
+                                    'vencido' => 'Vencido / Expirado',
+                                    'roto' => 'Roto / Dañado',
+                                    'robo' => 'Robo / Pérdida',
+                                    'otro' => 'Otro motivo',
+                                ])
+                                ->required(),
+                            \Filament\Forms\Components\Textarea::make('motivo')
+                                ->label('Observación / Motivo')
+                                ->placeholder('Describa brevemente la razón de la pérdida')
+                                ->maxLength(500),
+                        ];
+                    })
+                    ->action(function (\App\Models\Lote $record, array $data): void {
+                        $hasPending = $record->lotePresentaciones()->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)->exists();
+
+                        if ($hasPending) {
+                            \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
+                                $pendingLps = $record->lotePresentaciones()
+                                    ->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)
+                                    ->get();
+
+                                foreach ($pendingLps as $lp) {
+                                    // Cambiar estado a merma (confirmado)
+                                    $lp->update([
+                                        'estado' => \App\Models\LotePresentacion::ESTADO_MERMA,
+                                    ]);
+
+                                    // Buscar y actualizar merma automática
+                                    $merma = \App\Models\LotePresentacionMerma::where('lote_presentacion_id', $lp->id)
+                                        ->whereNull('user_id')
+                                        ->first();
+                                    
+                                    if ($merma) {
+                                        $motivoConfirmado = isset($data['motivo']) && trim($data['motivo']) !== ''
+                                            ? " | Confirmado por usuario: " . trim($data['motivo'])
+                                            : "";
+                                        
+                                        $merma->update([
+                                            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                            'motivo' => $merma->motivo . $motivoConfirmado,
+                                        ]);
+                                    }
+
+                                    // Buscar y actualizar movimiento de inventario en kardex
+                                    $mov = \App\Models\MovimientoInventario::where('referencia', "LotePresentacion:{$lp->id}")
+                                        ->whereNull('user_id')
+                                        ->first();
+                                    if ($mov) {
+                                        $mov->update([
+                                            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                        ]);
+                                    }
+                                }
+
+                                // Marcar el lote como agotado una vez confirmadas todas sus mermas pendientes
+                                $record->update(['estado_lote' => 'agotado']);
+                            });
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Mermas de lote vencido confirmadas con éxito')
+                                ->success()
+                                ->send();
+                            return;
+                        }
+
+                        $isExpired = ($record->fecha_vencimiento->isPast() || $record->estado_lote === 'vencido') && $record->stock_total > 0;
+
+                        if ($isExpired) {
+                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                foreach ($record->lotePresentaciones as $lp) {
+                                    if ($lp->stock > 0) {
+                                        $cantidad = $lp->stock;
+
+                                        // Crear registro de merma
+                                        \App\Models\LotePresentacionMerma::create([
+                                            'lote_presentacion_id' => $lp->id,
+                                            'cantidad' => $cantidad,
+                                            'tipo_merma' => 'vencido',
+                                            'motivo' => 'Merma manual de lote vencido (procesamiento rápido)',
+                                            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                        ]);
+
+                                        // Registrar en Kardex
+                                        \App\Models\MovimientoInventario::create([
+                                            'empresa_id' => \Illuminate\Support\Facades\Auth::user()->empresa_id ?? 1,
+                                            'sucursal_id' => $record->sucursal_id,
+                                            'producto_nombre' => $lp->productoPresentacion?->producto?->nombre ?? $record->producto_nombre,
+                                            'producto_presentacion_id' => $lp->producto_presentacion_id,
+                                            'tipo' => 'salida_merma',
+                                            'cantidad' => -$cantidad,
+                                            'motivo' => "Merma rápida lote vencido - Lote {$record->codigo_lote}",
+                                            'referencia' => "LotePresentacion:{$lp->id}",
+                                            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                                            'stock_final' => 0,
+                                        ]);
+
+                                        // Actualizar stock y estado
+                                        $lp->update([
+                                            'stock' => 0,
+                                            'estado' => \App\Models\LotePresentacion::ESTADO_MERMA,
+                                        ]);
+                                    }
+                                }
+
+                                // Actualizar lote a agotado
+                                $record->update(['estado_lote' => 'agotado']);
+                            });
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Lote vencido procesado por completo como merma')
+                                ->success()
+                                ->send();
+                            return;
+                        }
+
+                        // Lógica para lote activo normal
                         $lotePresentacion = \App\Models\LotePresentacion::with('lote.sucursal', 'productoPresentacion.producto')->findOrFail($data['lote_presentacion_id']);
                         $cantidad = (int) $data['cantidad'];
 
@@ -188,7 +348,14 @@ class ListLotes extends ListRecords
 
                         \Illuminate\Support\Facades\DB::transaction(function () use ($lotePresentacion, $cantidad, $data) {
                             $nuevoStock = $lotePresentacion->stock - $cantidad;
-                            $lotePresentacion->update(['stock' => $nuevoStock]);
+                            
+                            // Si el stock llega a 0, actualizar su estado
+                            $estadolp = $nuevoStock === 0 ? \App\Models\LotePresentacion::ESTADO_MERMA : $lotePresentacion->estado;
+
+                            $lotePresentacion->update([
+                                'stock' => $nuevoStock,
+                                'estado' => $estadolp,
+                            ]);
 
                             // Crear registro de merma
                             \App\Models\LotePresentacionMerma::create([
@@ -212,6 +379,11 @@ class ListLotes extends ListRecords
                                 'user_id' => \Illuminate\Support\Facades\Auth::id(),
                                 'stock_final' => $nuevoStock,
                             ]);
+                            
+                            // Si el stock total del lote quedó en 0, poner como agotado
+                            if ($lotePresentacion->lote->stock_total <= 0) {
+                                $lotePresentacion->lote->update(['estado_lote' => 'agotado']);
+                            }
                         });
 
                         \Filament\Notifications\Notification::make()

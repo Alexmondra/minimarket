@@ -13,9 +13,12 @@ class DatabaseSeeder extends Seeder
             EmpresaSucursalSeeder::class,
             RolesPermisosSeeder::class,
             UnidadesMedidaSeeder::class,
+            CategoriaSeeder::class,
+            MarcaSeeder::class,
+            ProductoSeeder::class,
             ProveedorSeeder::class,
         ]);
 
-        $this->command->info('✅ Seed completado: ubigeos, empresas, sucursales, usuarios, roles, permisos y proveedores.');
+        $this->command->info('✅ Seed completado: ubigeos, empresas, sucursales, usuarios, roles, permisos, categorías, marcas, productos y proveedores.');
     }
 }

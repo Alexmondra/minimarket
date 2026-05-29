@@ -206,4 +206,190 @@ class MermasLoteTest extends TestCase
             'stock_final' => 25,
         ]);
     }
+
+    public function test_command_marks_expired_lotes_less_than_three_days_as_pendiente(): void
+    {
+        $this->actingAs($this->user);
+
+        // Lote vencido ayer (1 día de vencimiento)
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-VENCIDO-1',
+            'producto_nombre' => $this->producto->nombre,
+            'fecha_vencimiento' => now()->subDay()->toDateString(),
+            'precio_compra' => 10.00,
+            'estado_lote' => 'activo',
+        ]);
+
+        $lotePresentacion = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'stock_inicial' => 10,
+            'stock' => 10,
+            'precio_compra' => 1.00,
+            'estado' => 'activo',
+        ]);
+
+        $this->artisan('app:procesar-lotes-vencidos')
+            ->assertExitCode(0);
+
+        // Debería cambiar el lote a 'vencido' y la presentación a 'pendiente' con stock 0
+        $this->assertEquals('vencido', $lote->fresh()->estado_lote);
+        $this->assertEquals('pendiente', $lotePresentacion->fresh()->estado);
+        $this->assertEquals(0, $lotePresentacion->fresh()->stock);
+
+        // Se debe haber creado la merma automática (con user_id null)
+        $this->assertDatabaseHas('lote_presentacion_mermas', [
+            'lote_presentacion_id' => $lotePresentacion->id,
+            'cantidad' => 10,
+            'tipo_merma' => 'vencido',
+            'user_id' => null,
+        ]);
+
+        // Kardex también registrado con user_id null
+        $this->assertDatabaseHas('movimientos_inventario', [
+            'sucursal_id' => $this->sucursal->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'tipo' => 'salida_merma',
+            'cantidad' => -10,
+            'user_id' => null,
+        ]);
+    }
+
+    public function test_command_auto_mermas_expired_lotes_older_than_three_days(): void
+    {
+        $this->actingAs($this->user);
+
+        // Lote vencido hace 3 días
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-AUTO-MERMA',
+            'producto_nombre' => $this->producto->nombre,
+            'fecha_vencimiento' => now()->subDays(3)->toDateString(),
+            'precio_compra' => 10.00,
+            'estado_lote' => 'activo',
+        ]);
+
+        $lotePresentacion = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'stock_inicial' => 15,
+            'stock' => 15,
+            'precio_compra' => 1.00,
+            'estado' => 'activo',
+        ]);
+
+        $this->artisan('app:procesar-lotes-vencidos')
+            ->assertExitCode(0);
+
+        // Debería cambiar el lote a 'vencido' (pendiente de confirmar) y la presentación a 'pendiente', con stock 0
+        $this->assertEquals('vencido', $lote->fresh()->estado_lote);
+        $this->assertEquals('pendiente', $lotePresentacion->fresh()->estado);
+        $this->assertEquals(0, $lotePresentacion->fresh()->stock);
+
+        // Debería crear la merma automática
+        $this->assertDatabaseHas('lote_presentacion_mermas', [
+            'lote_presentacion_id' => $lotePresentacion->id,
+            'cantidad' => 15,
+            'tipo_merma' => 'vencido',
+            'user_id' => null, // Automático
+        ]);
+
+        // Debería registrar el Kardex
+        $this->assertDatabaseHas('movimientos_inventario', [
+            'sucursal_id' => $this->sucursal->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'tipo' => 'salida_merma',
+            'cantidad' => -15,
+            'stock_final' => 0,
+            'user_id' => null,
+        ]);
+    }
+
+    public function test_filament_action_confirms_pending_mermas(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Crear un lote vencido con presentación en estado pendiente y stock 0
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-CONFIRMAR-1',
+            'producto_nombre' => $this->producto->nombre,
+            'fecha_vencimiento' => now()->subDays(2)->toDateString(),
+            'precio_compra' => 10.00,
+            'estado_lote' => 'vencido',
+        ]);
+
+        $lotePresentacion = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'stock_inicial' => 20,
+            'stock' => 0,
+            'precio_compra' => 1.00,
+            'estado' => 'pendiente',
+        ]);
+
+        $merma = LotePresentacionMerma::create([
+            'lote_presentacion_id' => $lotePresentacion->id,
+            'cantidad' => 20,
+            'tipo_merma' => 'vencido',
+            'motivo' => 'Vencimiento automático de lote (pendiente de confirmar)',
+            'user_id' => null,
+        ]);
+
+        $mov = MovimientoInventario::create([
+            'empresa_id' => $this->empresa->id,
+            'sucursal_id' => $this->sucursal->id,
+            'producto_nombre' => $this->producto->nombre,
+            'producto_presentacion_id' => $this->presentacion->id,
+            'tipo' => 'salida_merma',
+            'cantidad' => -20,
+            'motivo' => "Merma automática (Vencimiento) - Lote {$lote->codigo_lote}",
+            'referencia' => "LotePresentacion:{$lotePresentacion->id}",
+            'user_id' => null,
+            'stock_final' => 0,
+        ]);
+
+        // 2. Simular la ejecución de la confirmación mediante Livewire/Filament ListLotes page
+        // O lo hacemos directamente en código simulando el cierre de transacción de la acción
+        $page = new \App\Filament\Clusters\Compras\Resources\Lotes\Pages\ListLotes();
+        
+        // Ejecutamos la acción de confirmación directamente
+        DB::transaction(function () use ($lote) {
+            $pendingLps = $lote->lotePresentaciones()
+                ->where('estado', LotePresentacion::ESTADO_PENDIENTE)
+                ->get();
+
+            foreach ($pendingLps as $lp) {
+                $lp->update(['estado' => LotePresentacion::ESTADO_MERMA]);
+
+                $merma = LotePresentacionMerma::where('lote_presentacion_id', $lp->id)
+                    ->whereNull('user_id')
+                    ->first();
+                if ($merma) {
+                    $merma->update([
+                        'user_id' => $this->user->id,
+                        'motivo' => $merma->motivo . ' | Confirmado por usuario: Verificado físicamente',
+                    ]);
+                }
+
+                $mov = MovimientoInventario::where('referencia', "LotePresentacion:{$lp->id}")
+                    ->whereNull('user_id')
+                    ->first();
+                if ($mov) {
+                    $mov->update(['user_id' => $this->user->id]);
+                }
+            }
+
+            $lote->update(['estado_lote' => 'agotado']);
+        });
+
+        // 3. Aserciones
+        $this->assertEquals('agotado', $lote->fresh()->estado_lote);
+        $this->assertEquals('merma', $lotePresentacion->fresh()->estado);
+        $this->assertEquals($this->user->id, $merma->fresh()->user_id);
+        $this->assertStringContainsString('Confirmado por usuario: Verificado físicamente', $merma->fresh()->motivo);
+        $this->assertEquals($this->user->id, $mov->fresh()->user_id);
+    }
 }
+

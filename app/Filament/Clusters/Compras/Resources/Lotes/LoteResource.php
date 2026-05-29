@@ -22,6 +22,26 @@ class LoteResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'codigo_lote';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $today = now()->startOfDay();
+        $query = static::getModel()::query()
+            ->whereIn('estado_lote', ['activo', 'vencido'])
+            ->whereDate('fecha_vencimiento', '<=', $today)
+            ->whereHas('lotePresentaciones', function ($q) {
+                $q->where('stock', '>', 0);
+            });
+
+        $query = app(SucursalContext::class)->applyToQuery($query);
+
+        return $query->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
+
     public static function getPages(): array
     {
         return [

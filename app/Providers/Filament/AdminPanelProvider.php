@@ -59,7 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-                fn (): string => view('filament.components.sucursal-topbar-selector')->render(),
+                fn (): string => view('filament.components.sucursal-topbar-selector')->render() . \Illuminate\Support\Facades\Blade::render('@livewire(\'alertas-bell\')'),
             )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
