@@ -114,4 +114,50 @@ class PuntosService
             'motivo' => 'Puntos ganados por venta',
         ]);
     }
+
+    /**
+     * Revierte puntos acumulados por una venta cuando esta es anulada.
+     */
+    public function registrarReversion(
+        Cliente $cliente,
+        int $empresaId,
+        int $sucursalId,
+        int $userId,
+        int $puntos,
+        string $motivo = 'Anulación de venta'
+    ): void {
+        if ($puntos <= 0) {
+            return;
+        }
+
+        $restante = $puntos;
+
+        ClientePunto::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('empresa_id', $empresaId)
+            ->where('puntos', '>', 0)
+            ->orderByDesc('puntos')
+            ->get()
+            ->each(function (ClientePunto $saldo) use (&$restante): void {
+                if ($restante <= 0) {
+                    return;
+                }
+
+                $reversion = min($restante, $saldo->puntos);
+                $saldo->decrement('puntos', $reversion);
+                $restante -= $reversion;
+            });
+
+        ClientePuntoMovimiento::create([
+            'cliente_id' => $cliente->id,
+            'empresa_id' => $empresaId,
+            'sucursal_id' => $sucursalId,
+            'documento_id' => null,
+            'user_id' => $userId,
+            'tipo' => 'reversion',
+            'puntos' => -$puntos,
+            'monto_descuento' => 0,
+            'motivo' => $motivo,
+        ]);
+    }
 }

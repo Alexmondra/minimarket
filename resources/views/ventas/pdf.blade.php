@@ -1,4 +1,9 @@
 @php
+    use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+    use BaconQrCode\Renderer\ImageRenderer;
+    use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+    use BaconQrCode\Writer;
+
     $total = (float) $documento->total_neto;
     $entero = (int) floor($total);
     $centimos = (int) round(($total - $entero) * 100);
@@ -11,6 +16,50 @@
 
     $monedaNombre = $documento->tipo_moneda === 'USD' ? 'DÓLARES' : 'SOLES';
     $montoLetras = sprintf('SON %s CON %02d/100 %s', $letras, $centimos, $monedaNombre);
+
+    // QR SUNAT
+    $tipoDoc = match($documento->tipo_comprobante) {
+        'FACTURA' => '01',
+        'BOLETA'  => '03',
+        default   => '03',
+    };
+
+    $tipoDocCliente = match($documento->cliente?->tipo_documento) {
+        'RUC' => '6',
+        'CE', 'CARNET_EXTRANJERIA' => '4',
+        'PASAPORTE' => '7',
+        default => '1',
+    };
+
+    $fechaEmision = $documento->fecha_emision instanceof \Carbon\Carbon
+        ? $documento->fecha_emision->format('Y-m-d')
+        : (is_string($documento->fecha_emision) ? $documento->fecha_emision : now()->format('Y-m-d'));
+
+    $qrString = implode('|', [
+        $documento->empresa?->ruc ?? '',
+        $tipoDoc,
+        $documento->serie,
+        $documento->numero,
+        number_format((float) $documento->total_igv, 2, '.', ''),
+        number_format((float) $documento->total_neto, 2, '.', ''),
+        $fechaEmision,
+        $tipoDocCliente,
+        $documento->cliente?->documento ?? '00000000',
+        $documento->hash ?? '',
+    ]) . '|';
+
+    $qrBase64 = '';
+    try {
+        $renderer = new ImageRenderer(
+            new RendererStyle(180),
+            new SvgImageBackEnd()
+        );
+        $writer = new Writer($renderer);
+        $qrSvg = $writer->writeString($qrString);
+        $qrBase64 = base64_encode($qrSvg);
+    } catch (\Throwable $e) {
+        $qrBase64 = '';
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="es">
@@ -304,10 +353,39 @@
     </div>
 
     <div class="footer">
-        @if($documento->sunat)
-            <div><strong>Estado SUNAT:</strong> {{ $documento->sunat->descripcion_estado ?: $documento->sunat->estado_sunat }}</div>
-            @if($documento->sunat->codigo_respuesta)
-                <div><strong>Código SUNAT:</strong> {{ $documento->sunat->codigo_respuesta }}</div>
+        @if(in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA']))
+            <table style="width: 100%; margin-bottom: 15px;">
+                <tr>
+                    <td style="width: 70%; vertical-align: top;">
+                        @if($documento->sunat)
+                            <div><strong>Estado SUNAT:</strong> {{ $documento->estado_sunat ?? ($documento->sunat->estado_sunat ? 'Aceptado' : 'Pendiente/Rechazado') }}</div>
+                            @if($documento->sunat->codigo_respuesta_sunat)
+                                <div><strong>Código SUNAT:</strong> {{ $documento->sunat->codigo_respuesta_sunat }}</div>
+                            @endif
+                            @if($documento->sunat->mensaje_sunat)
+                                <div><strong>Mensaje:</strong> {{ $documento->sunat->mensaje_sunat }}</div>
+                            @endif
+                        @endif
+                        @if($documento->hash)
+                            <div style="font-size: 8px; word-break: break-all; margin-top: 5px;">
+                                <strong>Hash:</strong> {{ $documento->hash }}
+                            </div>
+                        @endif
+                    </td>
+                    <td style="width: 30%; text-align: center; vertical-align: top;">
+                        @if($qrBase64)
+                            <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" style="width: 100px; height: auto;"><br>
+                            <span style="font-size: 7px;">{{ $documento->serie }}-{{ $documento->numero }}</span>
+                        @endif
+                    </td>
+                </tr>
+            </table>
+        @else
+            @if($documento->sunat)
+                <div><strong>Estado SUNAT:</strong> {{ $documento->sunat->descripcion_estado ?: $documento->sunat->estado_sunat }}</div>
+                @if($documento->sunat->codigo_respuesta)
+                    <div><strong>Código SUNAT:</strong> {{ $documento->sunat->codigo_respuesta }}</div>
+                @endif
             @endif
         @endif
         <div class="footer-note">

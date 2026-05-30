@@ -40,6 +40,10 @@ class Documento extends Model
         'referencia_pago',
         'estado',
         'observaciones',
+        'hash',
+        'estado_sunat',
+        'codigo_error_sunat',
+        'mensaje_sunat',
     ];
 
     protected function casts(): array
@@ -106,5 +110,23 @@ class Documento extends Model
     public function sunat()
     {
         return $this->hasOne(Sunat::class);
+    }
+
+    public function documentoReferencia()
+    {
+        return $this->hasOne(DocumentoReferencium::class);
+    }
+
+    public function referencias()
+    {
+        return $this->hasMany(DocumentoReferencium::class);
+    }
+
+    /**
+     * Documentos que referencian a este (ej. notas de crédito que anulan este documento).
+     */
+    public function referenciadoPor()
+    {
+        return $this->hasMany(DocumentoReferencium::class, 'documento_referenciado_id');
     }
 }

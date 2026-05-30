@@ -12,6 +12,7 @@ use Greenter\Model\Company\Company;
 use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
 use Greenter\Model\Sale\Invoice;
 use Greenter\Model\Sale\Legend;
+use Greenter\Model\Sale\Note;
 use Greenter\Model\Sale\SaleDetail;
 use NumberFormatter;
 use RuntimeException;
@@ -160,6 +161,74 @@ class DocumentoGreenterFactory
             'NIU', 'ZZ', 'KGM', 'LTR', 'MTR', 'BX' => $unidad,
             default => 'NIU',
         };
+    }
+
+    /**
+     * Crea un objeto Greenter Note (Nota de Crédito) para anular un documento.
+     */
+    public function makeNotaCredito(Documento $nota, Documento $documentoAfectado): Note
+    {
+        $nota->loadMissing([
+            'empresa.empresaConfig',
+            'sucursal.ubigeoRel',
+            'cliente',
+            'documentoReferencia',
+            'detalles.presentacion.unidadMedida',
+        ]);
+
+        $documentoAfectado->loadMissing([
+            'empresa.empresaConfig',
+            'sucursal.ubigeoRel',
+            'cliente',
+            'detalles.presentacion.unidadMedida',
+        ]);
+
+        $tipoDocAfectado = $documentoAfectado->tipo_comprobante === 'FACTURA' ? '01' : '03';
+
+        $ref = $nota->documentoReferencia;
+
+        $note = new Note;
+        $note
+            ->setUblVersion('2.1')
+            ->setTipDocAfectado($tipoDocAfectado)
+            ->setNumDocfectado($documentoAfectado->serie.'-'.$documentoAfectado->numero)
+            ->setCodMotivo($ref?->motivo_codigo ?? '01')   // 01 = Anulación
+            ->setDesMotivo($ref?->motivo_descripcion ?? 'Anulación de comprobante')
+            ->setTipoDoc('07')                               // 07 = Nota de Crédito
+            ->setSerie((string) $nota->serie)
+            ->setCorrelativo(ltrim((string) $nota->numero, '0') ?: (string) $nota->numero)
+            ->setFechaEmision($nota->fecha_emision?->toDateTime() ?? now()->toDateTime())
+            ->setTipoMoneda((string) ($nota->tipo_moneda ?: 'PEN'))
+            ->setCompany($this->company($nota->empresa, $nota))
+            ->setClient($this->client($nota->cliente ?: $documentoAfectado->cliente));
+
+        // Totales (mismos montos del documento afectado)
+        $note
+            ->setMtoOperGravadas($this->money($documentoAfectado->op_gravada))
+            ->setMtoOperExoneradas($this->money($documentoAfectado->op_exonerada))
+            ->setMtoOperInafectas($this->money($documentoAfectado->op_inafecta))
+            ->setMtoIGV($this->money($documentoAfectado->total_igv))
+            ->setTotalImpuestos($this->money($documentoAfectado->total_igv))
+            ->setValorVenta($this->money($documentoAfectado->subtotal))
+            ->setSubTotal($this->money($documentoAfectado->total_neto))
+            ->setMtoImpVenta($this->money($documentoAfectado->total_neto));
+
+        // Detalles (mismos items del documento afectado)
+        $details = $documentoAfectado->detalles
+            ->values()
+            ->map(fn (DetalleDocumento $detalle, int $index): SaleDetail => $this->detail($detalle, $index + 1, $documentoAfectado))
+            ->all();
+
+        $note->setDetails($details);
+
+        // Leyendas
+        $note->setLegends([
+            (new Legend)
+                ->setCode('1000')
+                ->setValue($this->montoEnLetras($this->money($documentoAfectado->total_neto))),
+        ]);
+
+        return $note;
     }
 
     protected function money(mixed $value): float
