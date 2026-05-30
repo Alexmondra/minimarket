@@ -92,12 +92,40 @@ trait RegistrarVentaBehavior
 
     public string $vencidoWarningMessage = '';
 
+    public ?int $cajaActivaId = null;
+
+    public bool $showCerrarCajaModal = false;
+
+    public ?float $cerrarCajaSaldoReal = null;
+
+    public string $cerrarCajaObservaciones = '';
+
+    public bool $showBuscarVentaModal = false;
+
+    public string $searchVentaQuery = '';
+
+    public array $ventasResultados = [];
+
+    public ?int $selectedVentaId = null;
+
+    public ?array $selectedVentaDetalles = null;
+
     public function mountRegistrarVenta(): void
     {
         $context = app(SucursalContext::class);
         $context->normalizeSession(Auth::user());
 
         $this->sucursalId = $context->resolveSucursalForWrite();
+
+        $caja = \App\Models\SessioneCaja::query()
+            ->where('user_id', Auth::id())
+            ->where('sucursal_id', $this->sucursalId)
+            ->where('estado', true)
+            ->whereNull('fecha_cierre')
+            ->first();
+        if ($caja) {
+            $this->cajaActivaId = $caja->id;
+        }
         $activeSucursal = $context->activeSucursal() ?: ($this->sucursalId ? Sucursal::with('ubigeoRel')->find($this->sucursalId) : null);
         if ($activeSucursal) {
             $activeSucursal->loadMissing('ubigeoRel');
@@ -1117,6 +1145,200 @@ trait RegistrarVentaBehavior
         $this->selectedCategoriaId = null;
         $this->createdDocumentoId = null;
         $this->showSuccessModal = false;
+    }
+
+    public function getExpectedCajaBalanceProperty(): float
+    {
+        if (! $this->cajaActivaId) {
+            return 0.0;
+        }
+        $caja = \App\Models\SessioneCaja::find($this->cajaActivaId);
+        if (! $caja) {
+            return 0.0;
+        }
+        return (float) app(CajaService::class)->saldoTeorico($caja);
+    }
+
+    public function getInitialCajaBalanceProperty(): float
+    {
+        if (! $this->cajaActivaId) {
+            return 0.0;
+        }
+        $caja = \App\Models\SessioneCaja::find($this->cajaActivaId);
+        return $caja ? (float) $caja->saldo_inicial : 0.0;
+    }
+
+    public function getCerrarCajaDiferenciaProperty(): float
+    {
+        $real = (float) $this->cerrarCajaSaldoReal;
+        $teorico = $this->expectedCajaBalance;
+        return round($real - $teorico, 2);
+    }
+
+    public function openCerrarCajaModal(): void
+    {
+        $this->cerrarCajaSaldoReal = null;
+        $this->cerrarCajaObservaciones = '';
+        $this->showCerrarCajaModal = true;
+    }
+
+    public function closeCerrarCaja(): void
+    {
+        $this->validate([
+            'cerrarCajaSaldoReal' => 'required|numeric|min:0',
+            'cerrarCajaObservaciones' => 'nullable|string|max:500',
+        ]);
+
+        if (! $this->cajaActivaId) {
+            Notification::make()
+                ->title('No hay una sesión de caja activa')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $caja = \App\Models\SessioneCaja::find($this->cajaActivaId);
+        if (! $caja || ! $caja->estado) {
+            Notification::make()
+                ->title('La caja ya se encuentra cerrada')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $teorico = (float) app(CajaService::class)->saldoTeorico($caja);
+        $real = round((float) $this->cerrarCajaSaldoReal, 2);
+
+        $caja->update([
+            'fecha_cierre' => now(),
+            'saldo_teorico' => $teorico,
+            'saldo_real' => $real,
+            'diferencia' => round($real - $teorico, 2),
+            'estado' => false,
+            'observaciones' => $this->cerrarCajaObservaciones ?: null,
+        ]);
+
+        Notification::make()
+            ->title('Caja cerrada con éxito')
+            ->success()
+            ->send();
+
+        $this->redirect('/admin/punto-venta');
+    }
+
+    /**
+     * Abre el modal de búsqueda de ventas y restablece los resultados y estados de selección.
+     */
+    public function openBuscarVentaModal(): void
+    {
+        $this->searchVentaQuery = '';
+        $this->ventasResultados = [];
+        $this->selectedVentaId = null;
+        $this->selectedVentaDetalles = null;
+        $this->showBuscarVentaModal = true;
+    }
+
+    /**
+     * Cierra el modal de búsqueda de ventas y limpia la selección.
+     */
+    public function cerrarBuscarVentaModal(): void
+    {
+        $this->showBuscarVentaModal = false;
+        $this->selectedVentaId = null;
+        $this->selectedVentaDetalles = null;
+    }
+
+    /**
+     * Realiza la búsqueda de ventas en la sucursal activa cuando cambia el texto de búsqueda.
+     */
+    public function updatedSearchVentaQuery(): void
+    {
+        $term = trim($this->searchVentaQuery);
+
+        if ($term === '') {
+            $this->ventasResultados = [];
+            return;
+        }
+
+        $this->ventasResultados = \App\Models\Documento::query()
+            ->with(['cliente'])
+            ->where('sucursal_id', $this->sucursalId)
+            ->where(function ($query) use ($term) {
+                $query->where('serie', 'like', "%{$term}%")
+                    ->orWhere('numero', 'like', "%{$term}%")
+                    ->orWhereHas('cliente', function ($q) use ($term) {
+                        $q->where('nombre', 'like', "%{$term}%")
+                            ->orWhere('apellido', 'like', "%{$term}%")
+                            ->orWhere('razon_social', 'like', "%{$term}%")
+                            ->orWhere('documento', 'like', "%{$term}%");
+                    });
+            })
+            ->latest('fecha_emision')
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (\App\Models\Documento $doc): array => [
+                'id' => $doc->id,
+                'comprobante' => "{$doc->tipo_comprobante} {$doc->serie}-{$doc->numero}",
+                'cliente' => $doc->cliente ? ($doc->cliente->razon_social ?: trim(($doc->cliente->nombre ?? '') . ' ' . ($doc->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
+                'cliente_documento' => $doc->cliente ? "{$doc->cliente->tipo_documento} {$doc->cliente->documento}" : null,
+                'fecha' => $doc->fecha_emision ? $doc->fecha_emision->format('d/m/Y') : $doc->created_at->format('d/m/Y'),
+                'total' => (float) $doc->total_neto,
+                'estado' => $doc->estado,
+                'tipo_comprobante' => $doc->tipo_comprobante,
+            ])
+            ->all();
+    }
+
+    /**
+     * Carga el detalle de una venta específica para mostrarlo en el panel lateral.
+     *
+     * @param int $id ID de la venta/documento.
+     */
+    public function verDetalleVenta(int $id): void
+    {
+        $venta = \App\Models\Documento::query()
+            ->with(['cliente', 'detalles.presentacion.unidadMedida', 'detalles.producto'])
+            ->where('sucursal_id', $this->sucursalId)
+            ->find($id);
+
+        if (! $venta) {
+            Notification::make()
+                ->title('No se encontró la venta o no pertenece a esta sucursal.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->selectedVentaId = $venta->id;
+        $this->selectedVentaDetalles = [
+            'id' => $venta->id,
+            'comprobante' => "{$venta->tipo_comprobante} {$venta->serie}-{$venta->numero}",
+            'cliente' => $venta->cliente ? ($venta->cliente->razon_social ?: trim(($venta->cliente->nombre ?? '') . ' ' . ($venta->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
+            'cliente_documento' => $venta->cliente ? "{$venta->cliente->tipo_documento} {$venta->cliente->documento}" : null,
+            'cliente_direccion' => $venta->cliente?->direccion,
+            'fecha' => $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y') : $venta->created_at->format('d/m/Y'),
+            'hora' => $venta->created_at->format('H:i A'),
+            'subtotal' => (float) $venta->subtotal,
+            'total_igv' => (float) $venta->total_igv,
+            'total_descuento' => (float) $venta->total_descuento,
+            'total' => (float) $venta->total_neto,
+            'medio_pago' => $venta->medio_pago,
+            'monto_recibido' => (float) $venta->monto_recibido,
+            'vuelto' => (float) $venta->vuelto,
+            'referencia_pago' => $venta->referencia_pago,
+            'observaciones' => $venta->observaciones,
+            'puntos_ganados' => $venta->puntos_ganados,
+            'puntos_canjeados' => $venta->puntos_canjeados,
+            'items' => $venta->detalles->map(fn (\App\Models\DetalleDocumento $det): array => [
+                'producto_nombre' => $det->producto_nombre,
+                'presentacion' => $det->presentacion?->tipo_presentacion ?: 'Unidad',
+                'unidad' => $det->presentacion?->unidadMedida?->abreviatura ?? 'und',
+                'cantidad' => (float) $det->cantidad,
+                'precio_unitario' => (float) $det->precio_unitario,
+                'subtotal' => (float) $det->total_linea,
+            ])->all(),
+        ];
     }
 }
 

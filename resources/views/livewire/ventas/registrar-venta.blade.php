@@ -243,18 +243,23 @@
             <span class="text-xl font-extrabold tracking-tight">POS Minimarket</span>
         </div>
 
-        <!-- System Stats (Caja, Fecha, Hora) -->
-        <div wire:ignore class="hidden md:flex items-center gap-8 text-sm text-blue-100/90">
-            <!-- Caja -->
-            <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <!-- System Stats (Caja, Fecha, Hora, Buscar) -->
+        <div class="hidden md:flex items-center gap-6 text-sm text-blue-100/90">
+            <!-- Botón Cerrar Caja -->
+            <button 
+                type="button" 
+                wire:click="openCerrarCajaModal"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition shadow-md shadow-rose-900/20"
+                title="Cerrar Caja Actual"
+            >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span>Caja: <strong class="text-white">01</strong></span>
-            </div>
+                <span>Cerrar Caja</span>
+            </button>
 
             <!-- Fecha -->
-            <div class="flex items-center gap-2">
+            <div wire:ignore class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z" />
                 </svg>
@@ -262,12 +267,25 @@
             </div>
 
             <!-- Hora -->
-            <div class="flex items-center gap-2">
+            <div wire:ignore class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span id="pos-live-time" class="font-mono">--:--:-- --</span>
             </div>
+
+            <!-- Botón Buscar Venta -->
+            <button 
+                type="button" 
+                wire:click="openBuscarVentaModal"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition shadow-md shadow-blue-900/20"
+                title="Buscar Venta"
+            >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>Buscar Venta</span>
+            </button>
         </div>
 
         <!-- Theme Switch & Cajero Info -->
@@ -1185,6 +1203,163 @@
             </div>
         </div>
     @endif
+
+    <!-- Modal de Cerrar Caja -->
+    @if ($showCerrarCajaModal)
+        <div wire:click.self="$set('showCerrarCajaModal', false)" class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350" style="z-index: 99999 !important;">
+            <div class="pos-card p-6 max-w-lg w-full mx-4 space-y-5 text-left shadow-2xl border pos-border bg-white dark:bg-slate-900 rounded-2xl text-slate-800 dark:text-slate-200">
+                <!-- Header con Candado -->
+                <div class="flex items-center gap-3 border-b pos-border pb-3">
+                    <div class="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black uppercase tracking-wider pos-text text-slate-800 dark:text-white">Cerrar Sesión de Caja</h3>
+                        <p class="text-[10px] pos-text-muted text-slate-500 dark:text-slate-400">Por favor, cuente el efectivo físico en caja y verifique la diferencia antes de cerrar.</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard de Resumen (Saldo Inicial y Esperado) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Inicial -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Saldo Inicial</p>
+                            <p class="text-sm font-black text-slate-800 dark:text-white">S/ {{ number_format($this->initialCajaBalance, 2) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Esperado -->
+                    <div class="p-3.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/10 flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-emerald-500 text-white">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Saldo Esperado</p>
+                            <p class="text-base font-black text-emerald-700 dark:text-emerald-300">S/ {{ number_format($this->expectedCajaBalance, 2) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input de Dinero Físico -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dinero físico en caja (Efectivo)</label>
+                    <div class="relative flex items-center">
+                        <span class="absolute left-4 text-sm font-extrabold text-slate-400 dark:text-slate-500">S/</span>
+                        <input 
+                            type="number" 
+                            step="0.01" 
+                            min="0"
+                            wire:model.live="cerrarCajaSaldoReal"
+                            class="w-full text-sm font-black tracking-tight text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-xl py-2.5 pl-10 pr-4 transition shadow-inner" 
+                            placeholder="0.00"
+                        >
+                    </div>
+                    @error('cerrarCajaSaldoReal')
+                        <span class="text-rose-500 text-[10px] block mt-0.5 font-normal">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Panel Dinámico de Diferencia -->
+                <div>
+                    @if ($cerrarCajaSaldoReal === null || $cerrarCajaSaldoReal === '')
+                        <div class="flex items-center gap-2.5 p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 dark:text-slate-500 justify-center text-[11px] font-semibold py-4">
+                            <svg class="h-4 w-4 animate-pulse text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span>Ingrese el dinero físico para calcular la diferencia</span>
+                        </div>
+                    @elseif ($this->cerrarCajaDiferencia > 0)
+                        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 dark:bg-amber-500/5 dark:border-amber-500/20 flex items-start gap-3 shadow-sm">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="space-y-0.5">
+                                <h4 class="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">Sobrante Detectado</h4>
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="text-lg font-black text-amber-700 dark:text-amber-300">+ S/ {{ number_format($this->cerrarCajaDiferencia, 2) }}</span>
+                                </div>
+                                <p class="text-[9px] text-amber-605 dark:text-amber-400/90 pt-0.5 leading-normal">El dinero real supera el esperado. Explique la diferencia en observaciones.</p>
+                            </div>
+                        </div>
+                    @elseif ($this->cerrarCajaDiferencia < 0)
+                        <div class="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 dark:bg-rose-500/5 dark:border-rose-500/20 flex items-start gap-3 shadow-sm">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500 text-white">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" />
+                                </svg>
+                            </div>
+                            <div class="space-y-0.5">
+                                <h4 class="text-[11px] font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">Faltante Detectado</h4>
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="text-lg font-black text-rose-700 dark:text-rose-300">S/ {{ number_format(abs($this->cerrarCajaDiferencia), 2) }}</span>
+                                </div>
+                                <p class="text-[9px] text-rose-605 dark:text-rose-400/90 pt-0.5 leading-normal">El dinero real es menor que el esperado. La diferencia quedará registrada.</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 dark:bg-emerald-500/5 dark:border-emerald-500/20 flex items-start gap-3 shadow-sm">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div class="space-y-0.5">
+                                <h4 class="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">¡Caja Cuadrada!</h4>
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="text-lg font-black text-emerald-700 dark:text-emerald-300">S/ 0.00</span>
+                                </div>
+                                <p class="text-[9px] text-emerald-605 dark:text-emerald-400/90 pt-0.5 leading-normal">El saldo coincide exactamente con el teórico.</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Observaciones -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Observaciones</label>
+                    <textarea 
+                        wire:model="cerrarCajaObservaciones"
+                        rows="2"
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-xl py-2 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 transition resize-none" 
+                        placeholder="Ingrese comentarios sobre el cierre de caja (opcional)..."
+                        maxLength="500"
+                    ></textarea>
+                </div>
+
+                <!-- Acciones del Modal -->
+                <div class="flex justify-end gap-3 pt-3 border-t pos-border">
+                    <button 
+                        type="button" 
+                        wire:click="$set('showCerrarCajaModal', false)"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 font-bold text-xs rounded-lg transition"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="closeCerrarCaja"
+                        class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-lg transition shadow-md shadow-rose-500/10"
+                    >
+                        Confirmar y Cerrar Caja
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @include('livewire.ventas.modals.buscar-venta')
 
     <!-- 5. Date & Time Dynamic Script -->
     <script>

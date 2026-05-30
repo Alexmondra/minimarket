@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 #[Signature('app:procesar-lotes-vencidos')]
-#[Description('Procesa los lotes vencidos para marcarlos como pendientes (durante 3 días) y luego registrarlos automáticamente como mermas.')]
+#[Description('Procesa los lotes vencidos para marcarlos como pendientes para confirmar como mermas.')]
 class ProcesarLotesVencidos extends Command
 {
     /**

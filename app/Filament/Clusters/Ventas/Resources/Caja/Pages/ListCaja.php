@@ -24,7 +24,10 @@ class ListCaja extends ListRecords
                 ->label('Abrir caja')
                 ->icon('heroicon-o-lock-open')
                 ->color('success')
-                ->visible(Auth::user()?->can('cajas.abrir') ?? false)
+                ->visible(fn (): bool => 
+                    (Auth::user()?->can('cajas.abrir') ?? false) &&
+                    !\App\Models\SessioneCaja::query()->where('user_id', Auth::id())->where('estado', true)->whereNull('fecha_cierre')->exists()
+                )
                 ->form([
                     Select::make('sucursal_id')
                         ->label('Sucursal')

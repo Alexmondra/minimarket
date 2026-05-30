@@ -32,6 +32,12 @@ class PuntoVenta extends Page
 
     public ?int $sucursalId = null;
 
+    public ?float $saldoInicial = null;
+
+    public ?string $observaciones = null;
+
+    public ?SessioneCaja $cajaAbiertaEnOtraSucursal = null;
+
     public function mount(): void
     {
         abort_unless(Auth::user()?->can('ventas.crear'), 403, 'No tienes permiso para registrar ventas.');
@@ -49,89 +55,66 @@ class PuntoVenta extends Page
             return;
         }
 
-        if ($this->tieneCajaAbierta()) {
-            $this->redirect(DocumentoResource::getUrl('registrar'));
+        // Buscar si el usuario ya tiene una caja abierta en cualquier sucursal
+        $cajaGlobal = SessioneCaja::query()
+            ->where('user_id', Auth::id())
+            ->where('estado', true)
+            ->whereNull('fecha_cierre')
+            ->with('sucursal')
+            ->first();
 
-            return;
-        }
-
-        if (Auth::user()?->can('cajas.abrir')) {
-            $this->mountAction('abrirCaja');
+        if ($cajaGlobal) {
+            if ($cajaGlobal->sucursal_id === $this->sucursalId) {
+                // Si la tiene abierta en esta sucursal, redirigir al POS directamente
+                $this->redirect(DocumentoResource::getUrl('registrar'));
+                return;
+            } else {
+                // Si la tiene abierta en otra sucursal, guardar referencia para mostrar advertencia de bloqueo
+                $this->cajaAbiertaEnOtraSucursal = $cajaGlobal;
+            }
         }
     }
 
-    protected function getHeaderActions(): array
+    public function abrirCajaManual(): void
     {
-        return [
-            Action::make('abrirCaja')
-                ->label('Abrir caja')
-                ->icon('heroicon-o-lock-open')
-                ->color('success')
-                ->visible(fn (): bool => Auth::user()?->can('cajas.abrir') ?? false)
-                ->form([
-                    Select::make('sucursal_id')
-                        ->label('Sucursal')
-                        ->options(fn (): array => app(SucursalContext::class)
-                            ->sucursalesForWrite()
-                            ->pluck('nombre_sucursal', 'id')
-                            ->all())
-                        ->default(fn (): ?int => app(SucursalContext::class)->resolveSucursalForWrite())
-                        ->disabled(fn (): bool => app(SucursalContext::class)->activeSucursalId() !== null)
-                        ->dehydrated()
-                        ->required(),
-                    TextInput::make('saldo_inicial')
-                        ->label('Saldo inicial')
-                        ->numeric()
-                        ->required(),
-                    Textarea::make('observaciones')
-                        ->label('Observaciones')
-                        ->rows(3),
-                ])
-                ->action(function (array $data): void {
-                    $sucursalId = app(SucursalContext::class)->resolveSucursalForWrite((int) $data['sucursal_id']);
-                    abort_unless($sucursalId, 403);
+        abort_unless(Auth::user()?->can('cajas.abrir'), 403, 'No tienes permiso para abrir cajas.');
 
-                    $abierta = SessioneCaja::query()
-                        ->where('user_id', Auth::id())
-                        ->where('sucursal_id', $sucursalId)
-                        ->where('estado', true)
-                        ->whereNull('fecha_cierre')
-                        ->exists();
+        $this->validate([
+            'saldoInicial' => 'required|numeric|min:0',
+            'observaciones' => 'nullable|string|max:500',
+        ]);
 
-                    if ($abierta) {
-                        Notification::make()
-                            ->title('Ya tienes una caja abierta en esta sucursal')
-                            ->success()
-                            ->send();
+        // Re-verificar si tiene caja abierta globalmente
+        $tieneCajaAbierta = SessioneCaja::query()
+            ->where('user_id', Auth::id())
+            ->where('estado', true)
+            ->whereNull('fecha_cierre')
+            ->exists();
 
-                        $this->redirect(DocumentoResource::getUrl('registrar'));
+        if ($tieneCajaAbierta) {
+            Notification::make()
+                ->title('Ya tienes una sesión de caja abierta')
+                ->danger()
+                ->send();
+            return;
+        }
 
-                        return;
-                    }
+        SessioneCaja::create([
+            'empresa_id' => Auth::user()->empresa_id,
+            'sucursal_id' => $this->sucursalId,
+            'user_id' => Auth::id(),
+            'fecha_apertura' => now(),
+            'saldo_inicial' => round((float) $this->saldoInicial, 2),
+            'estado' => true,
+            'observaciones' => $this->observaciones,
+        ]);
 
-                    SessioneCaja::create([
-                        'empresa_id' => Auth::user()->empresa_id,
-                        'sucursal_id' => $sucursalId,
-                        'user_id' => Auth::id(),
-                        'fecha_apertura' => now(),
-                        'saldo_inicial' => round((float) $data['saldo_inicial'], 2),
-                        'estado' => true,
-                        'observaciones' => $data['observaciones'] ?? null,
-                    ]);
+        Notification::make()
+            ->title('Caja abierta correctamente')
+            ->success()
+            ->send();
 
-                    Notification::make()
-                        ->title('Caja abierta correctamente')
-                        ->success()
-                        ->send();
-
-                    $this->redirect(DocumentoResource::getUrl('registrar'));
-                }),
-            Action::make('irAVentas')
-                ->label('Ir a ventas')
-                ->icon('heroicon-o-arrow-right')
-                ->visible(fn (): bool => $this->tieneCajaAbierta())
-                ->url(DocumentoResource::getUrl('registrar')),
-        ];
+        $this->redirect(DocumentoResource::getUrl('registrar'));
     }
 
     public function tieneCajaAbierta(): bool
