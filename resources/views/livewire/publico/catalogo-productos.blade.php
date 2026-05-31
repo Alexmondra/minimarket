@@ -1,5 +1,5 @@
 <section id="productos" class="relative overflow-hidden bg-white dark:bg-slate-950">
-    {{-- Subtle background texture --}}
+    {{-- Subtle grid background --}}
     <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
     <div class="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -29,11 +29,11 @@
             </div>
         </div>
 
-        {{-- ============ MAIN LAYOUT: Filters + Grid ============ --}}
+        {{-- ============ MAIN LAYOUT: Sidebar + Grid ============ --}}
         <div class="grid gap-8 lg:grid-cols-[260px_1fr]">
             {{-- ============ FILTERS SIDEBAR ============ --}}
             <aside class="space-y-4">
-                {{-- Sucursal selector card --}}
+                {{-- Sucursal --}}
                 <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm p-4 shadow-sm">
                     <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sucursal</label>
                     <select
@@ -54,7 +54,7 @@
                     @endif
                 </div>
 
-                {{-- Marca filter --}}
+                {{-- Marca --}}
                 <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm p-4 shadow-sm">
                     <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Marca</label>
                     <select
@@ -68,7 +68,7 @@
                     </select>
                 </div>
 
-                {{-- Categories chips --}}
+                {{-- Categories --}}
                 <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm p-4 shadow-sm">
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Categorías</p>
                     <div class="flex flex-wrap gap-2">
@@ -121,9 +121,8 @@
                             class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/5 hover:border-emerald-200 dark:hover:border-emerald-800/50 hover:-translate-y-1 cursor-pointer"
                             wire:click="openProduct({{ $producto['id'] }})"
                         >
-                            {{-- Image area --}}
+                            {{-- Image --}}
                             <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                                {{-- Gradient overlay on hover --}}
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
 
                                 @if ($producto['imagen'])
@@ -134,7 +133,6 @@
                                         loading="lazy"
                                     >
                                 @else
-                                    {{-- Fallback with category-based gradient --}}
                                     @php
                                         $gradients = [
                                             'from-emerald-400 via-teal-400 to-cyan-500',
@@ -157,12 +155,12 @@
                                     </div>
                                 @endif
 
-                                {{-- Category badge top-right --}}
+                                {{-- Category badge --}}
                                 <span class="absolute top-3 right-3 z-20 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider shadow-sm">
                                     {{ $producto['categoria'] ?? 'General' }}
                                 </span>
 
-                                {{-- View icon on hover --}}
+                                {{-- View icon --}}
                                 <div class="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                     <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-xl">
                                         <svg class="h-5 w-5 text-slate-700 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -173,12 +171,11 @@
                                 </div>
                             </div>
 
-                            {{-- Product info --}}
+                            {{-- Info --}}
                             <div class="flex flex-col flex-1 p-4">
                                 <h3 class="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                                     {{ $producto['nombre'] }}
                                 </h3>
-
                                 <div class="mt-auto pt-3 flex items-center justify-between gap-2">
                                     <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                                         {{ $producto['marca'] ?? 'Sin marca' }}
@@ -231,16 +228,12 @@
             x-data
             x-on:keydown.escape.window="$wire.closeProduct()"
         >
-            {{-- Backdrop --}}
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity"></div>
 
-            {{-- Modal panel --}}
             <div class="relative min-h-full flex items-center justify-center p-4 sm:p-6">
-                {{-- Click outside to close --}}
                 <button type="button" wire:click="closeProduct" class="fixed inset-0 h-full w-full cursor-default" aria-label="Cerrar modal"></button>
 
                 <div class="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-200/50 dark:ring-slate-800/50">
-                    {{-- Close button --}}
                     <button
                         type="button"
                         wire:click="closeProduct"
@@ -253,11 +246,7 @@
                         {{-- Image side --}}
                         <div class="relative bg-slate-100 dark:bg-slate-800 min-h-[280px] md:min-h-[400px]">
                             @if ($selectedProduct['imagen'])
-                                <img
-                                    src="{{ $selectedProduct['imagen'] }}"
-                                    alt="{{ $selectedProduct['nombre'] }}"
-                                    class="absolute inset-0 h-full w-full object-cover"
-                                >
+                                <img src="{{ $selectedProduct['imagen'] }}" alt="{{ $selectedProduct['nombre'] }}" class="absolute inset-0 h-full w-full object-cover">
                             @else
                                 @php
                                     $gradients = [
@@ -273,9 +262,7 @@
                                     <svg class="h-24 w-24 text-white/90 drop-shadow-2xl" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                                     </svg>
-                                    <span class="mt-4 text-lg font-black text-white/90 uppercase tracking-wider">
-                                        {{ $selectedProduct['categoria'] ?? 'Producto' }}
-                                    </span>
+                                    <span class="mt-4 text-lg font-black text-white/90 uppercase tracking-wider">{{ $selectedProduct['categoria'] ?? 'Producto' }}</span>
                                 </div>
                             @endif
                         </div>
@@ -287,11 +274,9 @@
                                     {{ $selectedProduct['categoria'] ?? 'General' }}
                                 </span>
                             </div>
-
                             <h3 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                                 {{ $selectedProduct['nombre'] }}
                             </h3>
-
                             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
                                 @if ($selectedProduct['marca'])
                                     <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold">
@@ -308,9 +293,7 @@
 
                             @if ($selectedProduct['descripcion'])
                                 <div class="mt-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80">
-                                    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                                        {{ $selectedProduct['descripcion'] }}
-                                    </p>
+                                    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $selectedProduct['descripcion'] }}</p>
                                 </div>
                             @endif
 
