@@ -21,6 +21,11 @@ class ListCaja extends ListRecords
 
     protected string $view = 'filament.clusters.ventas.resources.caja.pages.list-cajas';
 
+    public function getHeader(): ?\Illuminate\Contracts\View\View
+    {
+        return view('filament.empty-header');
+    }
+
     public function getActiveCaja(): ?SessioneCaja
     {
         return SessioneCaja::query()
@@ -47,6 +52,7 @@ class ListCaja extends ListRecords
     {
         return Action::make('abrirCaja')
             ->label('Abrir caja')
+            ->extraAttributes(['class' => '!hidden'])
             ->icon('heroicon-o-lock-open')
             ->color('success')
             ->visible(fn (): bool => 
@@ -115,6 +121,7 @@ class ListCaja extends ListRecords
     {
         return Action::make('cerrarCaja')
             ->label('Cerrar caja')
+            ->extraAttributes(['class' => '!hidden'])
             ->icon('heroicon-o-lock-closed')
             ->color('danger')
             ->visible(fn (): bool => 

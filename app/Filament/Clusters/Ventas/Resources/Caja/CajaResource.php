@@ -10,9 +10,12 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +47,13 @@ class CajaResource extends Resource
                     ->searchable()
                     ->icon('heroicon-o-building-storefront')
                     ->iconColor('gray'),
+                TextColumn::make('user.name')
+                    ->label('Cajero')
+                    ->searchable()
+                    ->sortable()
+                    ->icon('heroicon-o-user')
+                    ->iconColor('gray')
+                    ->visible(fn () => Auth::user()?->hasRole('Administrador')),
                 TextColumn::make('fecha_apertura')
                     ->label('Apertura')
                     ->dateTime('d/m/Y H:i')
@@ -55,21 +65,10 @@ class CajaResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->placeholder('-')
                     ->icon('heroicon-o-stop')
-                    ->iconColor('danger'),
-                TextColumn::make('saldo_inicial')
-                    ->label('Saldo Inicial')
-                    ->money('PEN')
-                    ->color('primary'),
-                TextColumn::make('saldo_teorico')
-                    ->label('Saldo Esperado')
-                    ->money('PEN')
-                    ->state(fn (SessioneCaja $record) => $record->saldo_teorico ?? app(CajaService::class)->saldoTeorico($record))
-                    ->color('info'),
-                TextColumn::make('saldo_real')
-                    ->label('Saldo Real')
-                    ->money('PEN')
-                    ->placeholder('-')
-                    ->color('warning'),
+                    ->iconColor('danger')
+                    ->sortable(),
+                
+               
                 TextColumn::make('diferencia')
                     ->label('Diferencia')
                     ->money('PEN')
@@ -271,6 +270,39 @@ class CajaResource extends Resource
                             ->send();
                     }),
             ])
+            ->filters([
+                Filter::make('fecha_apertura')
+                    ->label('Fecha')
+                    ->form([
+                        DatePicker::make('fecha')
+                            ->label('Seleccionar Fecha')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->placeholder('dd/mm/aaaa'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['fecha'] ?? null,
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha_apertura', $date),
+                            );
+                    }),
+                SelectFilter::make('sucursal_id')
+                    ->label('Sucursal')
+                    ->relationship('sucursal', 'nombre_sucursal')
+                    ->preload(),
+                SelectFilter::make('estado')
+                    ->label('Estado')
+                    ->options([
+                        '1' => 'Abierta',
+                        '0' => 'Cerrada',
+                    ]),
+                SelectFilter::make('user_id')
+                    ->label('Cajero')
+                    ->relationship('user', 'name')
+                    ->preload()
+                    ->visible(fn () => Auth::user()?->hasRole('Administrador')),
+            ])
             ->recordAction('verDetalles')
             ->defaultSort('fecha_apertura', 'desc');
     }
@@ -279,6 +311,10 @@ class CajaResource extends Resource
     {
         $query = parent::getEloquentQuery()->with(['sucursal', 'user']);
         
+        if (Auth::user()?->hasRole('Administrador')) {
+            return $query;
+        }
+
         // Cada usuario solo ve sus propias cajas
         return $query->where('user_id', Auth::id());
     }

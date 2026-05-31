@@ -267,8 +267,7 @@
                     </div>
                     <button
                         type="button"
-                        x-on:click="close()"
-                        wire:click="mountAction('cerrarCaja')"
+                        x-on:click="close(); $nextTick(() => $wire.mountAction('cerrarCaja'))"
                         class="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 dark:bg-rose-700 dark:hover:bg-rose-600 rounded-xl shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                     >
                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">

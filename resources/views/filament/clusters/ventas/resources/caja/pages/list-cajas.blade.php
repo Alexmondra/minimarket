@@ -4,7 +4,14 @@
     @endphp
 
     {{-- ============ SLICK SAAS STATUS BANNER (Linear/shadcn style) ============ --}}
-    <div class="relative overflow-hidden mb-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md shadow-sm transition-all duration-300">
+    <div 
+        @if($activeCaja)
+            wire:click="mountTableAction('verDetalles', {{ $activeCaja->id }})"
+        @else
+            wire:click="mountAction('abrirCaja')"
+        @endif
+        class="relative overflow-hidden mb-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md shadow-sm transition-all duration-300 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md hover:-translate-y-0.5 group"
+    >
         {{-- Decorative grid background patterns (Linear style) --}}
         <div class="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none opacity-50 dark:opacity-30"></div>
         
@@ -58,7 +65,7 @@
                         {{-- Ver Detalle button --}}
                         <button
                             type="button"
-                            wire:click="mountTableAction('verDetalles', {{ $activeCaja->id }})"
+                            wire:click.stop="mountTableAction('verDetalles', {{ $activeCaja->id }})"
                             class="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-xl shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -71,7 +78,7 @@
                         {{-- Cerrar Caja button --}}
                         <button
                             type="button"
-                            wire:click="mountAction('cerrarCaja')"
+                            wire:click.stop="mountAction('cerrarCaja')"
                             class="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 dark:bg-rose-750 dark:hover:bg-rose-650 rounded-xl shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -83,7 +90,7 @@
                         {{-- Abrir Caja button --}}
                         <button
                             type="button"
-                            wire:click="mountAction('abrirCaja')"
+                            wire:click.stop="mountAction('abrirCaja')"
                             class="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-650 rounded-xl shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                         >
                             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
