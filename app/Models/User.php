@@ -12,9 +12,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
+
 #[Fillable(['name', 'email', 'password', 'empresa_id', 'telefono', 'activo'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements \Filament\Models\Contracts\FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, SoftDeletes;
@@ -45,4 +46,10 @@ class User extends Authenticatable
             ->withPivot('deleted_at')
             ->wherePivotNull('deleted_at');
     }
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        // Esto le da permiso a cualquier usuario que crees en tu base de datos
+        return true; 
+    }
+
 }
