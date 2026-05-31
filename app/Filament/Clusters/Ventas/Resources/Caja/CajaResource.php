@@ -41,38 +41,79 @@ class CajaResource extends Resource
             ->columns([
                 TextColumn::make('sucursal.nombre_sucursal')
                     ->label('Sucursal')
-                    ->searchable(),
+                    ->searchable()
+                    ->icon('heroicon-o-building-storefront')
+                    ->iconColor('gray'),
                 TextColumn::make('fecha_apertura')
                     ->label('Apertura')
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->icon('heroicon-o-play')
+                    ->iconColor('success'),
                 TextColumn::make('fecha_cierre')
                     ->label('Cierre')
                     ->dateTime('d/m/Y H:i')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->icon('heroicon-o-stop')
+                    ->iconColor('danger'),
                 TextColumn::make('saldo_inicial')
-                    ->label('Inicial')
-                    ->money('PEN'),
+                    ->label('Saldo Inicial')
+                    ->money('PEN')
+                    ->color('primary'),
                 TextColumn::make('saldo_teorico')
-                    ->label('Teórico')
+                    ->label('Saldo Esperado')
                     ->money('PEN')
-                    ->state(fn (SessioneCaja $record) => $record->saldo_teorico ?? app(CajaService::class)->saldoTeorico($record)),
+                    ->state(fn (SessioneCaja $record) => $record->saldo_teorico ?? app(CajaService::class)->saldoTeorico($record))
+                    ->color('info'),
                 TextColumn::make('saldo_real')
-                    ->label('Real')
+                    ->label('Saldo Real')
                     ->money('PEN')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->color('warning'),
                 TextColumn::make('diferencia')
                     ->label('Diferencia')
                     ->money('PEN')
                     ->color(fn ($state) => $state === null ? 'gray' : ((float) $state === 0.0 ? 'success' : 'danger'))
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->icon(fn ($state) => $state === null ? 'heroicon-o-minus' : ((float) $state === 0.0 ? 'heroicon-o-check-circle' : 'heroicon-o-exclamation-circle')),
                 TextColumn::make('estado')
                     ->label('Estado')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Abierta' : 'Cerrada')
                     ->badge()
-                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray')
+                    ->icon(fn (bool $state): string => $state ? 'heroicon-o-lock-open' : 'heroicon-o-lock-closed'),
             ])
             ->actions([
+                Action::make('verDetalles')
+                    ->label('Ver detalles')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Detalles de la Sesión de Caja')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Cerrar')
+                    ->modalWidth('2xl')
+                    ->modalContent(function (SessioneCaja $record) {
+                        $ventasQuery = $record->documentos()->where('estado', true);
+                        $totalVentas = (float) $ventasQuery->sum('total_neto');
+
+                        $efectivo = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'EFECTIVO')->sum('total_neto');
+                        $yape = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'YAPE')->sum('total_neto');
+                        $plin = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'PLIN')->sum('total_neto');
+                        $transferencia = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TRANSFERENCIA')->sum('total_neto');
+                        $tarjeta = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TARJETA')->sum('total_neto');
+                        $otro = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'OTRO')->sum('total_neto');
+
+                        return view('filament.clusters.ventas.resources.caja.pages.caja-detail-modal', [
+                            'caja' => $record,
+                            'totalVentas' => $totalVentas,
+                            'efectivo' => $efectivo,
+                            'yape' => $yape,
+                            'plin' => $plin,
+                            'transferencia' => $transferencia,
+                            'tarjeta' => $tarjeta,
+                            'otro' => $otro,
+                        ]);
+                    }),
                 Action::make('cerrarCaja')
                     ->label('Cerrar caja')
                     ->icon('heroicon-o-lock-closed')
@@ -228,36 +269,6 @@ class CajaResource extends Resource
                             ->title('Caja cerrada con éxito')
                             ->success()
                             ->send();
-                    }),
-                Action::make('verDetalles')
-                    ->label('Ver detalles')
-                    ->icon('heroicon-o-eye')
-                    ->color('info')
-                    ->modalHeading('Detalles de la Sesión de Caja')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar')
-                    ->modalWidth('2xl')
-                    ->modalContent(function (SessioneCaja $record) {
-                        $ventasQuery = $record->documentos()->where('estado', true);
-                        $totalVentas = (float) $ventasQuery->sum('total_neto');
-
-                        $efectivo = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'EFECTIVO')->sum('total_neto');
-                        $yape = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'YAPE')->sum('total_neto');
-                        $plin = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'PLIN')->sum('total_neto');
-                        $transferencia = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TRANSFERENCIA')->sum('total_neto');
-                        $tarjeta = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TARJETA')->sum('total_neto');
-                        $otro = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'OTRO')->sum('total_neto');
-
-                        return view('filament.clusters.ventas.resources.caja.pages.caja-detail-modal', [
-                            'caja' => $record,
-                            'totalVentas' => $totalVentas,
-                            'efectivo' => $efectivo,
-                            'yape' => $yape,
-                            'plin' => $plin,
-                            'transferencia' => $transferencia,
-                            'tarjeta' => $tarjeta,
-                            'otro' => $otro,
-                        ]);
                     }),
             ])
             ->recordAction('verDetalles')

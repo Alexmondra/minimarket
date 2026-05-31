@@ -35,17 +35,12 @@ class ListCaja extends ListRecords
         return $this->getActiveCaja();
     }
 
-    public function getActions(): array
+    protected function getHeaderActions(): array
     {
         return [
             $this->getAbrirCajaAction(),
             $this->getCerrarCajaAction(),
         ];
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [];
     }
 
     protected function getAbrirCajaAction(): Action
