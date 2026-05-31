@@ -72,7 +72,7 @@ class AnulacionService
         // ============================================================
         // FACTURA / BOLETA: NC completa + SUNAT
         // ============================================================
-        $ncTipo = 'NOTA_CREDITO';
+        $ncTipo = $documento->tipo_comprobante === 'FACTURA' ? 'NOTA_CREDITO_FACTURA' : 'NOTA_CREDITO_BOLETA';
         $serie = Serie::query()
             ->where('sucursal_id', $sucursalId)
             ->where('tipo_comprobante', $ncTipo)
@@ -83,8 +83,8 @@ class AnulacionService
             $serie = Serie::create([
                 'sucursal_id' => $sucursalId,
                 'tipo_comprobante' => $ncTipo,
-                'serie' => Serie::siguienteSeriePorEmpresa($empresa->id, 'NOTA_CREDITO'),
-                'correlativo' => 0,
+                'serie' => Serie::siguienteSeriePorEmpresa($empresa->id, $ncTipo),
+                'correlativo' => 1,
             ]);
         }
 

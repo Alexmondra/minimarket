@@ -35,7 +35,8 @@ class SerieResource extends Resource
     private const TIPOS_COMPROBANTE = [
         'BOLETA' => 'Boleta de venta',
         'FACTURA' => 'Factura',
-        'NOTA_CREDITO' => 'Nota de credito',
+        'NOTA_CREDITO_BOLETA' => 'Nota de credito Boleta',
+        'NOTA_CREDITO_FACTURA' => 'Nota de credito Factura',
         'NOTA_DEBITO' => 'Nota de debito',
         'TICKET' => 'Ticket',
     ];
@@ -122,7 +123,8 @@ class SerieResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'BOLETA' => 'success',
                         'FACTURA' => 'info',
-                        'NOTA_CREDITO' => 'warning',
+                        'NOTA_CREDITO_BOLETA' => 'warning',
+                        'NOTA_CREDITO_FACTURA' => 'warning',
                         'NOTA_DEBITO' => 'danger',
                         'TICKET' => 'gray',
                         default => 'gray',

@@ -37,32 +37,32 @@ class Sucursal extends Model
             $suffix3 = sprintf('%03d', $index);
             $suffix2 = sprintf('%02d', $index);
 
-            // Generate the default 5 series records
+            // Generate the default series records
             $seriesToCreate = [
                 [
                     'tipo_comprobante' => 'BOLETA',
                     'serie' => 'B' . $suffix3,
-                    'correlativo' => 0,
+                    'correlativo' => 1,
                 ],
                 [
                     'tipo_comprobante' => 'FACTURA',
                     'serie' => 'F' . $suffix3,
-                    'correlativo' => 0,
+                    'correlativo' => 1,
                 ],
                 [
-                    'tipo_comprobante' => 'NOTA_CREDITO',
-                    'serie' => 'NC' . $suffix2,
-                    'correlativo' => 0,
+                    'tipo_comprobante' => 'NOTA_CREDITO_BOLETA',
+                    'serie' => 'BC' . $suffix2,
+                    'correlativo' => 1,
                 ],
                 [
-                    'tipo_comprobante' => 'NOTA_DEBITO',
-                    'serie' => 'ND' . $suffix2,
-                    'correlativo' => 0,
+                    'tipo_comprobante' => 'NOTA_CREDITO_FACTURA',
+                    'serie' => 'FC' . $suffix2,
+                    'correlativo' => 1,
                 ],
                 [
                     'tipo_comprobante' => 'TICKET',
                     'serie' => 'T' . $suffix3,
-                    'correlativo' => 0,
+                    'correlativo' => 1,
                 ],
             ];
 

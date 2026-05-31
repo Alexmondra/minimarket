@@ -65,8 +65,8 @@ class SucursalAutoSeriesTest extends TestCase
         $expectedSeries = [
             'BOLETA' => 'B001',
             'FACTURA' => 'F001',
-            'NOTA_CREDITO' => 'NC01',
-            'NOTA_DEBITO' => 'ND01',
+            'NOTA_CREDITO_BOLETA' => 'BC01',
+            'NOTA_CREDITO_FACTURA' => 'FC01',
             'TICKET' => 'T001',
         ];
 
@@ -74,7 +74,7 @@ class SucursalAutoSeriesTest extends TestCase
             $matchingSerie = $series->firstWhere('tipo_comprobante', $tipo);
             $this->assertNotNull($matchingSerie);
             $this->assertSame($serieVal, $matchingSerie->serie);
-            $this->assertSame(0, $matchingSerie->correlativo);
+            $this->assertSame(1, $matchingSerie->correlativo);
         }
     }
 
@@ -108,8 +108,8 @@ class SucursalAutoSeriesTest extends TestCase
         $expectedSeries = [
             'BOLETA' => 'B002',
             'FACTURA' => 'F002',
-            'NOTA_CREDITO' => 'NC02',
-            'NOTA_DEBITO' => 'ND02',
+            'NOTA_CREDITO_BOLETA' => 'BC02',
+            'NOTA_CREDITO_FACTURA' => 'FC02',
             'TICKET' => 'T002',
         ];
 
@@ -117,7 +117,7 @@ class SucursalAutoSeriesTest extends TestCase
             $matchingSerie = $series->firstWhere('tipo_comprobante', $tipo);
             $this->assertNotNull($matchingSerie);
             $this->assertSame($serieVal, $matchingSerie->serie);
-            $this->assertSame(0, $matchingSerie->correlativo);
+            $this->assertSame(1, $matchingSerie->correlativo);
         }
     }
 

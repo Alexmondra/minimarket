@@ -32,7 +32,8 @@ class Serie extends Model
         $prefix = match ($tipoComprobante) {
             'BOLETA' => 'B',
             'FACTURA' => 'F',
-            'NOTA_CREDITO' => 'NC',
+            'NOTA_CREDITO_BOLETA' => 'BC',
+            'NOTA_CREDITO_FACTURA' => 'FC',
             'NOTA_DEBITO' => 'ND',
             'TICKET' => 'T',
             default => 'T',

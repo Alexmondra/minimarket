@@ -77,7 +77,7 @@ class RegistrarVenta
                     'sucursal_id' => $sucursalId,
                     'tipo_comprobante' => $tipoComprobante,
                     'serie' => $this->seriePorDefecto($tipoComprobante),
-                    'correlativo' => 0,
+                    'correlativo' => 1,
                 ]);
             }
 

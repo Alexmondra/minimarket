@@ -57,4 +57,29 @@ class SessioneCaja extends Model
     {
         return $this->hasMany(Documento::class, 'caja_sesion_id');
     }
+
+    public function getObservacionApertura(): string
+    {
+        $text = $this->observaciones ?? '';
+        if (preg_match('/APERTURA:(.*?)(CIERRE:|$)/s', $text, $matches)) {
+            return trim($matches[1]);
+        }
+        if (!str_contains($text, 'APERTURA:') && !str_contains($text, 'CIERRE:')) {
+            return $this->fecha_cierre === null ? $text : '';
+        }
+        return '';
+    }
+
+    public function getObservacionCierre(): string
+    {
+        $text = $this->observaciones ?? '';
+        if (preg_match('/CIERRE:(.*)/s', $text, $matches)) {
+            return trim($matches[1]);
+        }
+        if (!str_contains($text, 'APERTURA:') && !str_contains($text, 'CIERRE:')) {
+            return $this->fecha_cierre !== null ? $text : '';
+        }
+        return '';
+    }
 }
+

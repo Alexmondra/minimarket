@@ -203,7 +203,7 @@ class CajaResource extends Resource
                                 }
                             }),
                         Textarea::make('observaciones')
-                            ->label('Observaciones')
+                            ->label('Observaciones de Cierre')
                             ->placeholder('Ingrese comentarios o justificaciones de diferencias si las hay...')
                             ->rows(3),
                     ])
@@ -211,13 +211,17 @@ class CajaResource extends Resource
                         $teorico = app(CajaService::class)->saldoTeorico($record);
                         $real = round((float) $data['saldo_real'], 2);
 
+                        $apertura = $record->getObservacionApertura();
+                        $cierre = trim($data['observaciones'] ?? '');
+                        $formattedObservations = "APERTURA: {$apertura}\nCIERRE: {$cierre}";
+
                         $record->update([
                             'fecha_cierre' => now(),
                             'saldo_teorico' => $teorico,
                             'saldo_real' => $real,
                             'diferencia' => round($real - $teorico, 2),
                             'estado' => false,
-                            'observaciones' => $data['observaciones'] ?? null,
+                            'observaciones' => $formattedObservations,
                         ]);
 
                         \Filament\Notifications\Notification::make()
@@ -225,15 +229,44 @@ class CajaResource extends Resource
                             ->success()
                             ->send();
                     }),
+                Action::make('verDetalles')
+                    ->label('Ver detalles')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Detalles de la Sesión de Caja')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Cerrar')
+                    ->modalWidth('2xl')
+                    ->modalContent(function (SessioneCaja $record) {
+                        $ventasQuery = $record->documentos()->where('estado', true);
+                        $totalVentas = (float) $ventasQuery->sum('total_neto');
+
+                        $efectivo = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'EFECTIVO')->sum('total_neto');
+                        $yape = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'YAPE')->sum('total_neto');
+                        $plin = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'PLIN')->sum('total_neto');
+                        $transferencia = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TRANSFERENCIA')->sum('total_neto');
+                        $tarjeta = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'TARJETA')->sum('total_neto');
+                        $otro = (float) $record->documentos()->where('estado', true)->where('medio_pago', 'OTRO')->sum('total_neto');
+
+                        return view('filament.clusters.ventas.resources.caja.pages.caja-detail-modal', [
+                            'caja' => $record,
+                            'totalVentas' => $totalVentas,
+                            'efectivo' => $efectivo,
+                            'yape' => $yape,
+                            'plin' => $plin,
+                            'transferencia' => $transferencia,
+                            'tarjeta' => $tarjeta,
+                            'otro' => $otro,
+                        ]);
+                    }),
             ])
-            ->recordAction('cerrarCaja')
+            ->recordAction('verDetalles')
             ->defaultSort('fecha_apertura', 'desc');
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['sucursal', 'user']);
-        $query = app(SucursalContext::class)->applyToQuery($query);
         
         // Cada usuario solo ve sus propias cajas
         return $query->where('user_id', Auth::id());

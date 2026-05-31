@@ -26,7 +26,7 @@
 
                 <div class="pt-2">
                     <a 
-                        href="/admin/ventas/cajas" 
+                        href="/admin/caja/cajas" 
                         class="inline-flex w-full justify-center items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 text-sm transition dark:bg-slate-800 dark:hover:bg-slate-750"
                     >
                         Ver mis Cajas para Cerrar
