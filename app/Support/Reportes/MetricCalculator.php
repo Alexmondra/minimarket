@@ -1,0 +1,392 @@
+<?php
+
+namespace App\Support\Reportes;
+
+use App\Models\Documento;
+use App\Models\DetalleDocumento;
+use App\Models\ProductoSucursal;
+use App\Models\Cliente;
+use App\Support\SucursalContext;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class MetricCalculator
+{
+    public function __construct(
+        private SucursalContext $context,
+    ) {}
+
+    /**
+     * Build a KPI data array.
+     */
+    private function kpi(
+        mixed $value,
+        string $label,
+        string $icon,
+        string $color,
+        ?float $trend = null,
+        ?string $prefix = '',
+        ?string $suffix = '',
+    ): array {
+        return [
+            'value' => $value,
+            'label' => $label,
+            'icon' => $icon,
+            'color' => $color,
+            'trend' => $trend,
+            'trend_up' => $trend !== null ? $trend >= 0 : null,
+            'prefix' => $prefix,
+            'suffix' => $suffix,
+        ];
+    }
+
+    /**
+     * Ingresos = sum(ventas activas where tipo IN BOLETA, FACTURA, TICKET).
+     *
+     * NOTA_CREDITO documents are NOT subtracted because they are the
+     * comprobante of a cancellation. The original sale already has estado=0
+     * (excluded). Subtracting the credit note would be double-deducting.
+     *
+     * If a partial return happens (sale stays active + credit note issued),
+     * the credit note amount should be subtracted. For now, treat credit
+     * notes as linked to fully cancelled sales.
+     */
+    private function ingresosNetos(\Illuminate\Database\Eloquent\Builder $ventasQuery): float
+    {
+        return (float) (clone $ventasQuery)
+            ->whereNotIn('tipo_comprobante', [
+                'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                'NOTA_CREDITO_FACTURA', 'NOTA_DEBITO',
+            ])
+            ->sum('total_neto');
+    }
+
+    public function ventasDelDia(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $hoy = $this->ingresosNetos($qb->ventasHoy());
+        $ayer = $this->ingresosNetos($qb->ventasAyer());
+        $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
+
+        return $this->kpi(
+            value: number_format($hoy, 2),
+            label: 'Ventas Hoy',
+            icon: 'heroicon-o-currency-dollar',
+            color: 'emerald',
+            trend: $trend,
+            prefix: 'S/ ',
+        );
+    }
+
+    public function gananciaNeta(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $hoy = $this->calcularGanancia($qb->ventasHoy());
+        $ayer = $this->calcularGanancia($qb->ventasAyer());
+        $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
+
+        return $this->kpi(
+            value: number_format($hoy, 2),
+            label: 'Ganancia Est. del Día',
+            icon: 'heroicon-o-arrow-trending-up',
+            color: 'teal',
+            trend: $trend,
+            prefix: 'S/ ',
+        );
+    }
+
+    public function ticketsVendidos(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $hoy = $qb->ventasHoy()->count();
+        $ayer = $qb->ventasAyer()->count();
+        $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
+
+        return $this->kpi(
+            value: $hoy,
+            label: 'Tickets Vendidos',
+            icon: 'heroicon-o-ticket',
+            color: 'blue',
+            trend: $trend,
+        );
+    }
+
+    public function productosVendidos(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $hoyIds = $qb->ventasHoy()->pluck('id');
+        $ayerIds = $qb->ventasAyer()->pluck('id');
+
+        $hoy = DetalleDocumento::whereIn('documento_id', $hoyIds)->count();
+        $ayer = DetalleDocumento::whereIn('documento_id', $ayerIds)->count();
+        $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
+
+        return $this->kpi(
+            value: $hoy,
+            label: 'Productos Vendidos',
+            icon: 'heroicon-o-shopping-bag',
+            color: 'indigo',
+            trend: $trend,
+        );
+    }
+
+    public function productosBajoStock(): array
+    {
+        $count = app(ReporteQueryBuilder::class)->productosBajoStock()->count();
+
+        return $this->kpi(
+            value: $count,
+            label: 'Bajo Stock',
+            icon: 'heroicon-o-exclamation-triangle',
+            color: 'amber',
+        );
+    }
+
+    public function productosPorVencer(): array
+    {
+        $count = app(ReporteQueryBuilder::class)->productosPorVencer(30)->count();
+
+        return $this->kpi(
+            value: $count,
+            label: 'Por Vencer (30d)',
+            icon: 'heroicon-o-clock',
+            color: 'orange',
+        );
+    }
+
+    public function totalClientes(): array
+    {
+        $total = Cliente::query()->count();
+
+        return $this->kpi(
+            value: $total,
+            label: 'Total Clientes',
+            icon: 'heroicon-o-users',
+            color: 'violet',
+        );
+    }
+
+    public function totalIngresos(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $mes = $qb->ingresosNetos($qb->ventasMesActual());
+        $mesAnterior = $qb->ingresosNetos($qb->ventasMesAnterior());
+        $trend = $mesAnterior > 0 ? round((($mes - $mesAnterior) / $mesAnterior) * 100, 1) : null;
+
+        return $this->kpi(
+            value: number_format($mes, 2),
+            label: 'Ingresos del Mes',
+            icon: 'heroicon-o-banknotes',
+            color: 'emerald',
+            trend: $trend,
+            prefix: 'S/ ',
+        );
+    }
+
+    public function cajasAbiertasCount(): array
+    {
+        $count = app(ReporteQueryBuilder::class)->cajasAbiertas()->count();
+
+        return $this->kpi(
+            value: $count,
+            label: 'Cajas Abiertas',
+            icon: 'heroicon-o-lock-open',
+            color: $count > 0 ? 'emerald' : 'slate',
+        );
+    }
+
+    /**
+     * Get all KPIs at once.
+     */
+    public function allKpis(): array
+    {
+        return [
+            'ventas_dia' => $this->ventasDelDia(),
+            'ganancia_neta' => $this->gananciaNeta(),
+            'tickets_vendidos' => $this->ticketsVendidos(),
+            'productos_vendidos' => $this->productosVendidos(),
+            'productos_bajo_stock' => $this->productosBajoStock(),
+            'productos_por_vencer' => $this->productosPorVencer(),
+            'total_clientes' => $this->totalClientes(),
+            'total_ingresos' => $this->totalIngresos(),
+            'cajas_abiertas' => $this->cajasAbiertasCount(),
+        ];
+    }
+
+    /**
+     * Calculate total COST (not profit) for documents in the given query.
+     * Cost = sum(precio_compra_unitario * cantidad) for each detail line.
+     *
+     * IMPORTANT: The ONLY reliable per-unit purchase price is in
+     * lote_presentacion.precio_compra (0.67/unit).
+     * lote.precio_compra and detalle_compras.precio_compra are TOTAL batch cost,
+     * NOT per-unit — using them would give wildly wrong results.
+     *
+     * Fallback chain (most → least accurate):
+     *  1. LotePresentacion.precio_compra (per-unit, matched by lote_id + presentacion_id)
+     *  2. DetalleCompra.precio_compra / Lote.precio_compra (total batch — divide by stock?)
+     */
+    private function calcularCosto(\Illuminate\Database\Eloquent\Builder $documentoQuery): float
+    {
+        $ids = (clone $documentoQuery)->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return 0.0;
+        }
+
+        return (float) DetalleDocumento::whereIn('documento_id', $ids)
+            ->with(['lote.lotePresentaciones', 'lote.detalleCompra'])
+            ->get()
+            ->sum(function (DetalleDocumento $detalle) {
+                $cantidad = (float) ($detalle->cantidad ?? 1);
+
+                // 1. Best: lote_presentacion.precio_compra (per-unit, exact match)
+                $lpPrecio = $detalle->lote?->lotePresentaciones
+                    ?->firstWhere('producto_presentacion_id', $detalle->producto_presentacion_id)
+                    ?->precio_compra;
+
+                if ($lpPrecio !== null && (float) $lpPrecio > 0) {
+                    return (float) $lpPrecio * $cantidad;
+                }
+
+                // 2. Fallback: detalle_compra or lote (might be total batch, not per-unit)
+                $precioCompra = (float) ($detalle->lote?->detalleCompra?->precio_compra
+                    ?? $detalle->lote?->precio_compra
+                    ?? 0);
+
+                // If precio_compra looks like a batch total (> 10x typical unit price),
+                // try to normalize by stock
+                if ($precioCompra > 100 && $detalle->lote) {
+                    $stockTotal = $detalle->lote->stock_total;
+                    if ($stockTotal > 0) {
+                        $precioCompra = $precioCompra / $stockTotal;
+                    }
+                }
+
+                return $precioCompra * $cantidad;
+            });
+    }
+
+    /**
+     * Calculate NET PROFIT for documents in the given query.
+     * Profit = ingresos_netos (ventas - notas_credito) - costo
+     */
+    private function calcularGanancia(\Illuminate\Database\Eloquent\Builder $documentoQuery): float
+    {
+        $ingresos = $this->ingresosNetos($documentoQuery);
+        $costos = $this->calcularCosto($documentoQuery);
+
+        return $ingresos - $costos;
+    }
+
+    /**
+     * Get daily sales for the last N days (for charts).
+     */
+    public function ventasUltimosDias(int $dias = 7): array
+    {
+        $labels = [];
+        $data = [];
+        $qb = app(ReporteQueryBuilder::class);
+
+        for ($i = $dias - 1; $i >= 0; $i--) {
+            $fecha = today()->subDays($i);
+            $labels[] = $fecha->format('d/m');
+            $data[] = (float) (clone $qb->ventasBase())
+                ->whereDate('fecha_emision', $fecha)
+                ->sum('total_neto');
+        }
+
+        return compact('labels', 'data');
+    }
+
+    /**
+     * Get monthly sales for the last N months (for charts).
+     */
+    public function ventasUltimosMeses(int $meses = 12): array
+    {
+        $labels = [];
+        $data = [];
+        $qb = app(ReporteQueryBuilder::class);
+
+        for ($i = $meses - 1; $i >= 0; $i--) {
+            $fecha = today()->subMonths($i);
+            $labels[] = $fecha->format('M');
+            $data[] = (float) (clone $qb->ventasBase())
+                ->whereMonth('fecha_emision', $fecha->month)
+                ->whereYear('fecha_emision', $fecha->year)
+                ->sum('total_neto');
+        }
+
+        return compact('labels', 'data');
+    }
+
+    /**
+     * Get payment method distribution.
+     */
+    public function metodosPagoDistribution(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+
+        return $qb->ventasMesActual()
+            ->select('medio_pago', DB::raw('SUM(total_neto) as total'), DB::raw('COUNT(*) as cantidad'))
+            ->whereNotNull('medio_pago')
+            ->groupBy('medio_pago')
+            ->orderByDesc('total')
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Get top selling products.
+     */
+    public function topProductos(int $limit = 10): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $docIds = $qb->ventasMesActual()->pluck('id');
+
+        if ($docIds->isEmpty()) {
+            return [];
+        }
+
+        return DetalleDocumento::whereIn('documento_id', $docIds)
+            ->select(
+                'producto_nombre',
+                DB::raw('COUNT(*) as total_ventas'),
+                DB::raw('SUM(subtotal_neto) as total_ingresos')
+            )
+            ->groupBy('producto_nombre')
+            ->orderByDesc('total_ventas')
+            ->limit($limit)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Get monthly profit for the last N months.
+     * Returns ingresos, costos, and ganancias (ingresos - costos).
+     */
+    public function gananciasUltimosMeses(int $meses = 12): array
+    {
+        $labels = [];
+        $ingresos = [];
+        $costos = [];
+        $qb = app(ReporteQueryBuilder::class);
+
+        for ($i = $meses - 1; $i >= 0; $i--) {
+            $fecha = today()->subMonths($i);
+            $labels[] = $fecha->format('M');
+
+            $query = (clone $qb->ventasBase())
+                ->whereMonth('fecha_emision', $fecha->month)
+                ->whereYear('fecha_emision', $fecha->year);
+
+            $ingresos[] = (float) (clone $query)->sum('total_neto');
+            $costos[] = $this->calcularCosto($query);
+        }
+
+        // Ganancia = ingresos - costos
+        $ganancias = array_map(fn($i, $c) => $i - $c, $ingresos, $costos);
+
+        return compact('labels', 'ingresos', 'costos', 'ganancias');
+    }
+}

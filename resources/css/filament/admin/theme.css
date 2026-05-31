@@ -505,5 +505,111 @@
     @apply !rounded-xl !font-bold !tracking-wide !shadow-lg !shadow-primary-500/15 hover:!shadow-primary-500/25 active:!scale-[0.98] !transition-all !duration-300 !py-3;
 }
 
+/* ============ DASHBOARD STYLES ============ */
 
+/* Glass card base */
+.glass-card {
+    @apply relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md shadow-sm transition-all duration-300;
+}
+.glass-card:hover {
+    @apply shadow-lg -translate-y-0.5 border-slate-300/80 dark:border-slate-700/80;
+}
+
+/* KPI Card */
+.kpi-card {
+    @apply relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 p-4 sm:p-5;
+}
+.kpi-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1 rounded-t-2xl;
+}
+.kpi-card:hover {
+    @apply shadow-lg -translate-y-1;
+}
+.dark .kpi-card {
+    @apply border-slate-800;
+}
+
+/* KPI color variants */
+.kpi-emerald { @apply border-emerald-200/80 dark:border-emerald-800/40; }
+.kpi-emerald::before { @apply bg-gradient-to-r from-emerald-400 to-teal-500; }
+
+.kpi-teal { @apply border-teal-200/80 dark:border-teal-800/40; }
+.kpi-teal::before { @apply bg-gradient-to-r from-teal-400 to-cyan-500; }
+
+.kpi-blue { @apply border-blue-200/80 dark:border-blue-800/40; }
+.kpi-blue::before { @apply bg-gradient-to-r from-blue-400 to-indigo-500; }
+
+.kpi-indigo { @apply border-indigo-200/80 dark:border-indigo-800/40; }
+.kpi-indigo::before { @apply bg-gradient-to-r from-indigo-400 to-violet-500; }
+
+.kpi-amber { @apply border-amber-200/80 dark:border-amber-800/40; }
+.kpi-amber::before { @apply bg-gradient-to-r from-amber-400 to-orange-500; }
+
+.kpi-orange { @apply border-orange-200/80 dark:border-orange-800/40; }
+.kpi-orange::before { @apply bg-gradient-to-r from-orange-400 to-red-500; }
+
+.kpi-violet { @apply border-violet-200/80 dark:border-violet-800/40; }
+.kpi-violet::before { @apply bg-gradient-to-r from-violet-400 to-purple-500; }
+
+.kpi-rose { @apply border-rose-200/80 dark:border-rose-800/40; }
+.kpi-rose::before { @apply bg-gradient-to-r from-rose-400 to-pink-500; }
+
+.kpi-slate { @apply border-slate-200/80 dark:border-slate-700/40; }
+.kpi-slate::before { @apply bg-gradient-to-r from-slate-300 to-slate-500; }
+
+/* Skeleton loader */
+.skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    @apply rounded-lg;
+}
+.dark .skeleton {
+    background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+    background-size: 200% 100%;
+}
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Activity timeline */
+.activity-line {
+    @apply relative pl-6 pb-6 border-l-2 border-slate-200 dark:border-slate-800;
+}
+.activity-line:last-child {
+    @apply pb-0 border-l-0;
+}
+.activity-dot {
+    @apply absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900;
+}
+
+/* Alert card pulses */
+.alert-pulse {
+    animation: alert-pulse 2s ease-in-out infinite;
+}
+@keyframes alert-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+
+/* Scroll snap for mobile KPI row */
+.kpi-scroll {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+.kpi-scroll > * {
+    scroll-snap-align: start;
+}
+
+/* Alpine.js cloak */
+[x-cloak] { display: none !important; }
+
+/* Responsive chart heights */
+@media (max-width: 768px) {
+    .chart-container-mobile {
+        height: 200px !important;
+    }
+}
 
