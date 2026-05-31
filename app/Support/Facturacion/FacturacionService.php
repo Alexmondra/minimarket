@@ -20,8 +20,12 @@ class FacturacionService
      * Procesa un comprobante (FACTURA o BOLETA) ante SUNAT.
      * Todo el estado, código, mensaje y hash se guardan en la tabla sunat.
      */
-    public function procesar(Documento $documento): Sunat
+    public function procesar(Documento $documento): ?Sunat
     {
+        if (! in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
+            return null;
+        }
+
         $documento->loadMissing(['empresa.empresaConfig', 'sunat']);
 
         $sunat = Sunat::updateOrCreate(
@@ -34,16 +38,6 @@ class FacturacionService
                 'fecha_envio' => now(),
             ]
         );
-
-        if (! in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
-            $sunat->update([
-                'codigo_respuesta_sunat' => 'NO_APLICA',
-                'mensaje_sunat' => 'Ticket interno: no se envia a SUNAT.',
-                'fecha_respuesta' => now(),
-            ]);
-
-            return $sunat->fresh();
-        }
 
         try {
             $see = $this->seeFactory->make($documento->empresa);

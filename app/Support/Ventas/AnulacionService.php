@@ -95,6 +95,16 @@ class AnulacionService
             // 1. Restaurar stock
             $this->restaurarStock($documento, $sucursalId, $user->id, $empresa->id);
 
+            // Determine SUNAT-compliant fiscal series (starts with FC for Facturas, BC for Boletas)
+            $serieOriginal = (string) $serie->serie;
+            if (str_starts_with($serieOriginal, 'NC') || str_starts_with($serieOriginal, 'N')) {
+                $prefix = $tipoComprobante === 'FACTURA' ? 'FC' : 'BC';
+                $suffixDigits = preg_replace('/[^0-9]/', '', $serieOriginal);
+                $fiscalSerie = $prefix . sprintf('%02d', (int) $suffixDigits ?: 1);
+            } else {
+                $fiscalSerie = $serieOriginal;
+            }
+
             // 2. Crear NC
             $nota = Documento::create([
                 'caja_sesion_id' => $documento->caja_sesion_id,
@@ -103,7 +113,7 @@ class AnulacionService
                 'cliente_id' => $documento->cliente_id,
                 'user_id' => $user->id,
                 'tipo_comprobante' => 'NOTA_CREDITO',
-                'serie' => $serie->serie,
+                'serie' => $fiscalSerie,
                 'numero' => str_pad((string) $serie->correlativo, 8, '0', STR_PAD_LEFT),
                 'fecha_emision' => now()->toDateString(),
                 'total_bruto' => $documento->total_bruto,

@@ -82,7 +82,7 @@ class DocumentoGreenterFactoryTest extends TestCase
 
         $this->assertSame('03', $invoice->getTipoDoc());
         $this->assertSame('B001', $invoice->getSerie());
-        $this->assertSame('1', $invoice->getCorrelativo());
+        $this->assertSame('00000001', $invoice->getCorrelativo());
         $this->assertSame(23.60, $invoice->getMtoImpVenta());
         $this->assertSame('20123456789', $invoice->getCompany()->getRuc());
         $this->assertSame('LIMA', $invoice->getCompany()->getAddress()->getDepartamento());

@@ -37,7 +37,7 @@ class DocumentoGreenterFactory
             ->setTipoOperacion('0101')
             ->setTipoDoc($documento->tipo_comprobante === 'FACTURA' ? '01' : '03')
             ->setSerie((string) $documento->serie)
-            ->setCorrelativo(ltrim((string) $documento->numero, '0') ?: (string) $documento->numero)
+            ->setCorrelativo(str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT))
             ->setFechaEmision($documento->fecha_emision?->toDateTime() ?? now()->toDateTime())
             ->setFormaPago(new FormaPagoContado)
             ->setTipoMoneda((string) ($documento->tipo_moneda ?: 'PEN'))
@@ -187,6 +187,15 @@ class DocumentoGreenterFactory
 
         $ref = $nota->documentoReferencia;
 
+        $serieOriginal = (string) $nota->serie;
+        if (str_starts_with($serieOriginal, 'NC') || str_starts_with($serieOriginal, 'N')) {
+            $prefix = $tipoDocAfectado === '01' ? 'FC' : 'BC';
+            $suffixDigits = preg_replace('/[^0-9]/', '', $serieOriginal);
+            $fiscalSerie = $prefix . sprintf('%02d', (int) $suffixDigits ?: 1);
+        } else {
+            $fiscalSerie = $serieOriginal;
+        }
+
         $note = new Note;
         $note
             ->setUblVersion('2.1')
@@ -195,8 +204,8 @@ class DocumentoGreenterFactory
             ->setCodMotivo($ref?->motivo_codigo ?? '01')   // 01 = Anulación
             ->setDesMotivo($ref?->motivo_descripcion ?? 'Anulación de comprobante')
             ->setTipoDoc('07')                               // 07 = Nota de Crédito
-            ->setSerie((string) $nota->serie)
-            ->setCorrelativo(ltrim((string) $nota->numero, '0') ?: (string) $nota->numero)
+            ->setSerie($fiscalSerie)
+            ->setCorrelativo(str_pad((string) $nota->numero, 8, '0', STR_PAD_LEFT))
             ->setFechaEmision($nota->fecha_emision?->toDateTime() ?? now()->toDateTime())
             ->setTipoMoneda((string) ($nota->tipo_moneda ?: 'PEN'))
             ->setCompany($this->company($nota->empresa, $nota))
