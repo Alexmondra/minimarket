@@ -4,7 +4,7 @@
     @endphp
 
     <!-- Custom Premium Hero Header Panel -->
-    <div class="relative overflow-hidden mb-6 p-6 rounded-3xl bg-white dark:bg-[#0d111f]/90 border border-slate-200/80 dark:border-[#1d2745]/60 shadow-sm transition-all duration-300">
+    <div class="relative overflow-hidden mb-6 p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-sm transition-all duration-300">
         <!-- Decorative blurred glow -->
         <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl opacity-20 @if($activeCaja) bg-emerald-500 @else bg-slate-500 @endif"></div>
         
@@ -24,7 +24,7 @@
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                 Caja Activa
                             </span>
-                            <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
                                 S/ {{ number_format($activeCaja->saldo_inicial, 2) }} inicial
                             </span>
                         </div>
@@ -55,7 +55,7 @@
                     <button 
                         type="button" 
                         wire:click="mountAction('cerrarCaja')"
-                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-rose-600 hover:bg-rose-500 dark:bg-rose-700 dark:hover:bg-rose-600 text-white font-extrabold rounded-2xl shadow-lg shadow-rose-600/15 hover:shadow-rose-600/25 transition duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 cursor-pointer animate-fade-in"
+                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-600 dark:active:bg-rose-800 text-white font-extrabold rounded-2xl shadow-lg shadow-rose-600/20 hover:shadow-xl hover:shadow-rose-600/35 dark:shadow-rose-950/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 cursor-pointer animate-fade-in"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -66,7 +66,7 @@
                     <button 
                         type="button" 
                         wire:click="mountAction('abrirCaja')"
-                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/15 hover:shadow-emerald-600/25 transition duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer animate-fade-in"
+                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:active:bg-emerald-800 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/35 dark:shadow-emerald-950/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer animate-fade-in"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
