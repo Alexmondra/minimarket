@@ -28,7 +28,15 @@ class ReporteQueryBuilder
     {
         return $this->context->applyToQuery(
             Documento::query()
-                ->where('estado', true)
+                ->where(function ($q) {
+                    $q->where('estado', true)
+                      ->orWhere(function ($sub) {
+                          $sub->where('estado', false)
+                              ->whereHas('referenciadoPor.documento', function ($query) {
+                                  $query->where('estado', true);
+                              });
+                      });
+                })
                 ->whereNotIn('tipo_comprobante', [
                     'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
                     'NOTA_CREDITO_FACTURA', 'NOTA_DEBITO',
@@ -45,6 +53,22 @@ class ReporteQueryBuilder
             Documento::query()->where('estado', false)
         );
     }
+
+    /**
+     * Base query for active credit notes.
+     */
+    public function notasCreditoBase(): Builder
+    {
+        return $this->context->applyToQuery(
+            Documento::query()
+                ->where('estado', true)
+                ->whereIn('tipo_comprobante', [
+                    'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                    'NOTA_CREDITO_FACTURA',
+                ])
+        );
+    }
+
 
     public function ventasEnRango(Carbon $desde, Carbon $hasta): Builder
     {
@@ -72,6 +96,30 @@ class ReporteQueryBuilder
     public function ventasMesAnterior(): Builder
     {
         return $this->ventasBase()
+            ->whereMonth('fecha_emision', now()->subMonth()->month)
+            ->whereYear('fecha_emision', now()->subMonth()->year);
+    }
+
+    public function notasCreditoHoy(): Builder
+    {
+        return $this->notasCreditoBase()->whereDate('fecha_emision', today());
+    }
+
+    public function notasCreditoAyer(): Builder
+    {
+        return $this->notasCreditoBase()->whereDate('fecha_emision', today()->subDay());
+    }
+
+    public function notasCreditoMesActual(): Builder
+    {
+        return $this->notasCreditoBase()
+            ->whereMonth('fecha_emision', now()->month)
+            ->whereYear('fecha_emision', now()->year);
+    }
+
+    public function notasCreditoMesAnterior(): Builder
+    {
+        return $this->notasCreditoBase()
             ->whereMonth('fecha_emision', now()->subMonth()->month)
             ->whereYear('fecha_emision', now()->subMonth()->year);
     }

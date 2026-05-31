@@ -51,21 +51,28 @@ class MetricCalculator
      * the credit note amount should be subtracted. For now, treat credit
      * notes as linked to fully cancelled sales.
      */
-    private function ingresosNetos(\Illuminate\Database\Eloquent\Builder $ventasQuery): float
+    private function ingresosNetos(\Illuminate\Database\Eloquent\Builder $ventasQuery, ?\Illuminate\Database\Eloquent\Builder $ncQuery = null): float
     {
-        return (float) (clone $ventasQuery)
+        $ingresosSales = (float) (clone $ventasQuery)
             ->whereNotIn('tipo_comprobante', [
                 'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
                 'NOTA_CREDITO_FACTURA', 'NOTA_DEBITO',
             ])
             ->sum('total_neto');
+
+        $ingresosNC = 0.0;
+        if ($ncQuery) {
+            $ingresosNC = (float) (clone $ncQuery)->sum('total_neto');
+        }
+
+        return $ingresosSales - $ingresosNC;
     }
 
     public function ventasDelDia(): array
     {
         $qb = app(ReporteQueryBuilder::class);
-        $hoy = $this->ingresosNetos($qb->ventasHoy());
-        $ayer = $this->ingresosNetos($qb->ventasAyer());
+        $hoy = $this->ingresosNetos($qb->ventasHoy(), $qb->notasCreditoHoy());
+        $ayer = $this->ingresosNetos($qb->ventasAyer(), $qb->notasCreditoAyer());
         $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
 
         return $this->kpi(
@@ -81,8 +88,8 @@ class MetricCalculator
     public function gananciaNeta(): array
     {
         $qb = app(ReporteQueryBuilder::class);
-        $hoy = $this->calcularGanancia($qb->ventasHoy());
-        $ayer = $this->calcularGanancia($qb->ventasAyer());
+        $hoy = $this->calcularGanancia($qb->ventasHoy(), $qb->notasCreditoHoy());
+        $ayer = $this->calcularGanancia($qb->ventasAyer(), $qb->notasCreditoAyer());
         $trend = $ayer > 0 ? round((($hoy - $ayer) / $ayer) * 100, 1) : null;
 
         return $this->kpi(
@@ -169,8 +176,8 @@ class MetricCalculator
     public function totalIngresos(): array
     {
         $qb = app(ReporteQueryBuilder::class);
-        $mes = $qb->ingresosNetos($qb->ventasMesActual());
-        $mesAnterior = $qb->ingresosNetos($qb->ventasMesAnterior());
+        $mes = $this->ingresosNetos($qb->ventasMesActual(), $qb->notasCreditoMesActual());
+        $mesAnterior = $this->ingresosNetos($qb->ventasMesAnterior(), $qb->notasCreditoMesAnterior());
         $trend = $mesAnterior > 0 ? round((($mes - $mesAnterior) / $mesAnterior) * 100, 1) : null;
 
         return $this->kpi(
@@ -178,6 +185,23 @@ class MetricCalculator
             label: 'Ingresos del Mes',
             icon: 'heroicon-o-banknotes',
             color: 'emerald',
+            trend: $trend,
+            prefix: 'S/ ',
+        );
+    }
+
+    public function gananciaMensual(): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $mes = $this->calcularGanancia($qb->ventasMesActual(), $qb->notasCreditoMesActual());
+        $mesAnterior = $this->calcularGanancia($qb->ventasMesAnterior(), $qb->notasCreditoMesAnterior());
+        $trend = $mesAnterior > 0 ? round((($mes - $mesAnterior) / $mesAnterior) * 100, 1) : null;
+
+        return $this->kpi(
+            value: number_format($mes, 2),
+            label: 'Ganancia Est. del Mes',
+            icon: 'heroicon-o-arrow-trending-up',
+            color: 'teal',
             trend: $trend,
             prefix: 'S/ ',
         );
@@ -271,10 +295,13 @@ class MetricCalculator
      * Calculate NET PROFIT for documents in the given query.
      * Profit = ingresos_netos (ventas - notas_credito) - costo
      */
-    private function calcularGanancia(\Illuminate\Database\Eloquent\Builder $documentoQuery): float
+    private function calcularGanancia(\Illuminate\Database\Eloquent\Builder $salesQuery, ?\Illuminate\Database\Eloquent\Builder $ncQuery = null): float
     {
-        $ingresos = $this->ingresosNetos($documentoQuery);
-        $costos = $this->calcularCosto($documentoQuery);
+        $ingresos = $this->ingresosNetos($salesQuery, $ncQuery);
+        
+        $costoSales = $this->calcularCosto($salesQuery);
+        $costoNC = $ncQuery ? $this->calcularCosto($ncQuery) : 0.0;
+        $costos = $costoSales - $costoNC;
 
         return $ingresos - $costos;
     }
@@ -291,9 +318,16 @@ class MetricCalculator
         for ($i = $dias - 1; $i >= 0; $i--) {
             $fecha = today()->subDays($i);
             $labels[] = $fecha->format('d/m');
-            $data[] = (float) (clone $qb->ventasBase())
+            
+            $ventas = (float) (clone $qb->ventasBase())
                 ->whereDate('fecha_emision', $fecha)
                 ->sum('total_neto');
+                
+            $nc = (float) (clone $qb->notasCreditoBase())
+                ->whereDate('fecha_emision', $fecha)
+                ->sum('total_neto');
+                
+            $data[] = $ventas - $nc;
         }
 
         return compact('labels', 'data');
@@ -311,10 +345,18 @@ class MetricCalculator
         for ($i = $meses - 1; $i >= 0; $i--) {
             $fecha = today()->subMonths($i);
             $labels[] = $fecha->format('M');
-            $data[] = (float) (clone $qb->ventasBase())
+            
+            $ventas = (float) (clone $qb->ventasBase())
                 ->whereMonth('fecha_emision', $fecha->month)
                 ->whereYear('fecha_emision', $fecha->year)
                 ->sum('total_neto');
+                
+            $nc = (float) (clone $qb->notasCreditoBase())
+                ->whereMonth('fecha_emision', $fecha->month)
+                ->whereYear('fecha_emision', $fecha->year)
+                ->sum('total_neto');
+                
+            $data[] = $ventas - $nc;
         }
 
         return compact('labels', 'data');
@@ -380,8 +422,17 @@ class MetricCalculator
                 ->whereMonth('fecha_emision', $fecha->month)
                 ->whereYear('fecha_emision', $fecha->year);
 
-            $ingresos[] = (float) (clone $query)->sum('total_neto');
-            $costos[] = $this->calcularCosto($query);
+            $queryNC = (clone $qb->notasCreditoBase())
+                ->whereMonth('fecha_emision', $fecha->month)
+                ->whereYear('fecha_emision', $fecha->year);
+
+            $ingSales = (float) (clone $query)->sum('total_neto');
+            $ingNC = (float) (clone $queryNC)->sum('total_neto');
+            $ingresos[] = $ingSales - $ingNC;
+
+            $costSales = $this->calcularCosto($query);
+            $costNC = $this->calcularCosto($queryNC);
+            $costos[] = $costSales - $costNC;
         }
 
         // Ganancia = ingresos - costos

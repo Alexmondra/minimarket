@@ -16,12 +16,26 @@
         $totalIngresos = array_sum($data['ingresos']);
         $totalGanancia = array_sum($data['ganancias']);
         $margen = $totalIngresos > 0 ? round(($totalGanancia / $totalIngresos) * 100, 1) : 0;
+
+        // Daily calculations
+        $kpiVentasDia = $calc->ventasDelDia();
+        $kpiGananciaDia = $calc->gananciaNeta();
+        $ventasDiaRaw = (float) str_replace(',', '', $kpiVentasDia['value']);
+        $gananciaDiaRaw = (float) str_replace(',', '', $kpiGananciaDia['value']);
+        $margenDia = $ventasDiaRaw > 0 ? round(($gananciaDiaRaw / $ventasDiaRaw) * 100, 1) : 0;
+
+        // Monthly calculations
+        $kpiIngresosMes = $calc->totalIngresos();
+        $kpiGananciaMes = $calc->gananciaMensual();
+        $ventasMesRaw = (float) str_replace(',', '', $kpiIngresosMes['value']);
+        $gananciaMesRaw = (float) str_replace(',', '', $kpiGananciaMes['value']);
+        $margenMes = $ventasMesRaw > 0 ? round(($gananciaMesRaw / $ventasMesRaw) * 100, 1) : 0;
     @endphp
 
     <div class="mb-6">
         <h2 class="text-lg font-black text-slate-900 dark:text-white">Reporte de Ganancias</h2>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Cálculo: <strong>total_neto (venta) − precio_compra × cantidad</strong> por cada línea de venta.
+            Cálculo: <strong>total_neto (venta) − precio_compra × cantidad</strong> por cada línea de venta. Las Notas de Crédito (devoluciones) se restan de las ventas y los costos correspondientes.
         </p>
     </div>
 
@@ -55,18 +69,72 @@
         </p>
     @endif
 
-    <div class="grid grid-cols-3 gap-3 mb-6">
-        <div class="kpi-card kpi-blue p-4">
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ingresos Totales</p>
-            <p class="text-lg font-black text-slate-900 dark:text-white font-mono mt-1">S/ {{ number_format($totalIngresos, 2) }}</p>
+    {{-- KPIs Grid --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {{-- Hoy Section --}}
+        <div class="glass-card p-5 border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-1.5">
+                <svg class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                Resumen de Hoy
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ventas Netas Hoy</p>
+                    <p class="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">S/ {{ number_format($ventasDiaRaw, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ganancia Est. Hoy</p>
+                    <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 font-bold">S/ {{ number_format($gananciaDiaRaw, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Margen Est. Hoy</p>
+                    <p class="text-base font-bold text-teal-600 dark:text-teal-400 font-mono mt-0.5">{{ $margenDia }}%</p>
+                </div>
+            </div>
         </div>
-        <div class="kpi-card kpi-emerald p-4">
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ganancia Estimada</p>
-            <p class="text-lg font-black text-slate-900 dark:text-white font-mono mt-1">S/ {{ number_format($totalGanancia, 2) }}</p>
+
+        {{-- Este Mes Section --}}
+        <div class="glass-card p-5 border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-1.5">
+                <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg>
+                Resumen de este Mes
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ventas Netas Mes</p>
+                    <p class="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">S/ {{ number_format($ventasMesRaw, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ganancia Est. Mes</p>
+                    <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 font-bold">S/ {{ number_format($gananciaMesRaw, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Margen Est. Mes</p>
+                    <p class="text-base font-bold text-teal-600 dark:text-teal-400 font-mono mt-0.5">{{ $margenMes }}%</p>
+                </div>
+            </div>
         </div>
-        <div class="kpi-card kpi-teal p-4">
-            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Margen Est.</p>
-            <p class="text-lg font-black text-slate-900 dark:text-white font-mono mt-1">{{ $margen }}%</p>
+
+        {{-- Anual (Últimos 12 Meses) Section --}}
+        <div class="glass-card p-5 border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-1.5">
+                <svg class="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z"/></svg>
+                Últimos 12 Meses
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ingresos Totales</p>
+                    <p class="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">S/ {{ number_format($totalIngresos, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ganancia Est. Total</p>
+                    <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 font-bold">S/ {{ number_format($totalGanancia, 2) }}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Margen Est. Total</p>
+                    <p class="text-base font-bold text-teal-600 dark:text-teal-400 font-mono mt-0.5">{{ $margen }}%</p>
+                </div>
+            </div>
         </div>
     </div>
 
