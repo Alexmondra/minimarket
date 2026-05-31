@@ -113,10 +113,42 @@
         <div class="absolute top-1/2 -right-32 w-80 h-80 rounded-full bg-teal-500/15 blur-[100px] animate-float-slow"></div>
         <div class="absolute -bottom-40 left-1/3 w-72 h-72 rounded-full bg-cyan-500/10 blur-[90px] animate-pulse-glow"></div>
 
-        {{-- 3D floating shapes --}}
-        <div class="absolute top-1/4 right-[15%] w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-500/20 border border-white/10 backdrop-blur-sm rotate-12 animate-float hidden lg:block" style="animation-delay: 0.5s;"></div>
-        <div class="absolute top-[60%] right-[25%] w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-400/15 to-blue-500/15 border border-white/10 backdrop-blur-sm animate-float-slow hidden lg:block" style="animation-delay: 1s;"></div>
-        <div class="absolute top-[30%] left-[10%] w-16 h-16 rounded-2xl bg-gradient-to-bl from-amber-400/15 to-orange-500/15 border border-white/10 backdrop-blur-sm -rotate-6 animate-float hidden lg:block" style="animation-delay: 1.5s;"></div>
+        {{-- Floating minimarket elements --}}
+        {{-- Shopping cart --}}
+        <div class="absolute top-[18%] right-[12%] w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400/15 to-teal-500/15 border border-white/10 backdrop-blur-sm rotate-6 animate-float hidden lg:flex items-center justify-center" style="animation-delay: 0.5s;">
+            <svg class="h-10 w-10 text-white/30" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+            </svg>
+        </div>
+
+        {{-- Shopping bag with items --}}
+        <div class="absolute top-[55%] right-[22%] w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-400/15 to-blue-500/15 border border-white/10 backdrop-blur-sm -rotate-12 animate-float-slow hidden lg:flex items-center justify-center" style="animation-delay: 1s;">
+            <svg class="h-8 w-8 text-white/25" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+            </svg>
+        </div>
+
+        {{-- Fresh products box --}}
+        <div class="absolute top-[28%] left-[8%] w-16 h-16 rounded-2xl bg-gradient-to-bl from-amber-400/15 to-orange-500/15 border border-white/10 backdrop-blur-sm -rotate-6 animate-float hidden lg:flex items-center justify-center" style="animation-delay: 1.5s;">
+            <svg class="h-8 w-8 text-white/25" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+            </svg>
+        </div>
+
+        {{-- Price tag --}}
+        <div class="absolute top-[70%] left-[18%] w-14 h-14 rounded-full bg-gradient-to-br from-rose-400/10 to-pink-500/10 border border-white/10 backdrop-blur-sm rotate-12 animate-float-slow hidden lg:flex items-center justify-center" style="animation-delay: 2s;">
+            <svg class="h-7 w-7 text-white/20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
+            </svg>
+        </div>
+
+        {{-- Fresh vegetable/fruit leaf --}}
+        <div class="absolute top-[40%] right-[35%] w-12 h-12 rounded-xl bg-gradient-to-tr from-lime-400/10 to-emerald-500/10 border border-white/10 backdrop-blur-sm rotate-45 animate-float hidden lg:flex items-center justify-center" style="animation-delay: 0.8s;">
+            <svg class="h-6 w-6 text-white/20 -rotate-45" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/>
+            </svg>
+        </div>
 
         <div class="relative z-10 mx-auto max-w-7xl px-4 py-32 sm:px-6 lg:px-8 lg:py-40">
             <div class="max-w-3xl">
@@ -238,7 +270,7 @@
                 <div data-3d-tilt class="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 p-6 shadow-sm transition-shadow hover:shadow-xl">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg>
                     </div>
                     <h3 class="text-lg font-black text-slate-900 dark:text-white">Surtido diario</h3>
                     <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Trabajamos con productos frescos y un surtido pensado para el día a día de tu hogar.</p>
@@ -246,7 +278,7 @@
                 <div data-3d-tilt class="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 p-6 shadow-sm transition-shadow hover:shadow-xl">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-500 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-4 group-hover:scale-110 transition-transform">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
                     </div>
                     <h3 class="text-lg font-black text-slate-900 dark:text-white">Precios por sucursal</h3>
                     <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Elige tu sucursal más cercana y consulta el catálogo actualizado para esa ubicación.</p>
@@ -255,7 +287,7 @@
                     <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div class="flex items-center gap-4">
                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z"/></svg>
                         </div>
                         <div>
                             <h3 class="text-lg font-black text-slate-900 dark:text-white">Atención personalizada</h3>
