@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('empresa_id')->constrained()->cascadeOnDelete();
             $table->string('codigo')->unique();
-            $table->foreignId('ubigeo')->constrained('ubigeos');
+            $table->string('ubigeo');
+            $table->foreign('ubigeo')->references('ubigeo')->on('ubigeos');
             $table->string('direccion');
             $table->string('telefono')->nullable();
             $table->string('email')->nullable();

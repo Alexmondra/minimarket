@@ -72,10 +72,8 @@ class SucursalResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()
+        return parent::getEloquentQuery()
             ->where('empresa_id', auth()->user()->empresa_id);
-
-        return app(SucursalContext::class)->applyToQuery($query, 'id');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

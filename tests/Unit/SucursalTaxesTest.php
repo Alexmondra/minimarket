@@ -30,7 +30,7 @@ class SucursalTaxesTest extends TestCase
     public function test_sucursal_saving_listener_calculates_impuesto_exempt(): void
     {
         $ubigeoLoreto = Ubigeo::create([
-            'codigo' => '160101',
+            'ubigeo' => '160101',
             'departamento' => 'LORETO',
             'provincia' => 'MAYNAS',
             'distrito' => 'IQUITOS',
@@ -39,7 +39,7 @@ class SucursalTaxesTest extends TestCase
         $sucursal = Sucursal::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => 'SUC1',
-            'ubigeo' => $ubigeoLoreto->id,
+            'ubigeo' => $ubigeoLoreto->ubigeo,
             'direccion' => 'Av. Iquitos 123',
             'nombre_sucursal' => 'Sucursal Iquitos',
             'impuesto_porcentaje' => 18.00, // Should be overwritten to 0.00
@@ -52,7 +52,7 @@ class SucursalTaxesTest extends TestCase
     public function test_sucursal_saving_listener_calculates_impuesto_standard(): void
     {
         $ubigeoLima = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'LIMA',
             'provincia' => 'LIMA',
             'distrito' => 'LIMA',
@@ -61,7 +61,7 @@ class SucursalTaxesTest extends TestCase
         $sucursal = Sucursal::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => 'SUC2',
-            'ubigeo' => $ubigeoLima->id,
+            'ubigeo' => $ubigeoLima->ubigeo,
             'direccion' => 'Av. Lima 123',
             'nombre_sucursal' => 'Sucursal Lima',
             'impuesto_porcentaje' => 0.00, // Should be overwritten to 18.00
@@ -76,7 +76,7 @@ class SucursalTaxesTest extends TestCase
         $registrarVenta = $this->app->make(RegistrarVenta::class);
 
         $ubigeoLoreto = Ubigeo::create([
-            'codigo' => '160101',
+            'ubigeo' => '160101',
             'departamento' => 'LORETO',
             'provincia' => 'MAYNAS',
             'distrito' => 'IQUITOS',
@@ -85,14 +85,14 @@ class SucursalTaxesTest extends TestCase
         $sucursalLoreto = Sucursal::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => 'SUC1',
-            'ubigeo' => $ubigeoLoreto->id,
+            'ubigeo' => $ubigeoLoreto->ubigeo,
             'direccion' => 'Av. Iquitos 123',
             'nombre_sucursal' => 'Sucursal Iquitos',
             'activo' => true,
         ]);
 
         $ubigeoLima = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'LIMA',
             'provincia' => 'LIMA',
             'distrito' => 'LIMA',
@@ -101,7 +101,7 @@ class SucursalTaxesTest extends TestCase
         $sucursalLima = Sucursal::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => 'SUC2',
-            'ubigeo' => $ubigeoLima->id,
+            'ubigeo' => $ubigeoLima->ubigeo,
             'direccion' => 'Av. Lima 123',
             'nombre_sucursal' => 'Sucursal Lima',
             'activo' => true,

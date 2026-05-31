@@ -919,7 +919,13 @@
 
     <!-- 4. Modal de Impresión / Éxito -->
     @if ($showSuccessModal && $createdDocumentoId)
-        <div class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350" style="z-index: 99999 !important;">
+        <div
+            x-data
+            x-init="setTimeout(() => $refs.ticketBtn.focus(), 100)"
+            @keydown.enter.prevent="$refs.ticketBtn.click()"
+            @keydown.escape.prevent="$wire.cerrarSuccessModal()"
+            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350" style="z-index: 99999 !important;"
+        >
             <div class="pos-card p-8 max-w-md w-full mx-4 space-y-6 text-center shadow-2xl border pos-border bg-white/90 dark:bg-slate-900/90 rounded-2xl">
                 <!-- Checkmark Icon -->
                 <div class="h-16 w-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30 shadow-inner">
@@ -930,20 +936,24 @@
 
                 <div class="space-y-2">
                     <h3 class="text-xl font-black pos-text">¡Venta Registrada!</h3>
-                    <p class="text-xs pos-text-muted">El comprobante ha sido creado con éxito. Selecciona una opción para continuar.</p>
+                    <p class="text-xs pos-text-muted">
+                        <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-bold">Enter</kbd> Ticket &nbsp;|&nbsp;
+                        <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-bold">Esc</kbd> Nueva Venta
+                    </p>
                 </div>
 
                 <!-- Print Options -->
                 <div class="grid grid-cols-2 gap-3">
-                    <a 
-                        href="{{ route('filament.documentos.ticket', ['documento' => $createdDocumentoId]) }}" 
+                    <a
+                        x-ref="ticketBtn"
+                        href="{{ route('filament.documentos.ticket', ['documento' => $createdDocumentoId]) }}"
                         target="_blank"
-                        class="px-4 py-3 rounded-xl border border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-800 hover:bg-blue-600/5 font-bold text-sm flex items-center justify-center gap-2 transition"
+                        class="px-4 py-3 rounded-xl border-2 border-blue-600 bg-blue-600/10 text-blue-600 dark:text-blue-400 dark:border-blue-500 hover:bg-blue-600/20 font-bold text-sm flex items-center justify-center gap-2 transition focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
-                        🖨️ Ticket
+                        🖨️ Ticket <span class="text-[10px] opacity-60">(Enter)</span>
                     </a>
-                    <a 
-                        href="{{ route('filament.documentos.pdf', ['documento' => $createdDocumentoId]) }}" 
+                    <a
+                        href="{{ route('filament.documentos.pdf', ['documento' => $createdDocumentoId]) }}"
                         target="_blank"
                         class="px-4 py-3 rounded-xl border border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-800 hover:bg-blue-600/5 font-bold text-sm flex items-center justify-center gap-2 transition"
                     >
@@ -953,8 +963,8 @@
 
                 <!-- Close & New Sale -->
                 <div class="pt-2">
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         wire:click="cerrarSuccessModal"
                         class="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl transition shadow-lg shadow-emerald-500/10 focus:outline-none"
                     >
@@ -1359,8 +1369,6 @@
         </div>
     @endif
 
-    @include('livewire.ventas.modals.buscar-venta')
-
     <!-- 5. Date & Time Dynamic Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1407,4 +1415,7 @@
             setInterval(updateTime, 1000);
         });
     </script>
+    {{-- Modal incluido dentro del div raíz de Livewire para asegurar el correcto renderizado y reactividad --}}
+    @include('livewire.ventas.modals.buscar-venta')
 </div>
+

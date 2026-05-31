@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Serie;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -15,10 +16,73 @@ class Sucursal extends Model
     {
         parent::boot();
 
+        static::creating(function (Sucursal $sucursal) {
+            if (empty($sucursal->codigo)) {
+                $existingCodes = static::withTrashed()
+                    ->where('empresa_id', $sucursal->empresa_id)
+                    ->pluck('codigo')
+                    ->filter(fn($c) => preg_match('/^\d{4}$/', $c))
+                    ->map(fn($c) => (int)$c);
+
+                $nextCodeInt = $existingCodes->isEmpty() ? 0 : $existingCodes->max() + 1;
+                $sucursal->codigo = sprintf('%04d', $nextCodeInt);
+            }
+        });
+
+        static::created(function (Sucursal $sucursal) {
+            // Find maximum series suffix for the same empresa
+            $nextSerie = Serie::siguienteSeriePorEmpresa($sucursal->empresa_id, 'BOLETA');
+            $index = (int) substr($nextSerie, 1); // e.g., 1 from "B001"
+
+            $suffix3 = sprintf('%03d', $index);
+            $suffix2 = sprintf('%02d', $index);
+
+            // Generate the default 5 series records
+            $seriesToCreate = [
+                [
+                    'tipo_comprobante' => 'BOLETA',
+                    'serie' => 'B' . $suffix3,
+                    'correlativo' => 0,
+                ],
+                [
+                    'tipo_comprobante' => 'FACTURA',
+                    'serie' => 'F' . $suffix3,
+                    'correlativo' => 0,
+                ],
+                [
+                    'tipo_comprobante' => 'NOTA_CREDITO',
+                    'serie' => 'NC' . $suffix2,
+                    'correlativo' => 0,
+                ],
+                [
+                    'tipo_comprobante' => 'NOTA_DEBITO',
+                    'serie' => 'ND' . $suffix2,
+                    'correlativo' => 0,
+                ],
+                [
+                    'tipo_comprobante' => 'TICKET',
+                    'serie' => 'T' . $suffix3,
+                    'correlativo' => 0,
+                ],
+            ];
+
+            foreach ($seriesToCreate as $serieData) {
+                $sucursal->series()->create($serieData);
+            }
+
+            // Auto-assign the creator (logged-in user) to the new branch
+            if (auth()->check()) {
+                $user = auth()->user();
+                if ($user->empresa_id === $sucursal->empresa_id) {
+                    $user->sucursales()->attach($sucursal->id);
+                }
+            }
+        });
+
         static::saving(function (Sucursal $sucursal) {
-            $ubigeoId = $sucursal->ubigeo;
-            if ($ubigeoId) {
-                $ubigeo = Ubigeo::find($ubigeoId);
+            $ubigeoCode = $sucursal->ubigeo;
+            if ($ubigeoCode) {
+                $ubigeo = Ubigeo::where('ubigeo', $ubigeoCode)->first();
                 if ($ubigeo) {
                     $departamento = strtoupper(trim($ubigeo->departamento));
                     $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
@@ -66,7 +130,7 @@ class Sucursal extends Model
 
     public function ubigeoRel()
     {
-        return $this->belongsTo(Ubigeo::class, 'ubigeo');
+        return $this->belongsTo(Ubigeo::class, 'ubigeo', 'ubigeo');
     }
 
     public function users()

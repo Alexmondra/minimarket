@@ -193,7 +193,12 @@ class SerieResource extends Resource
                 $query->where('empresa_id', Auth::user()->empresa_id);
             });
 
-        return app(SucursalContext::class)->applyToQuery($query);
+        $activeSucursalId = app(SucursalContext::class)->activeSucursalId();
+        if ($activeSucursalId) {
+            $query->where('sucursal_id', $activeSucursalId);
+        }
+
+        return $query;
     }
 
     public static function canViewAny(): bool

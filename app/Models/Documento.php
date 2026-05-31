@@ -33,18 +33,12 @@ class Documento extends Model
         'tipo_moneda',
         'medio_pago',
         'monto_recibido',
-        'vuelto',
-        'puntos_ganados',
-        'puntos_canjeados',
         'descuento_puntos',
         'referencia_pago',
         'estado',
-        'observaciones',
-        'hash',
-        'estado_sunat',
-        'codigo_error_sunat',
-        'mensaje_sunat',
     ];
+
+    protected $appends = ['vuelto'];
 
     protected function casts(): array
     {
@@ -60,11 +54,20 @@ class Documento extends Model
             'total_igv' => 'decimal:2',
             'porcentaje_igv' => 'decimal:2',
             'monto_recibido' => 'decimal:2',
-            'vuelto' => 'decimal:2',
             'descuento_puntos' => 'decimal:2',
-            'puntos_ganados' => 'integer',
-            'puntos_canjeados' => 'integer',
         ];
+    }
+
+    /**
+     * Vuelto calculado (no se almacena).
+     */
+    public function getVueltoAttribute(): float
+    {
+        if ($this->medio_pago !== 'EFECTIVO') {
+            return 0;
+        }
+
+        return max(round((float) $this->monto_recibido - (float) $this->total_neto, 2), 0);
     }
 
     public function cajaSesion()

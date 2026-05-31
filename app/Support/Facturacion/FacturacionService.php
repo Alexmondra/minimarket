@@ -5,7 +5,6 @@ namespace App\Support\Facturacion;
 use App\Models\Documento;
 use App\Models\Sunat;
 use Greenter\Model\Response\BillResult;
-use Greenter\Model\Sale\Note;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -19,6 +18,7 @@ class FacturacionService
 
     /**
      * Procesa un comprobante (FACTURA o BOLETA) ante SUNAT.
+     * Todo el estado, código, mensaje y hash se guardan en la tabla sunat.
      */
     public function procesar(Documento $documento): Sunat
     {
@@ -42,10 +42,6 @@ class FacturacionService
                 'fecha_respuesta' => now(),
             ]);
 
-            $documento->update([
-                'estado_sunat' => 'NO_APLICA',
-            ]);
-
             return $sunat->fresh();
         }
 
@@ -58,10 +54,10 @@ class FacturacionService
                 throw new \RuntimeException('Greenter no genero XML firmado.');
             }
 
-            // Extraer y guardar el hash del XML firmado
+            // Extraer hash del XML y guardarlo en sunat
             $hash = $this->extraerHash($xmlFirmado);
             if ($hash) {
-                $documento->update(['hash' => $hash]);
+                $sunat->update(['hash' => $hash]);
             }
 
             $this->fileService->guardarXmlFirmado($documento, $xmlFirmado);
@@ -78,7 +74,7 @@ class FacturacionService
                 }
             }
 
-            return $this->guardarRespuesta($sunat, $documento, $result);
+            return $this->guardarRespuesta($sunat, $result);
         } catch (Throwable $exception) {
             Log::error('Error al enviar documento a SUNAT.', [
                 'documento_id' => $documento->id,
@@ -92,18 +88,12 @@ class FacturacionService
                 'fecha_respuesta' => now(),
             ]);
 
-            $documento->update([
-                'estado_sunat' => 'PENDIENTE',
-                'codigo_error_sunat' => 'ERROR',
-                'mensaje_sunat' => $exception->getMessage(),
-            ]);
-
             return $sunat->fresh();
         }
     }
 
     /**
-     * Procesa una Nota de Crédito o Débito ante SUNAT.
+     * Procesa una Nota de Crédito ante SUNAT.
      */
     public function procesarNota(Documento $nota, Documento $documentoAfectado): Sunat
     {
@@ -130,10 +120,9 @@ class FacturacionService
                 throw new \RuntimeException('Greenter no genero XML firmado para la Nota.');
             }
 
-            // Extraer y guardar hash
             $hash = $this->extraerHash($xmlFirmado);
             if ($hash) {
-                $nota->update(['hash' => $hash]);
+                $sunat->update(['hash' => $hash]);
             }
 
             $this->fileService->guardarXmlFirmado($nota, $xmlFirmado);
@@ -150,7 +139,7 @@ class FacturacionService
                 }
             }
 
-            return $this->guardarRespuesta($sunat, $nota, $result);
+            return $this->guardarRespuesta($sunat, $result);
         } catch (Throwable $exception) {
             Log::error('Error al enviar Nota a SUNAT.', [
                 'documento_id' => $nota->id,
@@ -162,12 +151,6 @@ class FacturacionService
                 'codigo_respuesta_sunat' => 'ERROR',
                 'mensaje_sunat' => $exception->getMessage(),
                 'fecha_respuesta' => now(),
-            ]);
-
-            $nota->update([
-                'estado_sunat' => 'PENDIENTE',
-                'codigo_error_sunat' => 'ERROR',
-                'mensaje_sunat' => $exception->getMessage(),
             ]);
 
             return $sunat->fresh();
@@ -186,7 +169,7 @@ class FacturacionService
         return $digestValue ? $digestValue->nodeValue : null;
     }
 
-    protected function guardarRespuesta(Sunat $sunat, Documento $documento, mixed $result): Sunat
+    protected function guardarRespuesta(Sunat $sunat, mixed $result): Sunat
     {
         if (! $result) {
             $sunat->update([
@@ -194,12 +177,6 @@ class FacturacionService
                 'codigo_respuesta_sunat' => 'SIN_RESPUESTA',
                 'mensaje_sunat' => 'SUNAT no retorno respuesta.',
                 'fecha_respuesta' => now(),
-            ]);
-
-            $documento->update([
-                'estado_sunat' => 'PENDIENTE',
-                'codigo_error_sunat' => 'SIN_RESPUESTA',
-                'mensaje_sunat' => 'SUNAT no retorno respuesta.',
             ]);
 
             return $sunat->fresh();
@@ -221,19 +198,11 @@ class FacturacionService
                 $message = $message ?: ($error?->getMessage() ?: 'SUNAT rechazo el envio.');
             }
 
-            $estadoSunat = $this->mapearEstadoSunat((string) $code);
-
             $sunat->update([
-                'estado_sunat' => $estadoSunat === 'ACEPTADA',
+                'estado_sunat' => false,
                 'codigo_respuesta_sunat' => $code,
                 'mensaje_sunat' => $message,
                 'fecha_respuesta' => now(),
-            ]);
-
-            $documento->update([
-                'estado_sunat' => $estadoSunat,
-                'codigo_error_sunat' => $code,
-                'mensaje_sunat' => $message,
             ]);
 
             return $sunat->fresh();
@@ -243,19 +212,11 @@ class FacturacionService
         $notes = $cdr?->getNotes() ? ' Notas: '.implode(' | ', $cdr->getNotes()) : '';
         $code = $cdr?->getCode() ?: '0';
 
-        $aceptado = $this->codigoAceptado($code);
-
         $sunat->update([
-            'estado_sunat' => $aceptado,
+            'estado_sunat' => $this->codigoAceptado($code),
             'codigo_respuesta_sunat' => $code,
             'mensaje_sunat' => trim(($cdr?->getDescription() ?: 'Comprobante aceptado por SUNAT.').$notes),
             'fecha_respuesta' => now(),
-        ]);
-
-        $documento->update([
-            'estado_sunat' => $aceptado ? 'ACEPTADA' : $this->mapearEstadoSunat($code),
-            'codigo_error_sunat' => $code,
-            'mensaje_sunat' => trim(($cdr?->getDescription() ?: 'Comprobante aceptado por SUNAT.').$notes),
         ]);
 
         return $sunat->fresh();
@@ -270,35 +231,5 @@ class FacturacionService
         $numericCode = (int) $code;
 
         return $numericCode === 0 || ($numericCode >= 100 && $numericCode <= 1999);
-    }
-
-    /**
-     * Mapea el código de respuesta SUNAT a un estado legible.
-     */
-    protected function mapearEstadoSunat(string $code): string
-    {
-        if (! is_numeric($code)) {
-            return 'PENDIENTE';
-        }
-
-        $numericCode = (int) $code;
-
-        if ($numericCode === 0) {
-            return 'ACEPTADA';
-        }
-
-        if ($numericCode >= 100 && $numericCode <= 1999) {
-            return 'OBSERVADA';
-        }
-
-        if ($numericCode >= 2000 && $numericCode <= 3999) {
-            return 'RECHAZADA';
-        }
-
-        if ($numericCode >= 4000) {
-            return 'OBSERVADA';
-        }
-
-        return 'PENDIENTE';
     }
 }

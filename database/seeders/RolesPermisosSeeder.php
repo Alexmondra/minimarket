@@ -15,7 +15,7 @@ class RolesPermisosSeeder extends Seeder
         // Limpia cache de permisos
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // === LISTA LIMPIA DE PERMISOS PARA FARMACIA ===
+        // === LISTA LIMPIA DE PERMISOS PARA MINIMARKETING ===
         $permisos = [
             // 1. VENTAS
             'ventas.ver',
@@ -24,12 +24,8 @@ class RolesPermisosSeeder extends Seeder
 
             // 2. CAJAS
             'cajas.ver',
-            'cajas.abrir',
+            'cajas.crear',
             'cajas.cerrar',
-
-            // 3. GUÍAS DE REMISIÓN
-            'guias.ver',
-            'guias.crear',
 
             // 4. FACTURACIÓN SUNAT
             'sunat.monitor',
@@ -37,11 +33,12 @@ class RolesPermisosSeeder extends Seeder
 
             // 5. REPORTES
             'reportes.ver',
+            'reportes.crear',
             'reportes.ventas',
             'reportes.inventario',
+            
             // 5.5. Ajustes
-            'lotes.ver',
-            'stock.crear',
+            'stock.ajustar',
             'movimientos.ver',
 
             // 6. CLIENTES
@@ -50,7 +47,7 @@ class RolesPermisosSeeder extends Seeder
             'clientes.editar',
             'clientes.eliminar',
 
-            // 7. MEDICAMENTOS (INVENTARIO)
+            // 7. PRODUCTOS (INVENTARIO)
             'productos.ver',
             'productos.crear',
             'productos.editar',
@@ -63,7 +60,7 @@ class RolesPermisosSeeder extends Seeder
             'categorias.editar',
             'categorias.eliminar',
 
-            // 9 CATEGORÍAS
+            // 9 Marcas
             'marcas.ver',
             'marcas.crear',
             'marcas.editar',
@@ -123,10 +120,9 @@ class RolesPermisosSeeder extends Seeder
         $vendedor->syncPermissions([
             'ventas.ver',
             'ventas.crear',
-            'cajas.abrir',
             'clientes.ver',
             'clientes.crear',
-            'productos.ver', // Necesita ver para buscar precios
+            'productos.ver',
         ]);
         // Asignar Admin al primer usuario (TÚ)
         $user = User::first();

@@ -38,7 +38,7 @@ class MermasLoteTest extends TestCase
         parent::setUp();
 
         $ubigeo = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'LIMA',
             'provincia' => 'LIMA',
             'distrito' => 'LIMA',
@@ -55,7 +55,7 @@ class MermasLoteTest extends TestCase
         $this->sucursal = Sucursal::create([
             'empresa_id' => $this->empresa->id,
             'codigo' => '0001',
-            'ubigeo' => $ubigeo->id,
+            'ubigeo' => $ubigeo->ubigeo,
             'nombre_sucursal' => 'CENTRO',
             'direccion' => 'AV. CENTRAL 123',
             'impuesto_porcentaje' => 18,

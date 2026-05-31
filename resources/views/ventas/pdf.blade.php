@@ -35,6 +35,8 @@
         ? $documento->fecha_emision->format('Y-m-d')
         : (is_string($documento->fecha_emision) ? $documento->fecha_emision : now()->format('Y-m-d'));
 
+    $hash = $documento->sunat?->hash ?? '';
+
     $qrString = implode('|', [
         $documento->empresa?->ruc ?? '',
         $tipoDoc,
@@ -45,7 +47,7 @@
         $fechaEmision,
         $tipoDocCliente,
         $documento->cliente?->documento ?? '00000000',
-        $documento->hash ?? '',
+        $hash,
     ]) . '|';
 
     $qrBase64 = '';
@@ -358,17 +360,17 @@
                 <tr>
                     <td style="width: 70%; vertical-align: top;">
                         @if($documento->sunat)
-                            <div><strong>Estado SUNAT:</strong> {{ $documento->estado_sunat ?? ($documento->sunat->estado_sunat ? 'Aceptado' : 'Pendiente/Rechazado') }}</div>
+                            <div><strong>Estado SUNAT:</strong> {{ $documento->sunat->estado_sunat ? 'Aceptado' : ($documento->sunat->codigo_respuesta_sunat === 'NO_APLICA' ? 'No Aplica' : 'Pendiente/Rechazado') }}</div>
                             @if($documento->sunat->codigo_respuesta_sunat)
-                                <div><strong>Código SUNAT:</strong> {{ $documento->sunat->codigo_respuesta_sunat }}</div>
+                                <div><strong>Código:</strong> {{ $documento->sunat->codigo_respuesta_sunat }}</div>
                             @endif
                             @if($documento->sunat->mensaje_sunat)
                                 <div><strong>Mensaje:</strong> {{ $documento->sunat->mensaje_sunat }}</div>
                             @endif
                         @endif
-                        @if($documento->hash)
+                        @if($hash)
                             <div style="font-size: 8px; word-break: break-all; margin-top: 5px;">
-                                <strong>Hash:</strong> {{ $documento->hash }}
+                                <strong>Hash:</strong> {{ $hash }}
                             </div>
                         @endif
                     </td>
@@ -382,9 +384,9 @@
             </table>
         @else
             @if($documento->sunat)
-                <div><strong>Estado SUNAT:</strong> {{ $documento->sunat->descripcion_estado ?: $documento->sunat->estado_sunat }}</div>
-                @if($documento->sunat->codigo_respuesta)
-                    <div><strong>Código SUNAT:</strong> {{ $documento->sunat->codigo_respuesta }}</div>
+                <div><strong>Estado SUNAT:</strong> {{ $documento->sunat->estado_sunat ? 'Aceptado' : 'Pendiente' }}</div>
+                @if($documento->sunat->codigo_respuesta_sunat)
+                    <div><strong>Código:</strong> {{ $documento->sunat->codigo_respuesta_sunat }}</div>
                 @endif
             @endif
         @endif

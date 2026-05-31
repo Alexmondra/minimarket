@@ -77,7 +77,7 @@ class PuntoVenta extends Page
 
     public function abrirCajaManual(): void
     {
-        abort_unless(Auth::user()?->can('cajas.abrir'), 403, 'No tienes permiso para abrir cajas.');
+        abort_unless(Auth::user()?->can('cajas.crear'), 403, 'No tienes permiso para abrir cajas.');
 
         $this->validate([
             'saldoInicial' => 'required|numeric|min:0',

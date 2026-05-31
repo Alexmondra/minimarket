@@ -77,7 +77,7 @@ class RegistrarVenta
                     'sucursal_id' => $sucursalId,
                     'tipo_comprobante' => $tipoComprobante,
                     'serie' => $this->seriePorDefecto($tipoComprobante),
-                    'correlativo' => 1,
+                    'correlativo' => 0,
                 ]);
             }
 
@@ -137,10 +137,6 @@ class RegistrarVenta
                 $montoRecibido = $totalNeto;
             }
 
-            $vuelto = $medioPago === 'EFECTIVO'
-                ? max(round($montoRecibido - $totalNeto, 2), 0)
-                : 0;
-
             $documento = Documento::create([
                 'caja_sesion_id' => $caja->id,
                 'sucursal_id' => $sucursalId,
@@ -163,13 +159,9 @@ class RegistrarVenta
                 'tipo_moneda' => $payload['tipo_moneda'] ?? 'PEN',
                 'medio_pago' => $medioPago,
                 'monto_recibido' => $montoRecibido,
-                'vuelto' => $vuelto,
-                'puntos_ganados' => 0,
-                'puntos_canjeados' => $puntosCanjeados,
                 'descuento_puntos' => $descuentoPuntos,
                 'referencia_pago' => $payload['referencia_pago'] ?? null,
                 'estado' => true,
-                'observaciones' => $payload['observaciones'] ?? null,
             ]);
 
             foreach ($lineasVenta as $index => $lineaVenta) {
@@ -200,7 +192,6 @@ class RegistrarVenta
 
             if ($cliente) {
                 $puntosGanados = $this->puntosService->puntosGanados($documento->total_neto);
-                $documento->update(['puntos_ganados' => $puntosGanados]);
 
                 $this->puntosService->registrarAcumulacion(
                     cliente: $cliente,
@@ -539,6 +530,11 @@ class RegistrarVenta
 
     protected function seriePorDefecto(string $tipoComprobante): string
     {
+        $empresaId = auth()->user()?->empresa_id;
+        if ($empresaId) {
+            return Serie::siguienteSeriePorEmpresa($empresaId, $tipoComprobante);
+        }
+
         return match ($tipoComprobante) {
             'FACTURA' => 'F001',
             'BOLETA' => 'B001',

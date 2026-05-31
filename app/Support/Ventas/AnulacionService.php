@@ -34,13 +34,9 @@ class AnulacionService
     ) {}
 
     /**
-     * Anula un documento creando una Nota de Crédito y restaurando el stock.
-     *
-     * @param User $user Usuario que realiza la anulación
-     * @param Documento $documento Documento original a anular
-     * @param string $motivoCodigo Código de motivo (01-10)
-     * @param string $motivoDescripcion Descripción detallada del motivo
-     * @return Documento La Nota de Crédito creada
+     * Anula un documento.
+     * - TICKET: solo restaura stock y marca como ANULADO.
+     * - FACTURA/BOLETA: crea Nota de Crédito, documento_referencia, y encola a SUNAT.
      */
     public function anular(User $user, Documento $documento, string $motivoCodigo = '01', string $motivoDescripcion = 'Anulación de la operación'): Documento
     {
@@ -52,18 +48,30 @@ class AnulacionService
             throw new \RuntimeException('Solo se pueden anular Facturas, Boletas y Tickets.');
         }
 
-        $documento->loadMissing([
-            'detalles',
-            'empresa',
-            'sucursal',
-            'cliente',
-        ]);
+        $documento->loadMissing(['detalles', 'empresa', 'sucursal', 'cliente']);
 
         $empresa = $documento->empresa;
         $sucursalId = (int) $documento->sucursal_id;
         $tipoComprobante = $documento->tipo_comprobante;
 
-        // Determinar serie para NC
+        // ============================================================
+        // TICKET: solo restaurar stock y marcar ANULADO, sin NC ni SUNAT
+        // ============================================================
+        if ($tipoComprobante === 'TICKET') {
+            DB::transaction(function () use ($documento, $sucursalId, $user, $empresa): void {
+                $this->restaurarStock($documento, $sucursalId, $user->id, $empresa->id);
+                $documento->update(['estado' => false]);
+            });
+
+            return $documento->fresh([
+                'cliente', 'empresa', 'sucursal',
+                'detalles.presentacion.unidadMedida',
+            ]);
+        }
+
+        // ============================================================
+        // FACTURA / BOLETA: NC completa + SUNAT
+        // ============================================================
         $ncTipo = 'NOTA_CREDITO';
         $serie = Serie::query()
             ->where('sucursal_id', $sucursalId)
@@ -75,8 +83,8 @@ class AnulacionService
             $serie = Serie::create([
                 'sucursal_id' => $sucursalId,
                 'tipo_comprobante' => $ncTipo,
-                'serie' => 'N001',
-                'correlativo' => 1,
+                'serie' => Serie::siguienteSeriePorEmpresa($empresa->id, 'NOTA_CREDITO'),
+                'correlativo' => 0,
             ]);
         }
 
@@ -87,7 +95,7 @@ class AnulacionService
             // 1. Restaurar stock
             $this->restaurarStock($documento, $sucursalId, $user->id, $empresa->id);
 
-            // 2. Crear documento NC
+            // 2. Crear NC
             $nota = Documento::create([
                 'caja_sesion_id' => $documento->caja_sesion_id,
                 'sucursal_id' => $sucursalId,
@@ -110,17 +118,12 @@ class AnulacionService
                 'tipo_moneda' => $documento->tipo_moneda ?? 'PEN',
                 'medio_pago' => $documento->medio_pago,
                 'monto_recibido' => 0,
-                'vuelto' => 0,
-                'puntos_ganados' => 0,
-                'puntos_canjeados' => 0,
                 'descuento_puntos' => 0,
                 'referencia_pago' => null,
                 'estado' => true,
-                'observaciones' => "Anula {$tipoComprobante} {$documento->serie}-{$documento->numero}. Motivo: {$motivoDescripcion}",
-                'estado_sunat' => 'PENDIENTE',
             ]);
 
-            // 3. Crear detalles NC (copia de los items originales)
+            // 3. Detalles NC
             foreach ($documento->detalles as $detalle) {
                 DetalleDocumento::create([
                     'documento_id' => $nota->id,
@@ -143,7 +146,7 @@ class AnulacionService
                 ]);
             }
 
-            // 4. Crear documento_referencia (NC → documento original)
+            // 4. documento_referencia
             DocumentoReferencium::create([
                 'documento_id' => $nota->id,
                 'tipo_relacion' => 'NOTA_CREDITO',
@@ -157,42 +160,41 @@ class AnulacionService
                 'moneda_ref' => $documento->tipo_moneda,
             ]);
 
-            // 5. Marcar documento original como ANULADO
-            $documento->update([
-                'estado' => false,
-                'estado_sunat' => 'ANULADO',
-            ]);
+            // 5. Marcar original como ANULADO
+            $documento->update(['estado' => false]);
 
-            // 6. Incrementar correlativo
+            // 6. Incrementar correlativo NC
             $serie->increment('correlativo');
 
-            // 7. Revertir puntos si los hubo
-            if ($documento->cliente_id && $documento->puntos_ganados > 0) {
-                $cliente = Cliente::find($documento->cliente_id);
-                if ($cliente) {
-                    $this->puntosService->registrarReversion(
-                        cliente: $cliente,
-                        empresaId: $empresa->id,
-                        sucursalId: $sucursalId,
-                        userId: $user->id,
-                        puntos: $documento->puntos_ganados,
-                        motivo: "Anulación {$nota->serie}-{$nota->numero}",
-                    );
+            // 7. Revertir puntos
+            if ($documento->cliente_id) {
+                $puntosGanados = \App\Models\ClientePuntoMovimiento::query()
+                    ->where('documento_id', $documento->id)
+                    ->where('tipo', 'acumulacion')
+                    ->sum('puntos');
+                if ($puntosGanados > 0) {
+                    $cliente = Cliente::find($documento->cliente_id);
+                    if ($cliente) {
+                        $this->puntosService->registrarReversion(
+                            cliente: $cliente,
+                            empresaId: $empresa->id,
+                            sucursalId: $sucursalId,
+                            userId: $user->id,
+                            puntos: (int) $puntosGanados,
+                            motivo: "Anulación {$nota->serie}-{$nota->numero}",
+                        );
+                    }
                 }
             }
 
             return $nota;
         });
 
-        // Encolar envío a SUNAT (si el original era FACTURA o BOLETA)
-        if (in_array($tipoComprobante, ['FACTURA', 'BOLETA'], true)) {
-            ProcesarNotaCreditoSunat::dispatch($notaCredito, $documento);
-        }
+        // Encolar envío a SUNAT
+        ProcesarNotaCreditoSunat::dispatch($notaCredito, $documento);
 
         return $notaCredito->fresh([
-            'cliente',
-            'empresa',
-            'sucursal',
+            'cliente', 'empresa', 'sucursal',
             'detalles.presentacion.unidadMedida',
             'documentoReferencia',
         ]);

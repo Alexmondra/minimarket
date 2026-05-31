@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\ProductoSucursal;
 use App\Models\Sucursal;
 use App\Support\SucursalContext;
+use App\Support\Ventas\AnulacionService;
 use App\Support\Ventas\CajaService;
 use App\Support\Ventas\PuntosService;
 use App\Support\Ventas\RegistrarVenta as RegistrarVentaAction;
@@ -109,6 +110,14 @@ trait RegistrarVentaBehavior
     public ?int $selectedVentaId = null;
 
     public ?array $selectedVentaDetalles = null;
+
+    public bool $showAnularVentaModal = false;
+
+    public ?int $anularVentaId = null;
+
+    public ?string $anularVentaComprobante = null;
+
+    public string $anularMotivoCodigo = '01';
 
     public function mountRegistrarVenta(): void
     {
@@ -1313,6 +1322,7 @@ trait RegistrarVentaBehavior
         $this->selectedVentaId = $venta->id;
         $this->selectedVentaDetalles = [
             'id' => $venta->id,
+            'estado' => $venta->estado,
             'comprobante' => "{$venta->tipo_comprobante} {$venta->serie}-{$venta->numero}",
             'cliente' => $venta->cliente ? ($venta->cliente->razon_social ?: trim(($venta->cliente->nombre ?? '') . ' ' . ($venta->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
             'cliente_documento' => $venta->cliente ? "{$venta->cliente->tipo_documento} {$venta->cliente->documento}" : null,
@@ -1327,9 +1337,6 @@ trait RegistrarVentaBehavior
             'monto_recibido' => (float) $venta->monto_recibido,
             'vuelto' => (float) $venta->vuelto,
             'referencia_pago' => $venta->referencia_pago,
-            'observaciones' => $venta->observaciones,
-            'puntos_ganados' => $venta->puntos_ganados,
-            'puntos_canjeados' => $venta->puntos_canjeados,
             'items' => $venta->detalles->map(fn (\App\Models\DetalleDocumento $det): array => [
                 'producto_nombre' => $det->producto_nombre,
                 'presentacion' => $det->presentacion?->tipo_presentacion ?: 'Unidad',
@@ -1339,6 +1346,137 @@ trait RegistrarVentaBehavior
                 'subtotal' => (float) $det->total_linea,
             ])->all(),
         ];
+    }
+
+    /**
+     * Abre el modal de confirmación para anular una venta.
+     */
+    public function confirmarAnularVenta(int $id): void
+    {
+        if (! Auth::user()?->can('ventas.anular')) {
+            Notification::make()
+                ->title('No tienes permisos para anular ventas.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $documento = \App\Models\Documento::query()
+            ->where('sucursal_id', $this->sucursalId)
+            ->find($id);
+
+        if (! $documento) {
+            Notification::make()
+                ->title('No se encontró la venta o no pertenece a esta sucursal.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        if ($documento->estado === false) {
+            Notification::make()
+                ->title('Este documento ya se encuentra anulado.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        if (! in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA', 'TICKET'], true)) {
+            Notification::make()
+                ->title('Solo se pueden anular Facturas, Boletas y Tickets.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        $this->anularVentaId = $documento->id;
+        $this->anularVentaComprobante = "{$documento->tipo_comprobante} {$documento->serie}-{$documento->numero}";
+        $this->anularMotivoCodigo = '01';
+        $this->showAnularVentaModal = true;
+    }
+
+    /**
+     * Ejecuta la anulación de la venta seleccionada.
+     */
+    public function anularVenta(): void
+    {
+        if (! $this->anularVentaId) {
+            return;
+        }
+
+        if (! Auth::user()?->can('ventas.anular')) {
+            Notification::make()
+                ->title('No tienes permisos para anular ventas.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $documento = \App\Models\Documento::query()
+            ->with(['detalles', 'empresa', 'sucursal', 'cliente'])
+            ->where('sucursal_id', $this->sucursalId)
+            ->find($this->anularVentaId);
+
+        if (! $documento) {
+            Notification::make()
+                ->title('No se encontró la venta.')
+                ->danger()
+                ->send();
+            $this->cerrarAnularVentaModal();
+            return;
+        }
+
+        $motivoCodigo = $this->anularMotivoCodigo;
+        $motivoDescripcion = AnulacionService::MOTIVOS[$motivoCodigo] ?? 'Anulación de la operación';
+
+        try {
+            $notaCredito = app(AnulacionService::class)->anular(
+                user: Auth::user(),
+                documento: $documento,
+                motivoCodigo: $motivoCodigo,
+                motivoDescripcion: $motivoDescripcion,
+            );
+
+            if ($documento->tipo_comprobante === 'TICKET') {
+                Notification::make()
+                    ->title('Ticket anulado con éxito')
+                    ->body("Se restauró el stock. El ticket {$documento->serie}-{$documento->numero} ha sido anulado.")
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Venta anulada con éxito')
+                    ->body("Se generó la Nota de Crédito {$notaCredito->serie}-{$notaCredito->numero} y se encoló el envío a SUNAT.")
+                    ->success()
+                    ->send();
+            }
+
+            // Recargar resultados y detalle
+            $this->updatedSearchVentaQuery();
+            if ($this->selectedVentaId === $this->anularVentaId) {
+                $this->selectedVentaId = null;
+                $this->selectedVentaDetalles = null;
+            }
+        } catch (\RuntimeException $e) {
+            Notification::make()
+                ->title('Error al anular')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+
+        $this->cerrarAnularVentaModal();
+    }
+
+    /**
+     * Cierra el modal de anulación y limpia el estado.
+     */
+    public function cerrarAnularVentaModal(): void
+    {
+        $this->showAnularVentaModal = false;
+        $this->anularVentaId = null;
+        $this->anularVentaComprobante = null;
+        $this->anularMotivoCodigo = '01';
     }
 }
 

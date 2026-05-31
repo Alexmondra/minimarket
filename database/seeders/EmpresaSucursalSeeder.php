@@ -11,19 +11,19 @@ class EmpresaSucursalSeeder extends Seeder
 {
     public function run(): void
     {
-        // Obtener IDs de ubigeos para Lima (códigos usados por sucursales)
-        $ubigeoLima = DB::table('ubigeos')->where('codigo', '150101')->first();
-        $ubigeoAncon = DB::table('ubigeos')->where('codigo', '150102')->first();
-        $ubigeoAte = DB::table('ubigeos')->where('codigo', '150103')->first();
-        $ubigeoBarranco = DB::table('ubigeos')->where('codigo', '150104')->first();
+        // Códigos de ubigeos para Lima (usados por sucursales)
+        $ubigeoLima = '150101';
+        $ubigeoAncon = '150102';
+        $ubigeoAte = '150103';
+        $ubigeoBarranco = '150104';
 
         // ==========================================
         // 1. EMPRESAS
         // ==========================================
         DB::table('empresas')->insert([
             [
-                'ruc' => '20123456789',
-                'razon_social' => 'MINIMARKET EL AHORRO S.A.C.',
+                'ruc' => '20100066603',
+                'razon_social' => 'MINIMARKET go go',
                 'direccion_fiscal' => 'Av. Principal 123, Lima',
                 'incluido_tributo' => true,
                 'entorno' => true,
@@ -44,8 +44,8 @@ class EmpresaSucursalSeeder extends Seeder
             // Empresa 1: Minimarket El Ahorro
             [
                 'empresa_id' => 1,
-                'codigo' => 'AHO-001',
-                'ubigeo' => $ubigeoLima->id,
+                'codigo' => '0000',
+                'ubigeo' => $ubigeoLima,
                 'direccion' => 'Av. Principal 123, Lima',
                 'telefono' => '987654321',
                 'email' => 'sucursal1@elahorro.com',
@@ -55,8 +55,8 @@ class EmpresaSucursalSeeder extends Seeder
             ],
             [
                 'empresa_id' => 1,
-                'codigo' => 'AHO-002',
-                'ubigeo' => $ubigeoAte->id,
+                'codigo' => '0001',
+                'ubigeo' => $ubigeoAte,
                 'direccion' => 'Av. Separadora Industrial 789, Ate',
                 'telefono' => '987654322',
                 'email' => 'sucursal2@elahorro.com',
@@ -67,8 +67,8 @@ class EmpresaSucursalSeeder extends Seeder
             // Empresa 2: Minimarket Don Pepe
             [
                 'empresa_id' => 2,
-                'codigo' => 'PEP-001',
-                'ubigeo' => $ubigeoAncon->id,
+                'codigo' => '0000',
+                'ubigeo' => $ubigeoAncon,
                 'direccion' => 'Jr. Los Olivos 321, Ancón',
                 'telefono' => '987654323',
                 'email' => 'sucursal1@donpepe.com',
@@ -78,8 +78,8 @@ class EmpresaSucursalSeeder extends Seeder
             ],
             [
                 'empresa_id' => 2,
-                'codigo' => 'PEP-002',
-                'ubigeo' => $ubigeoBarranco->id,
+                'codigo' => '0001',
+                'ubigeo' => $ubigeoBarranco,
                 'direccion' => 'Av. San Martín 654, Barranco',
                 'telefono' => '987654324',
                 'email' => 'sucursal2@donpepe.com',

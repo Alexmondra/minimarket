@@ -6,6 +6,7 @@ use App\Filament\Clusters\Ventas\Resources\Documentos\DocumentoResource;
 use App\Models\Cliente;
 use App\Models\Serie;
 use App\Support\Facturacion\FacturacionService;
+use App\Support\Ventas\AnulacionService;
 use App\Support\Ventas\VentaFileService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
@@ -162,18 +163,49 @@ class ViewDocumento extends ViewRecord
                 ->label('Anular')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->requiresConfirmation()
-                ->visible(auth()->user()?->can('ventas.anular') ?? false)
-                ->action(function () use ($documento): void {
-                    $documento->update([
-                        'estado' => false,
-                        'observaciones' => trim(($documento->observaciones ? $documento->observaciones.PHP_EOL : '').'Documento anulado manualmente.'),
-                    ]);
+                ->visible(fn () => $documento->estado === true && (auth()->user()?->can('ventas.anular') ?? false))
+                ->form([
+                    Select::make('motivo_codigo')
+                        ->label('Motivo de Anulación')
+                        ->options(AnulacionService::MOTIVOS)
+                        ->default('01')
+                        ->required()
+                        ->live(),
+                ])
+                ->action(function (array $data) use ($documento): void {
+                    $motivoCodigo = $data['motivo_codigo'];
+                    $motivoDescripcion = AnulacionService::MOTIVOS[$motivoCodigo] ?? 'Anulación de la operación';
 
-                    Notification::make()
-                        ->title('Documento anulado')
-                        ->success()
-                        ->send();
+                    try {
+                        $notaCredito = app(AnulacionService::class)->anular(
+                            user: auth()->user(),
+                            documento: $documento,
+                            motivoCodigo: $motivoCodigo,
+                            motivoDescripcion: $motivoDescripcion,
+                        );
+
+                        if ($documento->tipo_comprobante === 'TICKET') {
+                            Notification::make()
+                                ->title('Documento anulado con éxito')
+                                ->body("Se restauró el stock. El ticket {$documento->serie}-{$documento->numero} ha sido anulado.")
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Documento anulado con éxito')
+                                ->body("Se generó la Nota de Crédito {$notaCredito->serie}-{$notaCredito->numero} y se encoló el envío a SUNAT.")
+                                ->success()
+                                ->send();
+                        }
+                    } catch (\RuntimeException $e) {
+                        Notification::make()
+                            ->title('Error al anular')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::$resource::getUrl('view', ['record' => $documento]));
                 }),
         ];
     }

@@ -23,7 +23,7 @@ class VentaFileServiceTest extends TestCase
         Storage::fake('local');
 
         $ubigeo = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'Lima',
             'provincia' => 'Lima',
             'distrito' => 'Lima',
@@ -37,7 +37,7 @@ class VentaFileServiceTest extends TestCase
         $sucursal = Sucursal::create([
             'empresa_id' => $empresa->id,
             'codigo' => '0001',
-            'ubigeo' => $ubigeo->id,
+            'ubigeo' => $ubigeo->ubigeo,
             'direccion' => 'AV. TIENDA 456',
             'nombre_sucursal' => 'Central',
             'impuesto_porcentaje' => 18,

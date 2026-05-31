@@ -11,10 +11,19 @@ class UbigeoForm
     {
         return $schema
             ->components([
-                TextInput::make('codigo')
+                TextInput::make('ubigeo')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(6),
+                TextInput::make('Superficie')
+                    ->maxLength(255)
+                    ->default(null),
+                TextInput::make('Y')
+                    ->maxLength(255)
+                    ->default(null),
+                TextInput::make('x')
+                    ->maxLength(255)
+                    ->default(null),
                 TextInput::make('departamento')
                     ->required()
                     ->maxLength(255),

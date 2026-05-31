@@ -23,7 +23,7 @@ class ProcesarFacturaSunatTest extends TestCase
         Queue::fake();
 
         $ubigeo = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'Lima',
             'provincia' => 'Lima',
             'distrito' => 'Lima',
@@ -34,7 +34,7 @@ class ProcesarFacturaSunatTest extends TestCase
         $sucursal = Sucursal::create([
             'empresa_id' => $empresa->id,
             'codigo' => '0001',
-            'ubigeo' => $ubigeo->id,
+            'ubigeo' => $ubigeo->ubigeo,
             'direccion' => 'Dir',
             'nombre_sucursal' => 'Suc',
             'impuesto_porcentaje' => 18,
@@ -69,7 +69,7 @@ class ProcesarFacturaSunatTest extends TestCase
     public function test_job_handle_calls_facturacion_service(): void
     {
         $ubigeo = Ubigeo::create([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'Lima',
             'provincia' => 'Lima',
             'distrito' => 'Lima',
@@ -80,7 +80,7 @@ class ProcesarFacturaSunatTest extends TestCase
         $sucursal = Sucursal::create([
             'empresa_id' => $empresa->id,
             'codigo' => '0001',
-            'ubigeo' => $ubigeo->id,
+            'ubigeo' => $ubigeo->ubigeo,
             'direccion' => 'Dir',
             'nombre_sucursal' => 'Suc',
             'impuesto_porcentaje' => 18,

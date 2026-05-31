@@ -18,8 +18,17 @@ class UbigeosTable
     {
         return $table
             ->columns([
-                TextColumn::make('codigo')
+                TextColumn::make('ubigeo')
                     ->searchable(),
+                TextColumn::make('Superficie')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('Y')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('x')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('departamento')
                     ->searchable(),
                 TextColumn::make('provincia')

@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('ubigeos', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo')->unique();
+            $table->string('ubigeo')->unique();
             $table->string('departamento');
             $table->string('provincia');
             $table->string('distrito');
             $table->string('capital')->nullable();
             $table->string('region_natural')->nullable();
+            $table->string('Superficie')->nullable();
+            $table->string('Y')->nullable();
+            $table->string('x')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -17,6 +17,7 @@ class Sunat extends Model
         'estado_sunat',
         'codigo_respuesta_sunat',
         'mensaje_sunat',
+        'hash',
         'fecha_envio',
         'fecha_respuesta',
     ];

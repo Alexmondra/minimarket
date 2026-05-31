@@ -10,12 +10,15 @@ class Ubigeo extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'codigo',
+        'ubigeo',
         'departamento',
         'provincia',
         'distrito',
         'capital',
         'region_natural',
+        'Superficie',
+        'Y',
+        'x',
     ];
 
     public function sucursales()

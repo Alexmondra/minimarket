@@ -18,6 +18,13 @@
     $monedaNombre = ($documento->tipo_moneda === 'USD') ? 'DÓLARES' : 'SOLES';
     $montoLetras = sprintf('SON: %s CON %02d/100 %s', $letras, $centimos, $monedaNombre);
 
+    // --- DATOS SUNAT DESDE LA TABLA SUNAT ---
+    $sunat = $documento->sunat;
+    $hash = $sunat?->hash ?? '';
+    $codigoSunat = $sunat?->codigo_respuesta_sunat ?? '';
+    $mensajeSunat = $sunat?->mensaje_sunat ?? '';
+    $sunatAceptado = $sunat && $sunat->estado_sunat;
+
     // --- QR SUNAT ---
     $tipoDoc = match($documento->tipo_comprobante) {
         'FACTURA' => '01',
@@ -46,15 +53,11 @@
         $fechaEmision,
         $tipoDocCliente,
         $documento->cliente?->documento ?? '00000000',
-        $documento->hash ?? '',
+        $hash,
     ]) . '|';
 
-    // Generar QR
     try {
-        $renderer = new ImageRenderer(
-            new RendererStyle(180),
-            new SvgImageBackEnd()
-        );
+        $renderer = new ImageRenderer(new RendererStyle(180), new SvgImageBackEnd());
         $writer = new Writer($renderer);
         $qrSvg = $writer->writeString($qrString);
         $qrBase64 = base64_encode($qrSvg);
@@ -95,7 +98,6 @@
         ? url('/consultar/' . $documento->empresa->slug)
         : 'https://cpe.sunat.gob.pe/';
 
-    // --- TIPO COMPROBANTE LEGIBLE ---
     $tipoComprobanteLegible = match($documento->tipo_comprobante) {
         'FACTURA' => 'FACTURA ELECTRÓNICA',
         'BOLETA'  => 'BOLETA DE VENTA ELECTRÓNICA',
@@ -104,9 +106,17 @@
         default   => 'TICKET DE VENTA',
     };
 
-    $esAnulado = $documento->estado === false
-        || $documento->estado === 'ANULADO'
-        || $documento->estado_sunat === 'ANULADO';
+    $esAnulado = $documento->estado === false || $documento->estado === 'ANULADO';
+
+    // --- PUNTOS (desde movimientos, no de columna) ---
+    $puntosGanados = \App\Models\ClientePuntoMovimiento::query()
+        ->where('documento_id', $documento->id)
+        ->where('tipo', 'acumulacion')
+        ->sum('puntos');
+    $puntosCanjeados = \App\Models\ClientePuntoMovimiento::query()
+        ->where('documento_id', $documento->id)
+        ->where('tipo', 'canje')
+        ->sum('puntos');
 @endphp
 <!doctype html>
 <html lang="es">
@@ -114,14 +124,14 @@
     <meta charset="utf-8">
     <title>Ticket {{ $documento->serie }}-{{ $documento->numero }}</title>
     <style>
-        /* RESET TOTAL */
+        /* 1. RESET TOTAL */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        /* ELIMINAR MÁRGENES DE PÁGINA */
+        /* 2. ELIMINAR MÁRGENES DE PÁGINA — la impresora decide el ancho */
         @page {
             margin: 0;
             size: auto;
@@ -149,7 +159,7 @@
             print-color-adjust: exact !important;
         }
 
-        /* CONTENEDOR AJUSTADO PARA TÉRMICA 80mm */
+        /* 3. CONTENEDOR AJUSTADO — sin ancho fijo, se adapta a la térmica */
         .ticket-wrapper {
             width: 100%;
             padding: 2mm 3mm 8mm 3mm;
@@ -182,28 +192,16 @@
             margin: 5px 0;
         }
 
-        /* TABLAS */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        td, th {
-            padding: 2px 0;
-            vertical-align: top;
-            word-wrap: break-word;
-        }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        td, th { padding: 2px 0; vertical-align: top; word-wrap: break-word; }
 
         img.logo {
             max-width: 65%;
             height: auto;
             filter: grayscale(100%) contrast(150%);
-            margin-top: 0;
             margin-bottom: 4px;
         }
 
-        /* MARCA DE AGUA ANULADO */
         .watermark {
             position: absolute;
             top: 25%;
@@ -221,7 +219,6 @@
             width: 90%;
         }
 
-        /* TOTAL BOX */
         .total-box {
             background: #000 !important;
             color: #fff !important;
@@ -239,58 +236,38 @@
             padding: 5px;
             margin: 8px 0;
         }
-
-        /* QR */
-        .qr-container {
-            text-align: center;
-            margin-top: 8px;
-        }
-        .qr-container svg {
-            max-width: 120px;
-            height: auto;
-        }
     </style>
 </head>
-<body>
+<body onload="window.print(); setTimeout(function(){ window.close(); }, 1500);">
     <div class="ticket-wrapper">
-        {{-- MARCA DE AGUA SI ESTÁ ANULADO --}}
         @if($esAnulado)
             <div class="watermark">ANULADO</div>
         @endif
 
-        {{-- 1. ENCABEZADO: LOGO + RAZÓN SOCIAL + RUC + DIRECCIÓN --}}
+        {{-- ENCABEZADO --}}
         <div class="text-center">
             @if($logoBase64)
                 <img class="logo" src="{{ $logoBase64 }}" alt="Logo">
             @endif
-
-            <div style="font-size: 14px; font-weight: bold; line-height: 1.1;">
-                {{ $razonSocial }}
-            </div>
-            <div style="font-size: 12px; font-weight: bold; margin-top: 3px;">
-                RUC: {{ $ruc }}
-            </div>
+            <div style="font-size: 14px; font-weight: bold; line-height: 1.1;">{{ $razonSocial }}</div>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 3px;">RUC: {{ $ruc }}</div>
             <div style="font-size: 10px; line-height: 1.2;">
                 {{ $direccion }}<br>
                 @if($distrito || $provincia)
                     {{ $distrito }}@if($distrito && $provincia) - @endif{{ $provincia }}<br>
                 @endif
                 @if($telefono || $email)
-                    <span>
-                        {{ $telefono ?? '' }}
-                        {{ $telefono && $email ? '|' : '' }}
-                        {{ $email ?? '' }}
-                    </span><br>
+                    {{ $telefono ?? '' }}{{ $telefono && $email ? ' | ' : '' }}{{ $email ?? '' }}<br>
                 @endif
                 @if($sucursalNombre)
-                    <span style="font-weight: bold;">{{ $sucursalNombre }}</span><br>
+                    <b>{{ $sucursalNombre }}</b><br>
                 @endif
             </div>
         </div>
 
         <div class="border-dashed"></div>
 
-        {{-- 2. DATOS DEL COMPROBANTE --}}
+        {{-- DATOS COMPROBANTE --}}
         <div style="font-size: 11px;">
             <div style="display: flex; justify-content: space-between;">
                 <b>{{ $tipoComprobanteLegible }}:</b>
@@ -311,7 +288,7 @@
 
         <div class="border-dashed"></div>
 
-        {{-- 3. DETALLE DE PRODUCTOS --}}
+        {{-- DETALLE PRODUCTOS --}}
         <table>
             <thead>
                 <tr>
@@ -333,137 +310,95 @@
 
         <div class="border-dashed"></div>
 
-        {{-- 4. RESUMEN DE IMPORTES --}}
+        {{-- RESUMEN IMPORTES --}}
         <table>
             @if((float)$documento->op_gravada > 0)
-                <tr>
-                    <td class="text-right">Op. Gravada:</td>
-                    <td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_gravada, 2) }}</td>
-                </tr>
+                <tr><td class="text-right">Op. Gravada:</td><td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_gravada, 2) }}</td></tr>
             @endif
             @if((float)$documento->op_exonerada > 0)
-                <tr>
-                    <td class="text-right">Op. Exonerada:</td>
-                    <td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_exonerada, 2) }}</td>
-                </tr>
+                <tr><td class="text-right">Op. Exonerada:</td><td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_exonerada, 2) }}</td></tr>
             @endif
             @if((float)$documento->op_inafecta > 0)
-                <tr>
-                    <td class="text-right">Op. Inafecta:</td>
-                    <td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_inafecta, 2) }}</td>
-                </tr>
+                <tr><td class="text-right">Op. Inafecta:</td><td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->op_inafecta, 2) }}</td></tr>
             @endif
             @if((float)$documento->total_igv > 0)
-                <tr>
-                    <td class="text-right">IGV ({{ number_format((float)$documento->porcentaje_igv, 0) }}%):</td>
-                    <td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->total_igv, 2) }}</td>
-                </tr>
+                <tr><td class="text-right">IGV ({{ number_format((float)$documento->porcentaje_igv, 0) }}%):</td><td class="text-right" style="width: 40%;">S/ {{ number_format((float)$documento->total_igv, 2) }}</td></tr>
             @endif
             @if((float)$documento->total_descuento > 0)
-                <tr class="text-red">
-                    <td class="text-right font-bold">DESCUENTO:</td>
-                    <td class="text-right font-bold">- S/ {{ number_format((float)$documento->total_descuento, 2) }}</td>
-                </tr>
+                <tr class="text-red"><td class="text-right font-bold">DESCUENTO:</td><td class="text-right font-bold">- S/ {{ number_format((float)$documento->total_descuento, 2) }}</td></tr>
             @endif
         </table>
 
-        {{-- 5. TOTAL (CAJA NEGRA) --}}
+        {{-- TOTAL --}}
         <div class="total-box">
             <span class="font-bold">TOTAL</span>
             <span class="font-bold">S/ {{ number_format((float)$documento->total_neto, 2) }}</span>
         </div>
 
-        {{-- 6. MONTO EN LETRAS --}}
-        <div class="text-center uppercase" style="margin-top: 6px; font-size: 9px;">
-            {{ $montoLetras }}
-        </div>
+        {{-- MONTO EN LETRAS --}}
+        <div class="text-center uppercase" style="margin-top: 6px; font-size: 9px;">{{ $montoLetras }}</div>
 
-        {{-- 7. PAGO --}}
+        {{-- PAGO --}}
         @if($documento->medio_pago === 'EFECTIVO')
             <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px;">
-                <span>Recibido:</span>
-                <span>S/ {{ number_format((float)$documento->monto_recibido, 2) }}</span>
+                <span>Recibido:</span><span>S/ {{ number_format((float)$documento->monto_recibido, 2) }}</span>
             </div>
-            @if((float)$documento->vuelto > 0)
+            @if($documento->vuelto > 0)
                 <div style="display: flex; justify-content: space-between; font-size: 10px;">
-                    <span>Vuelto:</span>
-                    <span>S/ {{ number_format((float)$documento->vuelto, 2) }}</span>
+                    <span>Vuelto:</span><span>S/ {{ number_format($documento->vuelto, 2) }}</span>
                 </div>
             @endif
         @endif
 
-        {{-- 8. PUNTOS (si aplica) --}}
-        @if($documento->cliente && $documento->cliente->documento != '00000000' && ($documento->puntos_ganados > 0 || $documento->puntos_canjeados > 0))
+        {{-- PUNTOS --}}
+        @if($puntosGanados > 0 || $puntosCanjeados < 0)
             <div class="points-box">
                 <div style="font-weight: bold; font-size: 10px; background: #eee; text-align: center;">MONEDERO PUNTOS</div>
-                @if($documento->puntos_ganados > 0)
+                @if($puntosGanados > 0)
                     <div style="display: flex; justify-content: space-between; padding: 2px 5px; font-size: 10px;">
-                        <span>Ganados hoy:</span>
-                        <b>+{{ $documento->puntos_ganados }}</b>
+                        <span>Ganados hoy:</span><b>+{{ $puntosGanados }}</b>
                     </div>
                 @endif
-                @if($documento->puntos_canjeados > 0)
-                    <div style="display: flex; justify-content: space-between; padding: 0 5px; font-size: 10px;">
-                        <span>Canjeados:</span>
-                        <b>-{{ $documento->puntos_canjeados }}</b>
+                @if($puntosCanjeados < 0)
+                    <div style="display: flex; justify-content: space-between; padding: 2px 5px; font-size: 10px;">
+                        <span>Canjeados:</span><b>{{ $puntosCanjeados }}</b>
                     </div>
                 @endif
             </div>
         @endif
 
-        {{-- 9. QR + LEYENDA COMPROBANTE ELECTRÓNICO --}}
-        @if(in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA']))
-            <div class="text-center" style="margin-top: 10px;">
-                @if($qrBase64)
-                    <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" style="width: 95px;">
-                @endif
-                <div style="font-weight: bold; margin-top: 5px; font-size: 10px;">
-                    {{ $montoLetras }}
-                </div>
-                <div style="font-size: 9px; margin-top: 5px; color: #444;">
+        {{-- QR + LEYENDA (mismo formato visual para todos) --}}
+        <div class="text-center" style="margin-top: 10px;">
+            @if($qrBase64)
+                <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" style="width: 95px;">
+            @endif
+            <div style="font-size: 9px; margin-top: 5px; color: #444;">
+                @if(in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA']))
                     Representación impresa de la <b>{{ $tipoComprobanteLegible }}</b><br>
-                    @if($documento->hash)
-                        <span style="font-size: 7px;">Hash: {{ substr($documento->hash, 0, 40) }}...</span><br>
+                    @if($hash)
+                        <span style="font-size: 7px;">Hash: {{ substr($hash, 0, 40) }}...</span><br>
                     @endif
                     Consulte en: <b>{{ $consultaUrl }}</b><br>
-                    @if($documento->estado_sunat === 'ACEPTADA')
-                        <span style="color: green; font-weight: bold;">✓ Documento aceptado por SUNAT</span>
-                    @elseif($documento->estado_sunat === 'RECHAZADA')
-                        <span style="color: red; font-weight: bold;">✗ Documento rechazado: {{ $documento->mensaje_sunat }}</span>
-                    @elseif($documento->estado_sunat === 'PENDIENTE')
-                        <span style="color: orange;">⟳ Pendiente de envío a SUNAT</span>
+                    @if($sunatAceptado)
+                        <span style="color: green; font-weight: bold;">Documento aceptado por SUNAT (Cód. {{ $codigoSunat }})</span>
+                    @elseif($codigoSunat === 'ERROR' || str_starts_with($codigoSunat, '2') || str_starts_with($codigoSunat, '3'))
+                        <span style="color: red; font-weight: bold;">Rechazado: {{ $mensajeSunat }}</span>
+                    @elseif($codigoSunat && $codigoSunat !== 'NO_APLICA')
+                        <span style="color: orange;">Pendiente SUNAT ({{ $codigoSunat }})</span>
                     @endif
-                </div>
-            </div>
-        @else
-            {{-- Para TICKET simple, solo QR básico con datos de la venta --}}
-            <div class="text-center" style="margin-top: 10px;">
-                @if($qrBase64)
-                    <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" style="width: 85px;">
+                @else
+                    <b>{{ $documento->serie }}-{{ str_pad($documento->numero, 8, '0', STR_PAD_LEFT) }}</b><br>
+                    Emitido: {{ now()->format('d/m/Y H:i') }}<br>
+                    {{ $documento->empresa?->razon_social }}
                 @endif
-                <div style="font-size: 9px; margin-top: 5px; color: #444;">
-                    {{ $documento->serie }}-{{ $documento->numero }}<br>
-                    Emitido: {{ now()->format('d/m/Y H:i') }}
-                </div>
             </div>
-        @endif
+        </div>
 
-        {{-- 10. PIE: CAJERO + AGRADECIMIENTO --}}
+        {{-- PIE --}}
         <div class="text-center" style="margin-top: 8px; font-size: 9px;">
             <div>Emitido por: {{ $documento->user?->name ?? 'Sistema' }}</div>
             <div style="margin-top: 3px; font-weight: bold;">¡Gracias por su compra!</div>
         </div>
     </div>
-
-    @if(request('imprimir') == 'si')
-    <script>
-        window.addEventListener('load', () => {
-            window.print();
-            setTimeout(() => {
-                window.close();
-            }, 1000);
-        });
-    </script>
-    @endif
 </body>
 </html>

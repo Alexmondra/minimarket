@@ -3,12 +3,14 @@
 namespace App\Filament\Clusters\Configuraciones\Resources\Sucursales\Schemas;
 
 use App\Models\Ubigeo;
+use App\Models\Sucursal;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class SucursalForm
 {
@@ -24,9 +26,28 @@ class SucursalForm
                         TextInput::make('codigo')
                             ->label('Codigo')
                             ->required()
-                            ->unique(ignoreRecord: true)
+                            ->default(function () {
+                                $user = auth()->user();
+                                if (!$user) {
+                                    return '0000';
+                                }
+                                $existingCodes = Sucursal::withTrashed()
+                                    ->where('empresa_id', $user->empresa_id)
+                                    ->pluck('codigo')
+                                    ->filter(fn($c) => preg_match('/^\d{4}$/', $c))
+                                    ->map(fn($c) => (int)$c);
+
+                                $nextCodeInt = $existingCodes->isEmpty() ? 0 : $existingCodes->max() + 1;
+                                return sprintf('%04d', $nextCodeInt);
+                            })
+                            ->unique(
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn (Unique $rule) => $rule
+                                    ->where('empresa_id', auth()->user()?->empresa_id)
+                                    ->whereNull('deleted_at'),
+                            )
                             ->maxLength(50)
-                            ->placeholder('SUC-001'),
+                            ->placeholder('0000'),
                         TextInput::make('nombre_sucursal')
                             ->required()
                             ->maxLength(255)
@@ -59,7 +80,7 @@ class SucursalForm
                                 ->orderBy('distrito')
                                 ->get()
                                 ->mapWithKeys(fn ($item) => [
-                                    $item->id => "{$item->departamento} / {$item->provincia} / {$item->distrito}",
+                                    $item->ubigeo => "{$item->departamento} / {$item->provincia} / {$item->distrito}",
                                 ])
                             )
                             ->searchable()
@@ -68,7 +89,7 @@ class SucursalForm
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
-                                    $ubigeo = Ubigeo::find($state);
+                                    $ubigeo = Ubigeo::where('ubigeo', $state)->first();
                                     if ($ubigeo) {
                                         $departamento = strtoupper(trim($ubigeo->departamento));
                                         $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];

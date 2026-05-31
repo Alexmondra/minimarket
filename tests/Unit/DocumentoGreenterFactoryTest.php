@@ -27,11 +27,11 @@ class DocumentoGreenterFactoryTest extends TestCase
 
         $sucursal = new Sucursal([
             'codigo' => '0001',
-            'ubigeo' => 1,
+            'ubigeo' => '150101',
             'direccion' => 'AV. TIENDA 456',
         ]);
         $sucursal->setRelation('ubigeoRel', new Ubigeo([
-            'codigo' => '150101',
+            'ubigeo' => '150101',
             'departamento' => 'LIMA',
             'provincia' => 'LIMA',
             'distrito' => 'LIMA',
@@ -103,9 +103,9 @@ class DocumentoGreenterFactoryTest extends TestCase
 
         $sucursal = new Sucursal([
             'codigo' => '0001',
-            'ubigeo' => 1,
+            'ubigeo' => '150101',
         ]);
-        $sucursal->setRelation('ubigeoRel', new Ubigeo(['codigo' => '150101']));
+        $sucursal->setRelation('ubigeoRel', new Ubigeo(['ubigeo' => '150101']));
 
         // Detalle 1: GRAVADO (tipo_afectacion = '10') -> debe ser '10', IGV debe mantenerse
         $detalle1 = new DetalleDocumento([

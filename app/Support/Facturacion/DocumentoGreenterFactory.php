@@ -69,7 +69,7 @@ class DocumentoGreenterFactory
             ->setNombreComercial((string) $empresa->razon_social)
             ->setAddress(
                 (new Address)
-                    ->setUbigueo($ubigeo?->codigo ?: null)
+                    ->setUbigueo($ubigeo?->ubigeo ?: $ubigeo?->codigo ?: null)
                     ->setDepartamento($ubigeo?->departamento ?: '-')
                     ->setProvincia($ubigeo?->provincia ?: '-')
                     ->setDistrito($ubigeo?->distrito ?: '-')
