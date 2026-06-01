@@ -32,16 +32,16 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300">
                     @foreach($productos as $producto)
                         <tr class="hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition duration-150">
-                            <td class="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
+                            <td class="px-5 py-3.5 font-bold text-slate-900 dark:text-white max-w-[180px] truncate" title="{{ $producto->nombre }}">
                                 {{ $producto->nombre }}
                             </td>
                             <td class="px-5 py-3.5 font-semibold">
                                 {{ $producto->codigo_interno ?? '—' }}
                             </td>
-                            <td class="px-5 py-3.5 text-slate-500">
+                            <td class="px-5 py-3.5 text-slate-500 max-w-[120px] truncate" title="{{ $producto->categoria->nombre ?? '—' }}">
                                 {{ $producto->categoria->nombre ?? '—' }}
                             </td>
-                            <td class="px-5 py-3.5 text-slate-500">
+                            <td class="px-5 py-3.5 text-slate-500 max-w-[120px] truncate" title="{{ $producto->marca->nombre ?? '—' }}">
                                 {{ $producto->marca->nombre ?? '—' }}
                             </td>
                             <td class="px-5 py-3.5 text-right">

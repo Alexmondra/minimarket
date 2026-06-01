@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Marcas\Pages;
+namespace App\Filament\Clusters\Global\Resources\Marcas\Pages;
 
-use App\Filament\Clusters\Almacen\Resources\Marcas\MarcaResource;
+use App\Filament\Clusters\Global\Resources\Marcas\MarcaResource;
 use App\Models\Marca;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
@@ -16,7 +16,7 @@ class ManageMarcas extends Page
 
     protected static string $resource = MarcaResource::class;
 
-    protected string $view = 'filament.clusters.almacen.resources.marcas.pages.manage-marcas';
+    protected string $view = 'filament.clusters.global.resources.marcas.pages.manage-marcas';
 
     public $search = '';
     public $estado = 'all'; // all, active, trashed

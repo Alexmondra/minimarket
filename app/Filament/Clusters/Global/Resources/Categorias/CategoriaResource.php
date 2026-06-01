@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Marcas;
+namespace App\Filament\Clusters\Global\Resources\Categorias;
 
-use App\Filament\Clusters\Almacen\Resources\Marcas\Pages\ManageMarcas;
-use App\Models\Marca;
+use App\Filament\Clusters\Global\Resources\Categorias\Pages\ManageCategorias;
+use App\Models\Categoria;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,9 +16,12 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -26,21 +29,21 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use UnitEnum;
 
-class MarcaResource extends Resource
+class CategoriaResource extends Resource
 {
-    protected static ?string $model = Marca::class;
+    protected static ?string $model = Categoria::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bookmark';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Almacén';
+    protected static string|UnitEnum|null $navigationGroup = 'Catálogo Global';
 
     protected static ?string $recordTitleAttribute = 'nombre';
 
-    protected static ?string $navigationLabel = 'Marcas';
+    protected static ?string $navigationLabel = 'Categorías';
 
-    protected static ?string $modelLabel = 'Marca';
+    protected static ?string $modelLabel = 'Categoría';
 
-    protected static ?string $pluralModelLabel = 'Marcas';
+    protected static ?string $pluralModelLabel = 'Categorías';
 
     public static function form(Schema $schema): Schema
     {
@@ -53,6 +56,8 @@ class MarcaResource extends Resource
                     ->maxLength(65535)
                     ->default(null)
                     ->columnSpanFull(),
+                Toggle::make('estado')
+                    ->default(true),
             ]);
     }
 
@@ -64,6 +69,8 @@ class MarcaResource extends Resource
                 TextEntry::make('descripcion')
                     ->placeholder('-')
                     ->columnSpanFull(),
+                IconEntry::make('estado')
+                    ->boolean(),
                 TextEntry::make('created_at')
                     ->dateTime()
                     ->placeholder('-'),
@@ -72,7 +79,7 @@ class MarcaResource extends Resource
                     ->placeholder('-'),
                 TextEntry::make('deleted_at')
                     ->dateTime()
-                    ->visible(fn (Marca $record): bool => $record->trashed()),
+                    ->visible(fn (Categoria $record): bool => $record->trashed()),
             ]);
     }
 
@@ -86,6 +93,9 @@ class MarcaResource extends Resource
                 TextColumn::make('descripcion')
                     ->limit(50)
                     ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('estado')
+                    ->boolean()
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -121,7 +131,7 @@ class MarcaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageMarcas::route('/'),
+            'index' => ManageCategorias::route('/'),
         ];
     }
 

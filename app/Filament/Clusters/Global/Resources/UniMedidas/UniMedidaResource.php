@@ -34,7 +34,7 @@ class UniMedidaResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-scale';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Global';
+    protected static string|UnitEnum|null $navigationGroup = 'Catálogo Global';
 
     protected static ?string $recordTitleAttribute = 'nombre';
 

@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
-use App\Filament\Clusters\Almacen\Resources\Categorias\Pages\ManageCategorias;
+use App\Filament\Clusters\Global\Resources\Categorias\Pages\ManageCategorias;
 
 class ManageCategoriasDashboardTest extends TestCase
 {

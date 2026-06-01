@@ -66,7 +66,7 @@
             </div>
 
             <!-- Derecha: Filtros de Estado -->
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center justify-between w-full lg:w-auto gap-3">
                 <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider hidden sm:inline">Filtrar por Productos:</span>
                 <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border dark:border-slate-800/60">
                     <button type="button" 
@@ -126,13 +126,11 @@
                                 </p>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Acciones Inferiores -->
-                    <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800/40">
+                                        <!-- Acciones Inferiores -->
+                    <div class="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 pt-4 border-t border-slate-100 dark:border-slate-800/40">
                         <button type="button" 
                                 wire:click="openProductsModal('{{ $pres->tipo_presentacion }}')"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
+                                class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -142,7 +140,7 @@
                         
                         <button type="button" 
                                 wire:click="openRenameModal('{{ $pres->tipo_presentacion }}')"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                                class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                             </svg>
@@ -151,7 +149,7 @@
 
                         <button type="button" 
                                 wire:click="confirmDelete('{{ $pres->tipo_presentacion }}')"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all">
+                                class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.9 12.1A2 2 0 0116.1 21H7.9a2 2 0 01-2-1.9L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -309,6 +307,11 @@
                 <!-- Carga de Imagen -->
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Imagen de la Presentación</label>
+                    @if ($imagen)
+                        <div class="mb-2">
+                            <img src="{{ $imagen->temporaryUrl() }}" class="h-20 w-20 object-contain rounded-xl border dark:border-slate-800 bg-white dark:bg-slate-900/60 p-1">
+                        </div>
+                    @endif
                     <input type="file" 
                            wire:model="imagen"
                            class="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-950/40 dark:file:text-indigo-400 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-950/60 transition">
@@ -529,16 +532,16 @@
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 text-slate-700 dark:text-slate-300">
                                 @foreach ($productsList as $p)
                                     <tr class="hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition duration-150">
-                                        <td class="px-5 py-4 font-bold text-slate-900 dark:text-white">
+                                        <td class="px-5 py-4 font-bold text-slate-900 dark:text-white max-w-[180px] truncate" title="{{ $p->nombre }}">
                                             {{ $p->nombre }}
                                         </td>
                                         <td class="px-5 py-4 font-semibold">
                                             {{ $p->codigo_interno ?? '—' }}
                                         </td>
-                                        <td class="px-5 py-4 text-slate-500">
+                                        <td class="px-5 py-4 text-slate-500 max-w-[120px] truncate" title="{{ $p->categoria->nombre ?? '—' }}">
                                             {{ $p->categoria->nombre ?? '—' }}
                                         </td>
-                                        <td class="px-5 py-4 text-slate-500">
+                                        <td class="px-5 py-4 text-slate-500 max-w-[120px] truncate" title="{{ $p->marca->nombre ?? '—' }}">
                                             {{ $p->marca->nombre ?? '—' }}
                                         </td>
                                         <td class="px-5 py-4 text-right">

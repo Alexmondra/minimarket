@@ -1,22 +1,35 @@
 <x-filament-panels::page>
     <div class="unimedidas-root space-y-6 animate-fade-in">
         <!-- Barra de Búsqueda, Acciones y Filtros (Unified SaaS Toolbar) -->
-        <div class="glass-card p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-            <!-- Izquierda: Buscador -->
-            <div class="relative flex-1 max-w-md">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
-                    </svg>
+        <div class="glass-card p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <!-- Izquierda: Buscador + Botón Nueva Unidad -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                <!-- Buscador -->
+                <div class="relative flex-1 max-w-md">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
+                        </svg>
+                    </div>
+                    <input type="text" 
+                           wire:model.live="search"
+                           placeholder="Buscar unidades por nombre o abreviatura..."
+                           class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
                 </div>
-                <input type="text" 
-                       wire:model.live="search"
-                       placeholder="Buscar unidades por nombre o abreviatura..."
-                       class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+
+                <!-- Botón Registrar Unidad -->
+                <button type="button" 
+                        wire:click="openCreateModal"
+                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all shadow-md shadow-emerald-500/20 rounded-xl whitespace-nowrap">
+                    <svg class="w-4 h-4 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <span>Nueva Unidad</span>
+                </button>
             </div>
 
-            <!-- Derecha: Filtros, Botón Crear y Selector de Vista -->
-            <div class="flex flex-wrap items-center gap-3">
+            <!-- Derecha: Filtros y Selector de Vista -->
+            <div class="flex flex-wrap items-center justify-between w-full lg:w-auto gap-3">
                 <!-- Filtros de Estado -->
                 <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border dark:border-slate-800/60">
                     <button type="button" 
@@ -40,16 +53,6 @@
                         Papelera
                     </button>
                 </div>
-
-                <!-- Botón Registrar Unidad -->
-                <button type="button" 
-                        wire:click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all shadow-md shadow-emerald-500/20 rounded-xl whitespace-nowrap">
-                    <svg class="w-4 h-4 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    <span>Nueva Unidad</span>
-                </button>
 
                 <!-- Selector de Vista (Cards / Lista) -->
                 <div class="flex items-center p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border dark:border-slate-800/60 shadow-inner">

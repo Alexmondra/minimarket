@@ -1,31 +1,37 @@
 <div class="space-y-8 animate-fade-in">
     <!-- 1. HEADER CARD (DATOS DEL PRODUCTO) -->
     <div class="relative overflow-hidden rounded-[24px] bg-gradient-to-r from-indigo-50/90 via-slate-50/70 to-white/40 dark:from-[#171336] dark:via-[#0d101e] dark:to-[#0a0c14] p-6 md:p-8 shadow-xl border border-slate-200/80 dark:border-[#1d2745]/60 text-slate-800 dark:text-white">
+
         <!-- Background ambient glow blobs -->
         <div class="absolute right-0 top-0 -mr-20 -mt-20 h-80 w-80 rounded-full bg-indigo-500/[0.03] dark:bg-indigo-500/5 blur-3xl"></div>
         <div class="absolute left-0 bottom-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-purple-500/[0.03] dark:bg-purple-500/5 blur-3xl"></div>
 
-        <div class="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div class="flex flex-col sm:flex-row items-center gap-6 w-full">
-                <!-- Icono del Producto -->
+        <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
+            <!-- LEFT CONTENT -->
+            <div class="flex flex-col sm:flex-row items-center gap-6 w-full min-w-0">
+
+                <!-- Icono -->
                 <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md">
                     <svg class="h-10 w-10 text-[#a855f7] stroke-1.25" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                     </svg>
                 </div>
 
-                <!-- Detalles e Identificación -->
-                <div class="text-center sm:text-left space-y-2 flex-1 min-w-0">
+                <!-- INFO -->
+                <div class="text-center sm:text-left space-y-2 flex-1 min-w-0 w-full">
+
                     <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                        <!-- Categoría Badge -->
+
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
                             {{ $record->categoria?->nombre ?? 'Sin Categoría' }}
                         </span>
-                        <!-- Marca Badge -->
+
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                             {{ $record->marca?->nombre ?? 'Sin Marca' }}
                         </span>
-                        <!-- Afecto IGV Badge -->
+
                         @if ($record->afecto_igv)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                 Afecto IGV
@@ -35,7 +41,7 @@
                                 Exonerado IGV
                             </span>
                         @endif
-                        <!-- Activo Badge -->
+
                         @if ($record->activo)
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
@@ -47,34 +53,53 @@
                                 Inactivo
                             </span>
                         @endif
+
                     </div>
 
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white truncate">
                         {{ $record->nombre }}
                     </h1>
+
                     <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-center sm:justify-start gap-1">
-                        <span class="text-purple-600 dark:text-[#a855f7] font-bold">Cód. Interno</span> 
-                        <span class="text-slate-700 dark:text-slate-300 ml-1">{{ $record->codigo_interno ?: '—' }}</span>
+                        <span class="text-purple-600 dark:text-[#a855f7] font-bold">Cód. Interno</span>
+                        <span class="text-slate-700 dark:text-slate-300 ml-1">
+                            {{ $record->codigo_interno ?: '—' }}
+                        </span>
                     </p>
+
                     @if ($record->descripcion)
                         <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xl truncate">
                             {{ $record->descripcion }}
                         </p>
                     @endif
+
                 </div>
             </div>
 
-            <!-- Botón Editar Datos del Producto -->
-            <div class="w-full md:w-auto shrink-0 flex justify-center sm:justify-end">
-                <button type="button" 
-                        wire:click="abrirEditarProducto" 
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-900/60 active:bg-slate-200 dark:active:bg-slate-950 border border-slate-200 dark:border-slate-700/60 rounded-xl transition shadow-sm">
+            <!-- RIGHT BUTTON -->
+            <div class="w-full md:w-auto shrink-0 flex justify-center md:justify-end">
+
+                <button type="button"
+                    wire:click="abrirEditarProducto"
+                    class="inline-flex max-w-full items-center justify-center gap-2 px-5 py-2.5
+                    text-sm font-bold text-slate-700 dark:text-slate-200
+                    bg-white/90 dark:bg-slate-900/40
+                    hover:bg-slate-100 dark:hover:bg-slate-900/60
+                    active:bg-slate-200 dark:active:bg-slate-950
+                    border border-slate-200 dark:border-slate-700/60
+                    rounded-xl transition shadow-sm
+                    whitespace-nowrap">
+
                     <svg class="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.082a4.5 4.5 0 0 1-2.012 1.257l-3.858 1.05a.75.75 0 0 1-.922-.922l1.05-3.858a4.5 4.5 0 0 1 1.257-2.012L17.8 7.893z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.082a4.5 4.5 0 0 1-2.012 1.257l-3.858 1.05a.75.75 0 0 1-.922-.922l1.05-3.858a4.5 4.5 0 0 1 1.257-2.012L17.8 7.893z" />
                     </svg>
+
                     <span>Editar Producto</span>
                 </button>
+
             </div>
+
         </div>
     </div>
 
@@ -379,7 +404,7 @@
                                      @if ($imagen)
                                          <img src="{{ $imagen->temporaryUrl() }}" class="h-28 w-28 object-contain mb-2 rounded border border-slate-200 dark:border-[#1d2745]/40 bg-white">
                                      @elseif ($existingImagen)
-                                         <img src="{{ url('/storage/' . $existingImagen) }}" class="h-28 w-28 object-contain mb-2 rounded border border-slate-200 dark:border-[#1d2745]/40 bg-white">
+                                         <img src="{{ $existingImagen }}" class="h-28 w-28 object-contain mb-2 rounded border border-slate-200 dark:border-[#1d2745]/40 bg-white">
                                      @else
                                          <svg class="h-10 w-10 text-slate-400 dark:text-slate-600 mb-2 stroke-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                              <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375 0 1 1-.75 0 .375 0 0 1 .75 0Z" />

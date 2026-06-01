@@ -217,7 +217,7 @@
                                         <!-- Badge de Presentaciones Count -->
                                         <div class="absolute bottom-2.5 right-2.5 z-10">
                                             <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 uppercase tracking-wider">
-                                                {{ $producto->presentaciones_count }} vars.
+                                                {{ $producto->presentaciones_count }}
                                             </span>
                                         </div>
                                     </div>
@@ -369,7 +369,6 @@
                                         </th>
                                         <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Categoría / Marca</th>
                                         <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Cód. Interno</th>
-                                        <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20 text-center">Presentaciones</th>
                                         <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Afecto IGV</th>
                                         @if ($estado === 'trashed')
                                             <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Fecha Eliminación</th>
@@ -434,12 +433,7 @@
                                                 {{ $producto->codigo_interno ?: '—' }}
                                             </td>
 
-                                            <!-- Presentaciones -->
-                                            <td class="py-4 px-6 text-center">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20">
-                                                    {{ $producto->presentaciones_count }} vars.
-                                                </span>
-                                            </td>
+                                     
 
                                             <!-- Afecto IGV -->
                                             <td class="py-4 px-6 text-xs font-bold text-slate-700 dark:text-slate-300">

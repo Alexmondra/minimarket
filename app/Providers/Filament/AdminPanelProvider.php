@@ -32,7 +32,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->navigationGroups([
-                'Global',
+                'Catálogo Global',
                 'Compras',
                 'Almacén',
                 'Movimientos',

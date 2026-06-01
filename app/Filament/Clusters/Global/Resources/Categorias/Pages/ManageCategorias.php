@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Categorias\Pages;
+namespace App\Filament\Clusters\Global\Resources\Categorias\Pages;
 
-use App\Filament\Clusters\Almacen\Resources\Categorias\CategoriaResource;
+use App\Filament\Clusters\Global\Resources\Categorias\CategoriaResource;
 use App\Models\Categoria;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
@@ -16,7 +16,7 @@ class ManageCategorias extends Page
 
     protected static string $resource = CategoriaResource::class;
 
-    protected string $view = 'filament.clusters.almacen.resources.categorias.pages.manage-categorias';
+    protected string $view = 'filament.clusters.global.resources.categorias.pages.manage-categorias';
 
     public $search = '';
     public $estado = 'all'; // all, active, trashed

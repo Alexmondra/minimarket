@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
-use App\Filament\Clusters\Almacen\Resources\Marcas\Pages\ManageMarcas;
+use App\Filament\Clusters\Global\Resources\Marcas\Pages\ManageMarcas;
 
 class ManageMarcasDashboardTest extends TestCase
 {
