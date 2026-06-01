@@ -6,13 +6,15 @@ use App\Models\Empresa;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\ProductoPresentacion;
+use App\Models\UniMedida;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
-use App\Filament\Clusters\Almacen\Resources\Productos\Pages\ListProductos;
+use App\Filament\Clusters\Global\Resources\Productos\Pages\ListProductos;
 
-class ManageProductosDashboardTest extends TestCase
+class ManageGlobalCatalogTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,6 +22,7 @@ class ManageProductosDashboardTest extends TestCase
     private Empresa $empresa;
     private Categoria $categoria;
     private Marca $marca;
+    private UniMedida $unidad;
 
     protected function setUp(): void
     {
@@ -50,14 +53,20 @@ class ManageProductosDashboardTest extends TestCase
             'empresa_id' => $this->empresa->id,
             'nombre' => 'Coca-Cola',
         ]);
+
+        $this->unidad = UniMedida::create([
+            'nombre' => 'Unidad',
+            'abreviatura' => 'und',
+            'activo' => true,
+        ]);
     }
 
-    public function test_it_renders_productos_dashboard_and_shows_kpis(): void
+    public function test_it_renders_global_catalog_and_shows_kpis(): void
     {
         $this->actingAs($this->user);
 
         // Create some products
-        Producto::create([
+        $p1 = Producto::create([
             'empresa_id' => $this->empresa->id,
             'categoria_id' => $this->categoria->id,
             'marca_id' => $this->marca->id,
@@ -66,7 +75,7 @@ class ManageProductosDashboardTest extends TestCase
             'codigo_interno' => 'COCA500',
         ]);
 
-        Producto::create([
+        $p2 = Producto::create([
             'empresa_id' => $this->empresa->id,
             'categoria_id' => $this->categoria->id,
             'marca_id' => $this->marca->id,
@@ -75,11 +84,31 @@ class ManageProductosDashboardTest extends TestCase
             'codigo_interno' => 'INCA1000',
         ]);
 
+        // Create some presentations
+        ProductoPresentacion::create([
+            'producto_id' => $p1->id,
+            'unidad_medida_id' => $this->unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Unidad 500ml',
+        ]);
+
+        ProductoPresentacion::create([
+            'producto_id' => $p2->id,
+            'unidad_medida_id' => $this->unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Unidad 1L',
+        ]);
+
         Livewire::test(ListProductos::class)
             ->assertStatus(200)
             ->assertSee('Coca-Cola 500ml')
             ->assertSee('Inca Kola 1L')
-            ->assertSee('Total Productos');
+            ->assertSee('Catálogo Global Maestro')
+            ->assertSee('Total Productos')
+            ->assertSee('Presentaciones Globales')
+            ->assertSee('Unidades de Medida')
+            ->assertDontSee('Stock Crítico') // Stock levels are hidden
+            ->assertDontSee('Filtro de Stock'); 
     }
 
     public function test_it_filters_by_category_and_brand(): void
@@ -321,5 +350,39 @@ class ManageProductosDashboardTest extends TestCase
             ->assertSet('viewMode', 'table')
             ->call('verPresentaciones', $producto->id)
             ->assertSet('selectedProductForPresentationsId', $producto->id);
+    }
+
+    public function test_it_creates_category_and_brand_inline_from_product_form(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(ListProductos::class)
+            ->call('openAddCategoryModal')
+            ->assertSet('showAddCategoryModal', true)
+            ->set('newCategoryNombre', 'Gaseosas Importadas')
+            ->call('saveNewCategory')
+            ->assertHasNoErrors()
+            ->assertSet('showAddCategoryModal', false)
+            ->assertSet('categoriaId', Categoria::where('nombre', 'Gaseosas Importadas')->first()->id);
+
+        $this->assertDatabaseHas('categorias', [
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'Gaseosas Importadas',
+            'estado' => true,
+        ]);
+
+        Livewire::test(ListProductos::class)
+            ->call('openAddBrandModal')
+            ->assertSet('showAddBrandModal', true)
+            ->set('newBrandNombre', 'PepsiCo')
+            ->call('saveNewBrand')
+            ->assertHasNoErrors()
+            ->assertSet('showAddBrandModal', false)
+            ->assertSet('marcaId', Marca::where('nombre', 'PepsiCo')->first()->id);
+
+        $this->assertDatabaseHas('marcas', [
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PepsiCo',
+        ]);
     }
 }

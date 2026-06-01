@@ -1,7 +1,26 @@
 <x-filament-panels::page>
     <div class="productos-root space-y-6 animate-fade-in">
-        <!-- Contenido Principal -->
-        <div class="space-y-6">
+        <!-- Banner Informativo Catálogo Maestro Global -->
+        <div class="relative overflow-hidden p-4 rounded-xl bg-slate-50 border border-slate-200/80 shadow-sm dark:bg-slate-900/40 dark:border-slate-800/80 mb-6">
+            <div class="flex items-start gap-3.5">
+                <!-- Icono con fondo suave circular -->
+                <div class="flex items-center justify-center p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-.778.099-1.533.284-2.253" />
+                    </svg>
+                </div>
+                
+                <div class="space-y-1">
+                    <h4 class="text-xs font-semibold tracking-wide text-indigo-600 dark:text-indigo-400 uppercase">
+                        Catálogo Global Maestro
+                    </h4>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Este módulo gestiona únicamente la base central de productos, variantes y unidades de medida. Las existencias y precios finales se configuran a nivel de cada sucursal en módulos separados.
+                    </p>
+                </div>
+            </div>
+        </div>
+
             <!-- Tarjetas de Estadísticas (KPIs) -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Total Productos -->
@@ -10,7 +29,7 @@
                         <div class="space-y-2">
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Productos</span>
                             <div class="text-3xl font-black text-slate-950 dark:text-white">
-                                {{ $this->stats['total'] }}
+                                {{ $this->stats['totalProductos'] }}
                             </div>
                         </div>
                         <div class="p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
@@ -21,35 +40,35 @@
                     </div>
                 </div>
 
-                <!-- Productos Activos -->
-                <div class="kpi-card kpi-emerald">
+                <!-- Presentaciones Globales -->
+                <div class="kpi-card kpi-violet">
                     <div class="flex justify-between items-start">
                         <div class="space-y-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Activos</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Presentaciones Globales</span>
                             <div class="text-3xl font-black text-slate-950 dark:text-white">
-                                {{ $this->stats['actives'] }}
+                                {{ $this->stats['totalPresentaciones'] }}
                             </div>
                         </div>
-                        <div class="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                        <div class="p-2 bg-violet-500/10 text-violet-500 rounded-xl">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stock Bajo / Alerta -->
-                <div class="kpi-card kpi-amber">
+                <!-- Unidades de Medida -->
+                <div class="kpi-card kpi-emerald">
                     <div class="flex justify-between items-start">
                         <div class="space-y-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Stock Crítico</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Unidades de Medida</span>
                             <div class="text-3xl font-black text-slate-950 dark:text-white">
-                                {{ $this->stats['lowStock'] }}
+                                {{ $this->stats['totalUnidades'] }}
                             </div>
                         </div>
-                        <div class="p-2 bg-amber-500/10 text-amber-500 rounded-xl">
-                            <svg class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        <div class="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3" />
                             </svg>
                         </div>
                     </div>
@@ -103,14 +122,6 @@
                             @endforeach
                         </select>
 
-                        <!-- Stock Filtro Select -->
-                        <select wire:model.live="stock_filtro" 
-                                class="rounded-xl border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 text-slate-700 dark:text-slate-355 text-xs px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 shadow-sm">
-                            <option value="all">Filtro de Stock (Todos)</option>
-                            <option value="in">En Stock (Disponible)</option>
-                            <option value="low">Stock Bajo (Crítico)</option>
-                            <option value="out">Agotados</option>
-                        </select>
 
                         <!-- Filtros de Estado Pills -->
                         <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border dark:border-slate-800/60">
@@ -172,7 +183,7 @@
                                     // Calculate stock
                                     $stockTotal = $producto->presentaciones->flatMap->lotePresentaciones->sum('stock');
                                 @endphp
-                                <div class="relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 group hover:shadow-lg hover:-translate-y-1 {{ $isTrashed ? 'bg-rose-50/10 dark:bg-rose-950/5 border-rose-300/40 dark:border-rose-900/30 opacity-90 border-l-4 border-l-rose-500' : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800' }}">
+                                <div wire:click="verPresentaciones({{ $producto->id }})" class="relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 group hover:shadow-lg hover:-translate-y-1 cursor-pointer {{ $isTrashed ? 'bg-rose-50/10 dark:bg-rose-950/5 border-rose-300/40 dark:border-rose-900/30 opacity-90 border-l-4 border-l-rose-500' : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800' }}">
                                     
                                     <!-- Image / Thumbnail Area -->
                                     <div class="aspect-square bg-slate-50 dark:bg-slate-950/45 flex items-center justify-center p-4 relative border-b border-slate-100 dark:border-slate-800/40">
@@ -184,24 +195,20 @@
                                             </div>
                                         @endif
 
-                                        <!-- Badge de Stock Crítico o Estado en la imagen -->
+                                        <!-- Badge de Estado en la imagen -->
                                         <div class="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
                                             @if ($isTrashed)
                                                 <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-rose-500/20 text-rose-600 dark:text-rose-450 border border-rose-500/30 uppercase tracking-wider">
-                                                    Eliminado
+                                                    🗑️ Eliminado
                                                 </span>
                                             @else
-                                                @if ($stockTotal === 0)
-                                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 uppercase tracking-wider">
-                                                        🔴 Agotado
-                                                    </span>
-                                                @elseif ($stockTotal <= 5)
-                                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider">
-                                                        🟠 Stock Bajo
+                                                @if ($producto->activo)
+                                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-emerald-500/10 text-emerald-650 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                                                        🟢 Activo
                                                     </span>
                                                 @else
-                                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                                                        🟢 Disponible
+                                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-slate-500/10 text-slate-550 dark:text-slate-400 border border-slate-500/20 uppercase tracking-wider">
+                                                        🔴 Inactivo
                                                     </span>
                                                 @endif
                                             @endif
@@ -235,22 +242,18 @@
                                                 {{ $producto->nombre }}
                                             </h3>
 
-                                            <!-- Stock & Precio Rango -->
+                                            <!-- Info Adicional de Catálogo -->
                                             <div class="grid grid-cols-2 gap-2 pt-1">
                                                 <div>
-                                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Stock Total</span>
-                                                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                                                        {{ $stockTotal }} unidades
+                                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Código</span>
+                                                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-mono">
+                                                        {{ $producto->codigo_interno ?: 'S/C' }}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Rango Precios</span>
-                                                    <span class="text-xs font-extrabold text-slate-850 dark:text-white font-mono">
-                                                        @if ($minPrice !== null && $maxPrice !== null)
-                                                            {{ $minPrice === $maxPrice ? 'S/. ' . number_format($minPrice, 2) : 'S/. ' . number_format($minPrice, 2) . ' - ' . number_format($maxPrice, 2) }}
-                                                        @else
-                                                            S/. —
-                                                        @endif
+                                                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">Afecto IGV</span>
+                                                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                                                        {{ $producto->afecto_igv ? 'Sí' : 'No' }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -267,10 +270,10 @@
                                         </div>
 
                                         <!-- Acciones Rápidas del Card -->
-                                        <div class="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/40">
+                                        <div class="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/40 font-semibold">
                                             <!-- Ver Presentaciones -->
                                             <button type="button" 
-                                                    wire:click="verPresentaciones({{ $producto->id }})"
+                                                    wire:click.stop="verPresentaciones({{ $producto->id }})"
                                                     class="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl shadow active:scale-95 transition-all">
                                                 <span class="text-sm">👁</span>
                                                 <span>Ver Presentaciones</span>
@@ -280,7 +283,7 @@
                                                 @if ($isTrashed)
                                                     <!-- Restaurar -->
                                                     <button type="button" 
-                                                            wire:click="restore({{ $producto->id }})"
+                                                            wire:click.stop="restore({{ $producto->id }})"
                                                             class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-md active:scale-95 transition-all">
                                                         <span class="text-sm">♻️</span>
                                                         <span>Restaurar</span>
@@ -288,7 +291,7 @@
                                                     
                                                     <!-- Eliminar Definitivo -->
                                                     <button type="button" 
-                                                            wire:click="confirmDelete({{ $producto->id }})"
+                                                            wire:click.stop="confirmDelete({{ $producto->id }})"
                                                             class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-red-700 hover:bg-red-650 rounded-xl shadow-md active:scale-95 transition-all">
                                                         <span class="text-sm">🗑️</span>
                                                         <span>Eliminar Definitivo</span>
@@ -296,7 +299,7 @@
                                                 @else
                                                     <!-- Editar -->
                                                     <button type="button" 
-                                                            wire:click="openEditModal({{ $producto->id }})"
+                                                            wire:click.stop="openEditModal({{ $producto->id }})"
                                                             class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md active:scale-95 transition-all">
                                                         <span class="text-sm">✏️</span>
                                                         <span>Editar</span>
@@ -304,7 +307,7 @@
 
                                                     <!-- Eliminar -->
                                                     <button type="button" 
-                                                            wire:click="confirmDelete({{ $producto->id }})"
+                                                            wire:click.stop="confirmDelete({{ $producto->id }})"
                                                             class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-md active:scale-95 transition-all">
                                                         <span class="text-sm">🗑️</span>
                                                         <span>Eliminar</span>
@@ -327,9 +330,9 @@
                                                 No hay productos registrados que coincidan con la búsqueda o filtros actuales.
                                             </p>
                                         </div>
-                                        @if (!empty($search) || $categoria_id !== 'all' || $marca_id !== 'all' || $stock_filtro !== 'all' || $estado !== 'active')
+                                        @if (!empty($search) || $categoria_id !== 'all' || $marca_id !== 'all' || $estado !== 'active')
                                             <button type="button" 
-                                                    wire:click="$set('search', ''); $set('categoria_id', 'all'); $set('marca_id', 'all'); $set('stock_filtro', 'all'); $set('estado', 'active');"
+                                                    wire:click="$set('search', ''); $set('categoria_id', 'all'); $set('marca_id', 'all'); $set('estado', 'active');"
                                                     class="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-300">
                                                 <span>🔄</span>
                                                 <span>Limpiar filtros</span>
@@ -366,8 +369,8 @@
                                         </th>
                                         <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Categoría / Marca</th>
                                         <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Cód. Interno</th>
-                                        <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20 text-center">Stock</th>
-                                        <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Rango Precios</th>
+                                        <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20 text-center">Presentaciones</th>
+                                        <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Afecto IGV</th>
                                         @if ($estado === 'trashed')
                                             <th class="py-4 px-6 font-semibold uppercase tracking-wider text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/20">Fecha Eliminación</th>
                                         @endif
@@ -395,7 +398,7 @@
                                             // Calculate stock
                                             $stockTotal = $producto->presentaciones->flatMap->lotePresentaciones->sum('stock');
                                         @endphp
-                                        <tr class="border-l-4 {{ $isTrashed ? 'bg-rose-50/10 dark:bg-rose-950/5 border-l-rose-500 opacity-85' : 'border-l-transparent hover:bg-slate-50/40 dark:hover:bg-slate-900/30' }} transition duration-150">
+                                        <tr wire:click="verPresentaciones({{ $producto->id }})" class="border-l-4 cursor-pointer {{ $isTrashed ? 'bg-rose-50/10 dark:bg-rose-950/5 border-l-rose-500 opacity-85' : 'border-l-transparent hover:bg-slate-50/40 dark:hover:bg-slate-900/30' }} transition duration-150">
                                             <!-- Imagen -->
                                             <td class="py-4 px-6">
                                                 <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-950">
@@ -431,39 +434,21 @@
                                                 {{ $producto->codigo_interno ?: '—' }}
                                             </td>
 
-                                            <!-- Stock -->
+                                            <!-- Presentaciones -->
                                             <td class="py-4 px-6 text-center">
-                                                @if ($isTrashed)
-                                                    <span class="text-xs font-bold text-slate-450">—</span>
-                                                @else
-                                                    @if ($stockTotal === 0)
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                                                            Agotado
-                                                        </span>
-                                                    @elseif ($stockTotal <= 5)
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                                            {{ $stockTotal }} (Bajo)
-                                                        </span>
-                                                    @else
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                                            {{ $stockTotal }} und.
-                                                        </span>
-                                                    @endif
-                                                @endif
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20">
+                                                    {{ $producto->presentaciones_count }} vars.
+                                                </span>
                                             </td>
 
-                                            <!-- Rango Precios -->
-                                            <td class="py-4 px-6 text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
-                                                @if ($minPrice !== null && $maxPrice !== null)
-                                                    {{ $minPrice === $maxPrice ? 'S/. ' . number_format($minPrice, 2) : 'S/. ' . number_format($minPrice, 2) . ' - ' . number_format($maxPrice, 2) }}
-                                                @else
-                                                    S/. —
-                                                @endif
+                                            <!-- Afecto IGV -->
+                                            <td class="py-4 px-6 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                {{ $producto->afecto_igv ? 'Sí' : 'No' }}
                                             </td>
 
                                             <!-- Fecha Eliminación (Condicional) -->
                                             @if ($estado === 'trashed')
-                                                <td class="py-4 px-6 text-xs text-rose-600 dark:text-rose-400 font-bold">
+                                                <td class="py-4 px-6 text-xs text-rose-600 dark:text-rose-450 font-bold">
                                                     {{ $producto->deleted_at ? $producto->deleted_at->format('d/m/Y H:i') : '—' }}
                                                 </td>
                                             @endif
@@ -471,7 +456,7 @@
                                             <!-- Estado -->
                                             <td class="py-4 px-6">
                                                 @if ($isTrashed)
-                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/20">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                                         Eliminado
                                                     </span>
@@ -495,7 +480,7 @@
                                                 <div class="flex items-center justify-end gap-3 flex-wrap">
                                                     <!-- Ver Presentaciones -->
                                                     <button type="button" 
-                                                            wire:click="verPresentaciones({{ $producto->id }})"
+                                                            wire:click.stop="verPresentaciones({{ $producto->id }})"
                                                             class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl shadow active:scale-95 transition-all">
                                                         <span class="text-sm">👁</span>
                                                         <span>Ver Presentaciones</span>
@@ -504,7 +489,7 @@
                                                     @if ($isTrashed)
                                                         <!-- Restaurar -->
                                                         <button type="button" 
-                                                                wire:click="restore({{ $producto->id }})"
+                                                                wire:click.stop="restore({{ $producto->id }})"
                                                                 class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-md shadow-emerald-500/10 active:scale-95 transition-all">
                                                             <span class="text-sm">♻️</span>
                                                             <span>Restaurar</span>
@@ -512,7 +497,7 @@
                                                         
                                                         <!-- Eliminar Definitivo -->
                                                         <button type="button" 
-                                                                wire:click="confirmDelete({{ $producto->id }})"
+                                                                wire:click.stop="confirmDelete({{ $producto->id }})"
                                                                 class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-bold text-white bg-red-700 hover:bg-red-650 rounded-xl shadow-md shadow-red-700/10 active:scale-95 transition-all">
                                                             <span class="text-sm">🗑️</span>
                                                             <span>Eliminar Definitivo</span>
@@ -520,7 +505,7 @@
                                                     @else
                                                         <!-- Editar -->
                                                         <button type="button" 
-                                                                wire:click="openEditModal({{ $producto->id }})"
+                                                                wire:click.stop="openEditModal({{ $producto->id }})"
                                                                 class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md shadow-blue-500/10 active:scale-95 transition-all">
                                                             <span class="text-sm">✏️</span>
                                                             <span>Editar</span>
@@ -528,7 +513,7 @@
 
                                                         <!-- Eliminar -->
                                                         <button type="button" 
-                                                                wire:click="confirmDelete({{ $producto->id }})"
+                                                                wire:click.stop="confirmDelete({{ $producto->id }})"
                                                                 class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-md shadow-rose-500/10 active:scale-95 transition-all">
                                                             <span class="text-sm">🗑️</span>
                                                             <span>Eliminar</span>
@@ -551,9 +536,9 @@
                                                             No hay productos registrados que coincidan con la búsqueda o filtros actuales.
                                                         </p>
                                                     </div>
-                                                    @if (!empty($search) || $categoria_id !== 'all' || $marca_id !== 'all' || $stock_filtro !== 'all' || $estado !== 'active')
+                                                    @if (!empty($search) || $categoria_id !== 'all' || $marca_id !== 'all' || $estado !== 'active')
                                                         <button type="button" 
-                                                                wire:click="$set('search', ''); $set('categoria_id', 'all'); $set('marca_id', 'all'); $set('stock_filtro', 'all'); $set('estado', 'active');"
+                                                                wire:click="$set('search', ''); $set('categoria_id', 'all'); $set('marca_id', 'all'); $set('estado', 'active');"
                                                                 class="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-300">
                                                             <span>🔄</span>
                                                             <span>Limpiar filtros</span>
@@ -691,33 +676,48 @@
                         <input type="text" 
                                wire:model="nombre" 
                                placeholder="Ej: Coca-Cola Sin Azúcar, Leche de Soya..."
-                               class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
                         @error('nombre') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Categoría -->
                     <div class="space-y-1.5">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Categoría *</label>
-                        <select wire:model="categoriaId" 
-                                class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
-                            <option value="">Seleccione Categoría...</option>
-                            @foreach ($this->categorias as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->nombre }}</option>
-                            @endforeach
-                        </select>
+                        <div class="flex gap-2">
+                            <select wire:model="categoriaId" 
+                                    class="flex-1 rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                <option value="">Seleccione Categoría...</option>
+                                @foreach ($this->categorias as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <button type="button" 
+                                    wire:click="openAddCategoryModal" 
+                                    class="px-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition active:scale-95 flex items-center justify-center shrink-0 shadow-sm"
+                                    title="Agregar Categoría">
+                                <span class="text-base font-bold">➕</span>
+                            </button>
+                        </div>
                         @error('categoriaId') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Marca -->
                     <div class="space-y-1.5">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Marca *</label>
-                        <select wire:model="marcaId" 
-                                class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
-                            <option value="">Seleccione Marca...</option>
-                            @foreach ($this->marcas as $mrc)
-                                <option value="{{ $mrc->id }}">{{ $mrc->nombre }}</option>
-                            @endforeach
-                        </select>
+                        <div class="flex gap-2">
+                            <select wire:model="marcaId" 
+                                    class="flex-1 rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                <option value="">Seleccione Marca...</option>
+                                @foreach ($this->marcas as $mrc)
+                                    <option value="{{ $mrc->id }}">{{ $mrc->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <button type="button" 
+                                    wire:click="openAddBrandModal" 
+                                    class="px-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition active:scale-95 flex items-center justify-center shrink-0 shadow-sm"
+                                    title="Agregar Marca">
+                                <span class="text-base font-bold">➕</span>
+                            </button>
+                        </div>
                         @error('marcaId') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
@@ -734,23 +734,21 @@
                     <!-- Afecto IGV y Estado Activo -->
                     <div class="grid grid-cols-2 gap-4">
                         <!-- Afecto IGV -->
-                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-350">Afecto IGV</span>
-                            <button type="button" 
-                                    wire:click="$toggle('afecto_igv')"
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $afecto_igv ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700' }}">
-                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $afecto_igv ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                            </button>
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Afecto IGV</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" wire:model="afecto_igv" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
                         </div>
                         
                         <!-- Activo -->
-                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-355">Activo</span>
-                            <button type="button" 
-                                    wire:click="$toggle('activo')"
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $activo ? 'bg-emerald-655 bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700' }}">
-                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $activo ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                            </button>
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Activo</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" wire:model="activo" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
                         </div>
                     </div>
 
@@ -780,6 +778,117 @@
             </form>
         </div>
     </div>
+    <!-- MODAL AGREGAR CATEGORÍA INLINE -->
+    <template x-teleport="body">
+        <div x-data="{ openCategory: @entangle('showAddCategoryModal') }"
+             x-show="openCategory"
+             x-cloak
+             class="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-y-auto"
+             style="display: none;">
+
+            <!-- Backdrop/Overlay -->
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+                 @click="openCategory = false">
+            </div>
+
+            <!-- Ventana del Modal -->
+            <div class="relative bg-white dark:bg-[#0c101d] border border-slate-200 dark:border-[#1c243a] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl transition-all animate-fade-in my-8 z-10">
+            <!-- Cabecera -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1d2745]/30">
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span>➕ Nueva Categoría</span>
+                </h3>
+                <button type="button" 
+                        @click="openCategory = false"
+                        class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-650 dark:text-slate-550 dark:hover:text-slate-350 transition">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Formulario -->
+            <div class="p-6 space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre de la Categoría *</label>
+                    <input type="text" 
+                           wire:model="newCategoryNombre" 
+                           placeholder="Ej: Abarrotes, Bebidas, Limpieza..."
+                           class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                    @error('newCategoryNombre') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" 
+                            @click="openCategory = false"
+                            class="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                        Cancelar
+                    </button>
+                    <button type="button" 
+                            wire:click="saveNewCategory"
+                            class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl">
+                        Guardar Categoría
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- MODAL AGREGAR MARCA INLINE -->
+    <template x-teleport="body">
+        <div x-data="{ openBrand: @entangle('showAddBrandModal') }"
+             x-show="openBrand"
+             x-cloak
+             class="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-y-auto"
+             style="display: none;">
+
+            <!-- Backdrop/Overlay -->
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+                 @click="openBrand = false">
+            </div>
+
+            <!-- Ventana del Modal -->
+            <div class="relative bg-white dark:bg-[#0c101d] border border-slate-200 dark:border-[#1c243a] rounded-3xl w-full max-w-md overflow-hidden shadow-2xl transition-all animate-fade-in my-8 z-10">
+            <!-- Cabecera -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#1d2745]/30">
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span>➕ Nueva Marca</span>
+                </h3>
+                <button type="button" 
+                        @click="openBrand = false"
+                        class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-650 dark:text-slate-550 dark:hover:text-slate-355 transition">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Formulario -->
+            <div class="p-6 space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre de la Marca *</label>
+                    <input type="text" 
+                           wire:model="newBrandNombre" 
+                           placeholder="Ej: Nestlé, Gloria, Coca-Cola..."
+                           class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                    @error('newBrandNombre') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" 
+                            @click="openBrand = false"
+                            class="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                        Cancelar
+                    </button>
+                    <button type="button" 
+                            wire:click="saveNewBrand"
+                            class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl">
+                        Guardar Marca
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <!-- MODAL CONFIRMAR ELIMINACIÓN -->
     <div x-data="{ openDelete: @entangle('showDeleteConfirmModal') }" 

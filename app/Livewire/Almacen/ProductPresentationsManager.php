@@ -31,6 +31,15 @@ class ProductPresentationsManager extends Component
 
     public bool $showProductModal = false;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $presentationToDeleteId = null;
+
+    /**
+     * Indica si la presentación a eliminar tiene asignaciones a sucursales.
+     */
+    public bool $presentationHasSucursales = false;
+
     // Campos del Formulario (Presentación)
     public ?string $tipo_presentacion = null;
 
@@ -71,6 +80,14 @@ class ProductPresentationsManager extends Component
     protected $listeners = [
         'refreshPresentations' => '$refresh',
     ];
+
+    /**
+     * Monta el componente e hidrata correctamente el modelo Producto.
+     */
+    public function mount(Producto $record): void
+    {
+        $this->record = $record;
+    }
 
     /**
      * Define las reglas de validación básicas del formulario.
@@ -136,7 +153,7 @@ class ProductPresentationsManager extends Component
         $this->unidad_medida_id = $presentation->unidad_medida_id;
         $this->presentacion_base_id = $presentation->presentacion_base_id;
         $this->es_pesable = (bool) $presentation->es_pesable;
-        $this->existingImagen = $presentation->imagen;
+        $this->existingImagen = $presentation->imagen_url;
         $this->barras = $presentation->barras->pluck('codigo_barra')->toArray();
 
         $this->showModal = true;
@@ -250,18 +267,28 @@ class ProductPresentationsManager extends Component
         }
 
         DB::transaction(function () {
+            $baseId = !empty($this->presentacion_base_id) ? $this->presentacion_base_id : null;
+
             // Guardar presentación
-            $presentation = ProductoPresentacion::updateOrCreate(
-                ['id' => $this->editingPresentationId],
-                [
+            if ($this->editingPresentationId) {
+                $presentation = ProductoPresentacion::findOrFail($this->editingPresentationId);
+                $presentation->update([
+                    'tipo_presentacion' => $this->tipo_presentacion,
+                    'cantidad' => $this->cantidad,
+                    'unidad_medida_id' => $this->unidad_medida_id,
+                    'presentacion_base_id' => $baseId,
+                    'es_pesable' => $this->es_pesable,
+                ]);
+            } else {
+                $presentation = ProductoPresentacion::create([
                     'producto_id' => $this->record->id,
                     'tipo_presentacion' => $this->tipo_presentacion,
                     'cantidad' => $this->cantidad,
                     'unidad_medida_id' => $this->unidad_medida_id,
-                    'presentacion_base_id' => $this->presentacion_base_id,
+                    'presentacion_base_id' => $baseId,
                     'es_pesable' => $this->es_pesable,
-                ]
-            );
+                ]);
+            }
 
             // Gestionar imagen
             if ($this->imagen && ! is_string($this->imagen)) {
@@ -274,17 +301,19 @@ class ProductPresentationsManager extends Component
             }
 
             // Sincronizar códigos de barras
-            // Eliminar códigos removidos
-            ProductoPresentacionBarra::where('producto_presentacion_id', $presentation->id)
-                ->whereNotIn('codigo_barra', $this->barras)
-                ->delete();
+            if (empty($this->barras)) {
+                ProductoPresentacionBarra::where('producto_presentacion_id', $presentation->id)->delete();
+            } else {
+                ProductoPresentacionBarra::where('producto_presentacion_id', $presentation->id)
+                    ->whereNotIn('codigo_barra', $this->barras)
+                    ->delete();
 
-            // Agregar nuevos códigos
-            foreach ($this->barras as $code) {
-                ProductoPresentacionBarra::firstOrCreate([
-                    'producto_presentacion_id' => $presentation->id,
-                    'codigo_barra' => $code,
-                ]);
+                foreach ($this->barras as $code) {
+                    ProductoPresentacionBarra::firstOrCreate([
+                        'producto_presentacion_id' => $presentation->id,
+                        'codigo_barra' => $code,
+                    ]);
+                }
             }
 
             Notification::make()
@@ -295,13 +324,47 @@ class ProductPresentationsManager extends Component
 
         $this->showModal = false;
         $this->resetForm();
+        $this->dispatch('refreshPresentations');
     }
 
     /**
-     * Borrado lógico (softdelete) de la presentación y remoción física de su imagen.
+     * Abre el modal de confirmación de eliminación.
+     * Bloquea la eliminación si la presentación está asignada a alguna sucursal.
      */
-    public function eliminarPresentacion(int $id): void
+    public function confirmDelete(int $id): void
     {
+        $presentation = ProductoPresentacion::findOrFail($id);
+
+        // Verificar si la presentación está asignada a alguna sucursal (a través de lotes)
+        $tieneSucursales = $presentation->productoSucursales()->exists()
+            || $presentation->lotePresentaciones()->exists();
+
+        if ($tieneSucursales) {
+            Notification::make()
+                ->title('No se puede eliminar')
+                ->body('Esta presentación tiene existencias o está asignada a una o más sucursales. Desasígnala primero antes de eliminarla.')
+                ->warning()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
+        $this->presentationToDeleteId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    /**
+     * Borrado lógico (softdelete) de la presentación confirmada y remoción física de su imagen.
+     */
+    public function delete(): void
+    {
+        if (!$this->presentationToDeleteId) {
+            return;
+        }
+
+        $id = $this->presentationToDeleteId;
+
         DB::transaction(function () use ($id) {
             $presentation = ProductoPresentacion::findOrFail($id);
 
@@ -321,6 +384,10 @@ class ProductPresentationsManager extends Component
                 ->success()
                 ->send();
         });
+
+        $this->presentationToDeleteId = null;
+        $this->showDeleteModal = false;
+        $this->dispatch('refreshPresentations');
     }
 
     /**
@@ -376,6 +443,7 @@ class ProductPresentationsManager extends Component
         });
 
         $this->showProductModal = false;
+        $this->dispatch('refreshPresentations');
     }
 
     /**
@@ -438,7 +506,7 @@ class ProductPresentationsManager extends Component
 
     public function render()
     {
-        $presentaciones = ProductoPresentacion::with(['unidadMedida', 'presentacionBase.unidadMedida', 'barras'])
+        $presentaciones = ProductoPresentacion::with(['unidadMedida', 'presentacionBase.unidadMedida', 'barras', 'productoSucursales', 'lotePresentaciones'])
             ->where('producto_id', $this->record->id)
             ->get();
 

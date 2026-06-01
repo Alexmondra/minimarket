@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Presentaciones;
+namespace App\Filament\Clusters\Global\Resources\Presentaciones;
 
-use App\Filament\Clusters\Almacen\Resources\Presentaciones\Pages\ListPresentaciones;
-use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use App\Filament\Clusters\Global\Resources\Presentaciones\Pages\ListPresentaciones;
+use App\Filament\Clusters\Global\Resources\Productos\ProductoResource;
 use App\Models\Producto;
 use App\Models\ProductoPresentacion;
 use BackedEnum;
@@ -20,7 +20,7 @@ class PresentacionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube-transparent';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Almacén';
+    protected static string|UnitEnum|null $navigationGroup = 'Global';
 
     protected static ?string $navigationLabel = 'Presentaciones';
 

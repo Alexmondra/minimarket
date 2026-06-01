@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Productos\Pages;
+namespace App\Filament\Clusters\Global\Resources\Productos\Pages;
 
-use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use App\Filament\Clusters\Global\Resources\Productos\ProductoResource;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\ProductoPresentacion;
+use App\Models\UniMedida;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,13 +21,12 @@ class ListProductos extends Page
 
     protected static string $resource = ProductoResource::class;
 
-    protected string $view = 'filament.clusters.almacen.resources.productos.pages.list-productos';
+    protected string $view = 'filament.clusters.global.resources.productos.pages.list-productos';
 
     // Filters and sorting
     public $search = '';
     public $categoria_id = 'all';
     public $marca_id = 'all';
-    public $stock_filtro = 'all'; // all, in, low, out
     public $estado = 'all'; // all, active, trashed
     public $sortField = 'nombre';
     public $sortDirection = 'asc';
@@ -49,13 +50,22 @@ class ListProductos extends Page
     public $showDeleteConfirmModal = false;
     public $productoToDeleteId = null;
 
+    // Brand/Category creation modals from Product Form
+    public $showAddCategoryModal = false;
+    public $newCategoryNombre = '';
+    public $showAddBrandModal = false;
+    public $newBrandNombre = '';
+
     protected $queryString = [
         'search' => ['except' => ''],
         'categoria_id' => ['except' => 'all'],
         'marca_id' => ['except' => 'all'],
-        'stock_filtro' => ['except' => 'all'],
         'estado' => ['except' => 'all'],
         'viewMode' => ['except' => 'grid'],
+    ];
+
+    protected $listeners = [
+        'refreshPresentations' => '$refresh',
     ];
 
     public function updatingSearch(): void
@@ -73,48 +83,30 @@ class ListProductos extends Page
         $this->resetPage();
     }
 
-    public function updatingStockFiltro(): void
-    {
-        $this->resetPage();
-    }
-
     public function updatingEstado(): void
     {
         $this->resetPage();
     }
 
     /**
-     * Get dashboard KPIs
+     * Get global catalog dashboard KPIs
      */
     public function getStatsProperty(): array
     {
         $empresaId = auth()->user()->empresa_id;
 
-        $total = Producto::where('empresa_id', $empresaId)->withTrashed()->count();
-        $actives = Producto::where('empresa_id', $empresaId)->count();
+        $totalProductos = Producto::where('empresa_id', $empresaId)->withTrashed()->count();
+        
+        $totalPresentaciones = ProductoPresentacion::whereHas('producto', function ($q) use ($empresaId) {
+            $q->where('empresa_id', $empresaId);
+        })->count();
 
-        // Stock Crítico / Bajo (sum of stock <= 5 and > 0)
-        $lowStock = Producto::where('empresa_id', $empresaId)
-            ->whereExists(function ($sub) {
-                $sub->selectRaw(1)
-                    ->from('lote_presentacion as lp')
-                    ->join('producto_presentacion as pp', 'lp.producto_presentacion_id', '=', 'pp.id')
-                    ->whereColumn('pp.producto_id', 'productos.id')
-                    ->whereNull('pp.deleted_at')
-                    ->where('lp.stock', '>', 0);
-            })
-            ->whereRaw('(
-                SELECT COALESCE(SUM(lp2.stock), 0)
-                FROM lote_presentacion as lp2
-                JOIN producto_presentacion as pp2 ON lp2.producto_presentacion_id = pp2.id
-                WHERE pp2.producto_id = productos.id AND pp2.deleted_at IS NULL
-            ) <= 5')
-            ->count();
+        $totalUnidades = UniMedida::where('activo', true)->count();
 
         return [
-            'total' => $total,
-            'actives' => $actives,
-            'lowStock' => $lowStock,
+            'totalProductos' => $totalProductos,
+            'totalPresentaciones' => $totalPresentaciones,
+            'totalUnidades' => $totalUnidades,
         ];
     }
 
@@ -145,47 +137,6 @@ class ListProductos extends Page
             $query->where('marca_id', (int) $this->marca_id);
         }
 
-        // Filter by stock level
-        if ($this->stock_filtro === 'out') {
-            $query->where(function ($q) {
-                $q->whereNotExists(function ($sub) {
-                    $sub->selectRaw(1)
-                        ->from('lote_presentacion as lp')
-                        ->join('producto_presentacion as pp', 'lp.producto_presentacion_id', '=', 'pp.id')
-                        ->whereColumn('pp.producto_id', 'productos.id')
-                        ->whereNull('pp.deleted_at')
-                        ->where('lp.stock', '>', 0);
-                });
-            });
-        } elseif ($this->stock_filtro === 'in') {
-            $query->whereExists(function ($sub) {
-                $sub->selectRaw(1)
-                    ->from('lote_presentacion as lp')
-                    ->join('producto_presentacion as pp', 'lp.producto_presentacion_id', '=', 'pp.id')
-                    ->whereColumn('pp.producto_id', 'productos.id')
-                    ->whereNull('pp.deleted_at')
-                    ->where('lp.stock', '>', 0);
-            });
-        } elseif ($this->stock_filtro === 'low') {
-            $query->where(function ($q) {
-                $q->whereExists(function ($sub) {
-                    $sub->selectRaw(1)
-                        ->from('lote_presentacion as lp')
-                        ->join('producto_presentacion as pp', 'lp.producto_presentacion_id', '=', 'pp.id')
-                        ->whereColumn('pp.producto_id', 'productos.id')
-                        ->whereNull('pp.deleted_at')
-                        ->where('lp.stock', '>', 0);
-                })->where(function ($inner) {
-                    $inner->whereRaw('(
-                        SELECT COALESCE(SUM(lp2.stock), 0)
-                        FROM lote_presentacion as lp2
-                        JOIN producto_presentacion as pp2 ON lp2.producto_presentacion_id = pp2.id
-                        WHERE pp2.producto_id = productos.id AND pp2.deleted_at IS NULL
-                    ) <= 5');
-                });
-            });
-        }
-
         // Search text
         if (!empty(trim($this->search))) {
             $searchTerm = '%' . trim($this->search) . '%';
@@ -196,13 +147,13 @@ class ListProductos extends Page
             });
         }
 
-        // Eager load relationships for rendering image, stock, and price
+        // Eager load only catalog relationships (no stock/branches)
         $query->with([
             'categoria',
             'marca',
             'presentaciones' => function ($q) {
                 $q->whereNull('deleted_at')
-                  ->with(['unidadMedida', 'lotePresentaciones', 'productoSucursales']);
+                  ->with(['unidadMedida']);
             }
         ]);
 
@@ -373,6 +324,21 @@ class ListProductos extends Page
 
     public function confirmDelete(int $id): void
     {
+        $producto = Producto::where('empresa_id', auth()->user()->empresa_id)
+            ->findOrFail($id);
+
+        // Verificar si el producto está asignado a alguna sucursal
+        if ($producto->productoSucursales()->exists()) {
+            Notification::make()
+                ->title('No se puede eliminar')
+                ->body('Este producto tiene presentaciones asignadas a una o más sucursales. Desasígnalo primero antes de eliminarlo.')
+                ->warning()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
         $this->productoToDeleteId = $id;
         $this->showDeleteConfirmModal = true;
     }
@@ -427,8 +393,69 @@ class ListProductos extends Page
             Notification::make()
                 ->title('Producto eliminado permanentemente')
                 ->success()
-                ->send();
+                 ->send();
         });
+    }
+
+    public function openAddCategoryModal(): void
+    {
+        $this->resetErrorBag(['newCategoryNombre']);
+        $this->newCategoryNombre = '';
+        $this->showAddCategoryModal = true;
+    }
+
+    public function saveNewCategory(): void
+    {
+        $this->validate([
+            'newCategoryNombre' => 'required|string|max:255',
+        ], [
+            'newCategoryNombre.required' => 'El nombre de la categoría es requerido.',
+        ]);
+
+        $categoria = Categoria::create([
+            'empresa_id' => auth()->user()->empresa_id,
+            'nombre' => $this->newCategoryNombre,
+            'estado' => true,
+        ]);
+
+        $this->categoriaId = $categoria->id;
+        $this->showAddCategoryModal = false;
+        $this->newCategoryNombre = '';
+
+        Notification::make()
+            ->title('Categoría creada con éxito')
+            ->success()
+            ->send();
+    }
+
+    public function openAddBrandModal(): void
+    {
+        $this->resetErrorBag(['newBrandNombre']);
+        $this->newBrandNombre = '';
+        $this->showAddBrandModal = true;
+    }
+
+    public function saveNewBrand(): void
+    {
+        $this->validate([
+            'newBrandNombre' => 'required|string|max:255',
+        ], [
+            'newBrandNombre.required' => 'El nombre de la marca es requerido.',
+        ]);
+
+        $marca = Marca::create([
+            'empresa_id' => auth()->user()->empresa_id,
+            'nombre' => $this->newBrandNombre,
+        ]);
+
+        $this->marcaId = $marca->id;
+        $this->showAddBrandModal = false;
+        $this->newBrandNombre = '';
+
+        Notification::make()
+            ->title('Marca creada con éxito')
+            ->success()
+            ->send();
     }
 
     /**

@@ -16,4 +16,9 @@ class UniMedida extends Model
         'abreviatura',
         'activo',
     ];
+
+    public function presentaciones()
+    {
+        return $this->hasMany(ProductoPresentacion::class, 'unidad_medida_id');
+    }
 }

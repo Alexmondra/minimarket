@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\UniMedidas;
+namespace App\Filament\Clusters\Global\Resources\UniMedidas;
 
-use App\Filament\Clusters\Almacen\Resources\UniMedidas\Pages\ManageUniMedidas;
+use App\Filament\Clusters\Global\Resources\UniMedidas\Pages\ManageUniMedidas;
 use App\Models\UniMedida;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -34,7 +34,7 @@ class UniMedidaResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-scale';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Almacén';
+    protected static string|UnitEnum|null $navigationGroup = 'Global';
 
     protected static ?string $recordTitleAttribute = 'nombre';
 

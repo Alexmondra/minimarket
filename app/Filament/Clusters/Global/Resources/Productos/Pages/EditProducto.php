@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Productos\Pages;
+namespace App\Filament\Clusters\Global\Resources\Productos\Pages;
 
-use App\Filament\Clusters\Almacen\Resources\Productos\ProductoResource;
+use App\Filament\Clusters\Global\Resources\Productos\ProductoResource;
 use Filament\Resources\Pages\EditRecord;
 
 class EditProducto extends EditRecord

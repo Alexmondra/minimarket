@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->navigationGroups([
+                'Global',
                 'Compras',
                 'Almacén',
                 'Movimientos',
@@ -47,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Clusters/Almacen/Resources'), for: 'App\\Filament\\Clusters\\Almacen\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Compras/Resources'), for: 'App\\Filament\\Clusters\\Compras\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Configuraciones/Resources'), for: 'App\\Filament\\Clusters\\Configuraciones\\Resources')
+            ->discoverResources(in: app_path('Filament/Clusters/Global/Resources'), for: 'App\\Filament\\Clusters\\Global\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Inventario/Resources'), for: 'App\\Filament\\Clusters\\Inventario\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Reportes/Resources'), for: 'App\\Filament\\Clusters\\Reportes\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Sunat/Resources'), for: 'App\\Filament\\Clusters\\Sunat\\Resources')

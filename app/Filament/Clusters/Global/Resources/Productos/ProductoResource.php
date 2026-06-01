@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Clusters\Almacen\Resources\Productos;
+namespace App\Filament\Clusters\Global\Resources\Productos;
 
-use App\Filament\Clusters\Almacen\Resources\Productos\Pages\CreateProducto;
-use App\Filament\Clusters\Almacen\Resources\Productos\Pages\EditProducto;
-use App\Filament\Clusters\Almacen\Resources\Productos\Pages\ListProductos;
+use App\Filament\Clusters\Global\Resources\Productos\Pages\CreateProducto;
+use App\Filament\Clusters\Global\Resources\Productos\Pages\EditProducto;
+use App\Filament\Clusters\Global\Resources\Productos\Pages\ListProductos;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
@@ -46,7 +46,7 @@ class ProductoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Almacén';
+    protected static string|UnitEnum|null $navigationGroup = 'Global';
 
     protected static ?string $recordTitleAttribute = 'nombre';
 
