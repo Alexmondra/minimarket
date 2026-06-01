@@ -583,7 +583,10 @@ trait RegistrarVentaBehavior
                         $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
                     });
                 })
-                ->whereHas('lotePresentacion', fn ($q) => $q->where('stock', '>', 0))
+                ->whereHas('lotePresentacion', fn ($q) => $q
+                    ->where('stock', '>', 0)
+                    ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+                )
                 ->first();
 
             if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
@@ -607,7 +610,10 @@ trait RegistrarVentaBehavior
                 $query->where('empresa_id', Auth::user()->empresa_id)
                     ->where('activo', true);
             })
-            ->whereHas('lotePresentacion', fn ($query) => $query->where('stock', '>', 0))
+            ->whereHas('lotePresentacion', fn ($query) => $query
+                ->where('stock', '>', 0)
+                ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+            )
             ->where(function ($query) use ($term) {
                 $query->whereHas('producto', function ($productQuery) use ($term) {
                     $productQuery->where('nombre', 'like', "%{$term}%")
@@ -680,8 +686,11 @@ trait RegistrarVentaBehavior
                 $query->where('empresa_id', Auth::user()->empresa_id)
                     ->where('activo', true);
             })
-            ->whereHas('lotePresentacion', fn ($query) => $query->where('producto_presentacion_id', $presentacionId))
-            ->whereHas('lotePresentacion', fn ($query) => $query->where('stock', '>', 0))
+            ->whereHas('lotePresentacion', fn ($query) => $query
+                ->where('producto_presentacion_id', $presentacionId)
+                ->where('stock', '>', 0)
+                ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+            )
             ->get();
 
         if ($group->isEmpty()) {
@@ -722,9 +731,10 @@ trait RegistrarVentaBehavior
         // Buscar si existe algún lote de la presentación que esté vencido y en estado pendiente de confirmar
         $lotePendiente = \App\Models\LotePresentacion::query()
             ->where('producto_presentacion_id', $presentacionId)
-            ->where('estado', \App\Models\LotePresentacion::ESTADO_PENDIENTE)
+            ->where('stock', '>', 0)
             ->whereHas('lote', function ($q) {
-                $q->where('sucursal_id', $this->sucursalId);
+                $q->where('sucursal_id', $this->sucursalId)
+                  ->where('estado_lote', 'por_confirmar');
             })
             ->with(['lote', 'productoPresentacion.producto'])
             ->first();
@@ -1017,7 +1027,10 @@ trait RegistrarVentaBehavior
                         $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
                     });
                 })
-                ->whereHas('lotePresentacion', fn ($q) => $q->where('stock', '>', 0))
+                ->whereHas('lotePresentacion', fn ($q) => $q
+                    ->where('stock', '>', 0)
+                    ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+                )
                 ->first();
 
             if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
@@ -1197,7 +1210,10 @@ trait RegistrarVentaBehavior
             ])
             ->where('sucursal_id', $this->sucursalId)
             ->where('activo', true)
-            ->whereHas('lotePresentacion', fn ($query) => $query->where('stock', '>', 0))
+            ->whereHas('lotePresentacion', fn ($query) => $query
+                ->where('stock', '>', 0)
+                ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+            )
             ->whereHas('producto', function ($q) {
                 $q->where('empresa_id', Auth::user()->empresa_id)
                     ->where('activo', true);

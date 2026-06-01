@@ -26,7 +26,7 @@ class LoteResource extends Resource
     {
         $today = now()->startOfDay();
         $query = static::getModel()::query()
-            ->whereIn('estado_lote', ['activo', 'vencido'])
+            ->whereIn('estado_lote', ['activo', 'vencido', 'por_confirmar'])
             ->whereDate('fecha_vencimiento', '<=', $today)
             ->whereHas('lotePresentaciones', function ($q) {
                 $q->where('stock', '>', 0);

@@ -25,11 +25,14 @@ class AlertasBell extends Component
         $today = Carbon::today();
         $unMesDespues = Carbon::today()->addMonth();
 
-        // 1. Lotes por vencer en los próximos 30 días con stock > 0
+        // 1. Lotes por vencer en los próximos 30 días o por confirmar merma con stock > 0
         $queryLotes = Lote::query()
             ->with(['lotePresentaciones.productoPresentacion.producto'])
-            ->whereIn('estado_lote', ['activo', 'vencido'])
-            ->whereBetween('fecha_vencimiento', [$today, $unMesDespues])
+            ->whereIn('estado_lote', ['activo', 'vencido', 'por_confirmar'])
+            ->where(function ($q) use ($today, $unMesDespues) {
+                $q->whereBetween('fecha_vencimiento', [$today, $unMesDespues])
+                  ->orWhere('estado_lote', 'por_confirmar');
+            })
             ->whereHas('lotePresentaciones', function ($q) {
                 $q->where('stock', '>', 0);
             });

@@ -8,7 +8,12 @@ use App\Models\Sucursal;
 use App\Models\User;
 use App\Support\SucursalContext;
 use BackedEnum;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -34,6 +39,102 @@ class MovimientoResource extends Resource
 
     protected static ?string $modelLabel = 'Movimiento';
 
+    public static function form(Schema $schema): Schema
+    {
+        return $schema;
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Detalle del Movimiento de Inventario')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('tipo')
+                                    ->label('Tipo de Movimiento')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'entrada' => 'success',
+                                        'salida' => 'danger',
+                                        default => 'gray',
+                                    })
+                                    ->icon(fn (string $state): string => match ($state) {
+                                        'entrada' => 'heroicon-m-arrow-trending-up',
+                                        'salida' => 'heroicon-m-arrow-trending-down',
+                                        default => 'heroicon-m-arrows-right-left',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'entrada' => 'Entrada',
+                                        'salida' => 'Salida',
+                                        default => ucfirst($state),
+                                    }),
+                                TextEntry::make('producto_nombre')
+                                    ->label('Producto')
+                                    ->weight('bold')
+                                    ->placeholder('N/A'),
+                                TextEntry::make('productoPresentacion.tipo_presentacion')
+                                    ->label('Presentación')
+                                    ->placeholder('N/A'),
+                                TextEntry::make('cantidad')
+                                    ->label('Cantidad')
+                                    ->weight('bold')
+                                    ->color(fn ($state, $record): string => $record->tipo === 'salida' ? 'danger' : 'success')
+                                    ->formatStateUsing(fn ($state, $record) => ($record->tipo === 'salida' ? '-' : '+') . ' ' . abs($state) . ($record->productoPresentacion?->unidadMedida?->abreviatura ? ' ' . $record->productoPresentacion->unidadMedida->abreviatura : '')),
+                                TextEntry::make('motivo')
+                                    ->label('Motivo')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'compra' => 'success',
+                                        'venta' => 'info',
+                                        'ajuste' => 'warning',
+                                        'merma' => 'danger',
+                                        'anulacion' => 'gray',
+                                        default => 'gray',
+                                    })
+                                    ->icon(fn (string $state): string => match ($state) {
+                                        'compra' => 'heroicon-m-shopping-cart',
+                                        'venta' => 'heroicon-m-currency-dollar',
+                                        'ajuste' => 'heroicon-m-adjustments-horizontal',
+                                        'merma' => 'heroicon-m-trash',
+                                        'anulacion' => 'heroicon-m-arrow-path',
+                                        default => 'heroicon-m-clock',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'compra' => 'Compra',
+                                        'venta' => 'Venta',
+                                        'ajuste' => 'Ajuste',
+                                        'merma' => 'Merma',
+                                        'anulacion' => 'Anulación',
+                                        default => ucfirst($state),
+                                    }),
+                                TextEntry::make('referencia')
+                                    ->label('Referencia')
+                                    ->placeholder('Ninguna')
+                                    ->weight('semibold')
+                                    ->color('primary'),
+                                TextEntry::make('sucursal.nombre_sucursal')
+                                    ->label('Sucursal')
+                                    ->icon('heroicon-m-building-storefront')
+                                    ->placeholder('N/A'),
+                                TextEntry::make('user.name')
+                                    ->label('Usuario')
+                                    ->placeholder('Sistema')
+                                    ->icon('heroicon-m-user'),
+                                TextEntry::make('stock_final')
+                                    ->label('Stock Final')
+                                    ->weight('bold')
+                                    ->placeholder('N/A'),
+                                TextEntry::make('created_at')
+                                    ->label('Fecha y Hora')
+                                    ->dateTime('d/m/Y H:i:s')
+                                    ->placeholder('N/A'),
+                            ]),
+                    ])
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -46,6 +147,7 @@ class MovimientoResource extends Resource
 
                 TextColumn::make('sucursal.nombre_sucursal')
                     ->label('Sucursal')
+                    ->icon('heroicon-m-building-storefront')
                     ->sortable()
                     ->toggleable(),
 
@@ -57,28 +159,33 @@ class MovimientoResource extends Resource
                         'salida' => 'danger',
                         default => 'gray',
                     })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'entrada' => 'heroicon-m-arrow-trending-up',
+                        'salida' => 'heroicon-m-arrow-trending-down',
+                        default => 'heroicon-m-arrows-right-left',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'entrada' => 'Entrada',
                         'salida' => 'Salida',
-                        default => $state,
+                        default => ucfirst($state),
                     })
                     ->sortable(),
 
                 TextColumn::make('producto_nombre')
                     ->label('Producto')
+                    ->weight('bold')
                     ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('productoPresentacion.unidadMedida.abreviatura')
-                    ->label('Und.')
-                    ->toggleable(),
+                    ->sortable()
+                    ->description(fn ($record) => $record->productoPresentacion?->tipo_presentacion . ($record->productoPresentacion?->unidadMedida?->abreviatura ? " ({$record->productoPresentacion->unidadMedida->abreviatura})" : "")),
 
                 TextColumn::make('cantidad')
                     ->label('Cantidad')
                     ->numeric()
-                    ->sortable()
+                    ->alignRight()
+                    ->weight('bold')
                     ->color(fn (int $state, $record): string => $record->tipo === 'salida' ? 'danger' : 'success')
-                    ->formatStateUsing(fn (int $state, $record): string => ($record->tipo === 'salida' ? '-' : '+') . ' ' . abs($state)),
+                    ->formatStateUsing(fn (int $state, $record): string => ($record->tipo === 'salida' ? '-' : '+') . ' ' . abs($state))
+                    ->sortable(),
 
                 TextColumn::make('motivo')
                     ->label('Motivo')
@@ -91,33 +198,54 @@ class MovimientoResource extends Resource
                         'anulacion' => 'gray',
                         default => 'gray',
                     })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'compra' => 'heroicon-m-shopping-cart',
+                        'venta' => 'heroicon-m-currency-dollar',
+                        'ajuste' => 'heroicon-m-adjustments-horizontal',
+                        'merma' => 'heroicon-m-trash',
+                        'anulacion' => 'heroicon-m-arrow-path',
+                        default => 'heroicon-m-clock',
+                    })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'compra' => 'Compra',
                         'venta' => 'Venta',
                         'ajuste' => 'Ajuste',
                         'merma' => 'Merma',
-                        'anulacion' => 'Anulacion',
+                        'anulacion' => 'Anulación',
                         default => ucfirst($state),
                     })
                     ->sortable(),
 
                 TextColumn::make('referencia')
                     ->label('Referencia')
+                    ->weight('medium')
+                    ->color('primary')
                     ->searchable()
                     ->toggleable(),
 
                 TextColumn::make('user.name')
                     ->label('Usuario')
+                    ->icon('heroicon-m-user')
                     ->sortable()
                     ->toggleable(),
 
                 TextColumn::make('stock_final')
                     ->label('Stock Final')
                     ->numeric()
+                    ->alignRight()
+                    ->weight('bold')
                     ->sortable()
                     ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordActions([
+                ViewAction::make()
+                    ->label('Ver')
+                    ->icon('heroicon-m-eye')
+                    ->button()
+                    ->color('info'),
+            ])
+            ->recordAction(ViewAction::class)
             ->filters([
                 Filter::make('created_at')
                     ->form([

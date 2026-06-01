@@ -12,6 +12,7 @@ use App\Models\ProductoSucursal;
 use App\Models\Proveedor;
 use App\Models\Sucursal;
 use Filament\Notifications\Notification;
+use App\Support\SucursalContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -65,6 +66,13 @@ class AjusteStock extends Component
 
     public array $provisionalDistribution = [];
 
+    // Branch lock flag
+    public bool $isSucursalLocked = false;
+
+    public ?float $totalPagado = null;
+
+    public int $totalStockDisponible = 0;
+
     protected $listeners = [
         'abrirAjusteEntrada' => 'abrirEntrada',
         'abrirAjusteSalida' => 'abrirSalida',
@@ -74,6 +82,7 @@ class AjusteStock extends Component
     {
         $this->resetForm();
         $this->tipoAjuste = 'entrada';
+        $this->aplicarLogicaSucursal();
         $this->showModal = true;
     }
 
@@ -81,6 +90,7 @@ class AjusteStock extends Component
     {
         $this->resetForm();
         $this->tipoAjuste = 'salida';
+        $this->aplicarLogicaSucursal();
         $this->showModal = true;
     }
 
@@ -97,11 +107,35 @@ class AjusteStock extends Component
             'searchProducto', 'productosResultados', 'showProductoDropdown',
             'presentaciones', 'lotePresentacionId', 'tipoMerma', 'observacion',
             'lotesDisponibles', 'loteCodigo', 'fechaVencimiento', 'costo',
-            'proveedorId', 'showConfirmStep', 'provisionalDistribution'
+            'proveedorId', 'showConfirmStep', 'provisionalDistribution', 'isSucursalLocked',
+            'totalPagado', 'totalStockDisponible'
         ]);
         $this->cantidad = 1;
         $this->lotePresentacionId = 'fifo';
         $this->tipoMerma = 'roto';
+        $this->resetValidation();
+        if (method_exists($this, 'resetErrorBag')) {
+            $this->resetErrorBag();
+        }
+    }
+
+    public function aplicarLogicaSucursal(): void
+    {
+        $context = app(SucursalContext::class);
+        $user = auth()->user();
+        $allowed = $context->allowedSucursales($user);
+        $activeId = $context->activeSucursalId();
+
+        if ($activeId) {
+            $this->sucursalId = $activeId;
+            $this->isSucursalLocked = true;
+        } elseif ($allowed->count() === 1) {
+            $this->sucursalId = $allowed->first()->id;
+            $this->isSucursalLocked = true;
+        } else {
+            $this->sucursalId = null;
+            $this->isSucursalLocked = false;
+        }
     }
 
     public function updatedSucursalId(): void
@@ -109,9 +143,31 @@ class AjusteStock extends Component
         $this->cargarLotesDisponibles();
     }
 
+    public function updatedTotalPagado(): void
+    {
+        $this->calcularPrecioUnitario();
+    }
+
+    public function updatedCantidad(): void
+    {
+        if ($this->tipoAjuste === 'entrada') {
+            $this->calcularPrecioUnitario();
+        }
+    }
+
+    protected function calcularPrecioUnitario(): void
+    {
+        if ($this->cantidad > 0 && $this->totalPagado !== null && $this->totalPagado !== '') {
+            $this->costo = round((float) $this->totalPagado / $this->cantidad, 4);
+        } else {
+            $this->costo = null;
+        }
+    }
+
     public function getSucursalesProperty()
     {
-        return Sucursal::where('activo', true)->get();
+        $context = app(SucursalContext::class);
+        return $context->allowedSucursales(auth()->user());
     }
 
     public function getProveedoresProperty()
@@ -124,43 +180,65 @@ class AjusteStock extends Component
 
     public function updatedSearchProducto(): void
     {
+        $this->productoId = null;
+        $this->presentacionId = null;
+        $this->lotePresentacionId = 'fifo';
+        $this->lotesDisponibles = [];
+
         if (strlen($this->searchProducto) < 2) {
             $this->productosResultados = [];
             $this->showProductoDropdown = false;
-
             return;
         }
 
-        $this->productosResultados = Producto::where('activo', true)
-            ->where(function ($q) {
-                $q->where('nombre', 'like', "%{$this->searchProducto}%")
-                    ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");
+        $termRaw = trim($this->searchProducto);
+        $words = explode(' ', $termRaw);
+
+        $this->productosResultados = ProductoPresentacion::query()
+            ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
+            ->leftJoin('unidades_medida', 'producto_presentacion.unidad_medida_id', '=', 'unidades_medida.id')
+            ->where('productos.activo', true)
+            ->where('productos.empresa_id', auth()->user()->empresa_id)
+            ->where(function ($q) use ($words) {
+                foreach ($words as $word) {
+                    $word = '%' . $word . '%';
+                    $q->where(function ($sub) use ($word) {
+                        $sub->where('productos.nombre', 'like', $word)
+                            ->orWhere('producto_presentacion.tipo_presentacion', 'like', $word)
+                            ->orWhere('productos.codigo_interno', 'like', $word);
+                    });
+                }
             })
-            ->limit(10)
+            ->select(
+                'producto_presentacion.id as presentacion_id',
+                'productos.id as producto_id',
+                'productos.nombre as producto_nombre',
+                'producto_presentacion.tipo_presentacion',
+                'unidades_medida.abreviatura as unidad_medida_abr',
+                'productos.codigo_interno'
+            )
+            ->limit(15)
             ->get()
+            ->map(fn ($p) => [
+                'presentacion_id' => $p->presentacion_id,
+                'producto_id' => $p->producto_id,
+                'producto_nombre' => $p->producto_nombre,
+                'tipo_presentacion' => $p->tipo_presentacion,
+                'unidad_medida_abr' => $p->unidad_medida_abr,
+                'codigo_interno' => $p->codigo_interno,
+            ])
             ->toArray();
 
         $this->showProductoDropdown = count($this->productosResultados) > 0;
     }
 
-    public function seleccionarProducto(int $id, string $nombre): void
+    public function seleccionarPresentacion(array $result): void
     {
-        $this->productoId = $id;
-        $this->searchProducto = $nombre;
+        $this->productoId = $result['producto_id'];
+        $this->presentacionId = $result['presentacion_id'];
+        $this->searchProducto = $result['producto_nombre'] . ' — ' . $result['tipo_presentacion'] . ($result['unidad_medida_abr'] ? ' (' . $result['unidad_medida_abr'] . ')' : '');
         $this->showProductoDropdown = false;
-        $this->presentacionId = null;
-        $this->lotePresentacionId = 'fifo';
-        $this->lotesDisponibles = [];
 
-        // Load presentations
-        $this->presentaciones = ProductoPresentacion::where('producto_id', $id)
-            ->with('unidadMedida')
-            ->get()
-            ->toArray();
-    }
-
-    public function updatedPresentacionId(): void
-    {
         $this->lotePresentacionId = 'fifo';
         $this->cargarLotesDisponibles();
     }
@@ -169,22 +247,26 @@ class AjusteStock extends Component
     {
         if (! $this->sucursalId || ! $this->presentacionId) {
             $this->lotesDisponibles = [];
+            $this->totalStockDisponible = 0;
 
             return;
         }
 
-        $this->lotesDisponibles = LotePresentacion::query()
+        $lotes = LotePresentacion::query()
             ->where('producto_presentacion_id', $this->presentacionId)
             ->whereHas('lote', fn ($query) => $query->where('sucursal_id', $this->sucursalId))
             ->with('lote')
-            ->get()
-            ->map(fn (LotePresentacion $lp): array => [
+            ->get();
+
+        $this->lotesDisponibles = $lotes->map(fn (LotePresentacion $lp): array => [
                 'id' => $lp->id,
                 'codigo_lote' => $lp->lote?->codigo_lote ?? 'Sin código',
                 'stock' => $lp->stock,
                 'vencimiento' => $lp->lote?->fecha_vencimiento?->format('d/m/Y'),
             ])
             ->toArray();
+
+        $this->totalStockDisponible = $lotes->sum('stock');
     }
 
     public function calcularSalida(): void
@@ -195,8 +277,13 @@ class AjusteStock extends Component
             'presentacionId' => 'required|exists:producto_presentacion,id',
             'cantidad' => 'required|integer|min:1',
             'tipoMerma' => 'required|string',
-            'motivo' => 'required|string|max:500',
+            'motivo' => 'nullable|string|max:500',
         ]);
+
+        if ($this->totalStockDisponible <= 0) {
+            $this->addError('cantidad', 'Esta presentación no tiene stock disponible en esta sucursal.');
+            return;
+        }
 
         $requestedQty = $this->cantidad;
         $distribution = [];
@@ -276,6 +363,7 @@ class AjusteStock extends Component
             'productoId' => 'required|exists:productos,id',
             'presentacionId' => 'required|exists:producto_presentacion,id',
             'cantidad' => 'required|integer|min:1',
+            'totalPagado' => 'nullable|numeric|min:0',
             'loteCodigo' => 'required|string|max:100',
             'fechaVencimiento' => 'nullable|date',
             'costo' => 'nullable|numeric|min:0',
@@ -288,7 +376,6 @@ class AjusteStock extends Component
 
     public function guardar(): void
     {
-        // Guardar is called to trigger confirmation calculation or final save
         if ($this->tipoAjuste === 'salida') {
             if (! $this->showConfirmStep) {
                 $this->calcularSalida();
@@ -323,6 +410,8 @@ class AjusteStock extends Component
                 $nuevoStock = $lotePresentacion->stock - $item['cantidad_retirar'];
                 $lotePresentacion->update(['stock' => $nuevoStock]);
 
+                $motivoAjuste = filled($this->motivo) ? $this->motivo : 'Ajuste rápido de inventario';
+
                 // Register Movement
                 MovimientoInventario::create([
                     'empresa_id' => Auth::user()->empresa_id ?? 1,
@@ -331,7 +420,7 @@ class AjusteStock extends Component
                     'producto_presentacion_id' => $this->presentacionId,
                     'tipo' => 'ajuste_salida',
                     'cantidad' => $item['cantidad_retirar'],
-                    'motivo' => "Merma ({$this->tipoMerma}): " . $this->motivo,
+                    'motivo' => "Merma ({$this->tipoMerma}): " . $motivoAjuste,
                     'referencia' => "LotePresentacion:{$lotePresentacion->id}",
                     'user_id' => Auth::id(),
                     'stock_final' => $nuevoStock,
@@ -342,7 +431,7 @@ class AjusteStock extends Component
                     'lote_presentacion_id' => $lotePresentacion->id,
                     'cantidad' => $item['cantidad_retirar'],
                     'tipo_merma' => $this->tipoMerma,
-                    'motivo' => $this->motivo . ($this->observacion ? ' - Obs: ' . $this->observacion : ''),
+                    'motivo' => $motivoAjuste . ($this->observacion ? ' - Obs: ' . $this->observacion : ''),
                     'user_id' => Auth::id(),
                 ]);
             }
@@ -382,7 +471,7 @@ class AjusteStock extends Component
                     'fecha_fabricacion' => null,
                     'fecha_vencimiento' => $this->fechaVencimiento ?: null,
                     'precio_compra' => $this->costo ?: 0.00,
-                    'observaciones' => $this->observacion . $supplierNote,
+                    'observaciones' => ($this->observacion ?: 'Ajuste de entrada manual') . $supplierNote,
                     'estado_lote' => 'activo',
                 ]);
             }
@@ -434,7 +523,7 @@ class AjusteStock extends Component
                 'producto_presentacion_id' => $this->presentacionId,
                 'tipo' => 'ajuste_entrada',
                 'cantidad' => $this->cantidad,
-                'motivo' => 'Ingreso manual' . ($this->observacion ? ': ' . $this->observacion : '') . $supplierNote,
+                'motivo' => ($this->observacion ?: 'Ingreso manual') . $supplierNote,
                 'referencia' => 'LotePresentacion:' . $lotePresentacion->id,
                 'user_id' => Auth::id(),
                 'stock_final' => $lotePresentacion->stock,
@@ -448,6 +537,28 @@ class AjusteStock extends Component
 
         $this->cerrarModal();
         $this->dispatch('ajusteGuardado');
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'sucursalId.required' => 'La sucursal es obligatoria.',
+            'sucursalId.exists' => 'La sucursal seleccionada no es válida.',
+            'productoId.required' => 'Debe buscar y seleccionar un producto con su presentación.',
+            'presentacionId.required' => 'Debe buscar y seleccionar un producto con su presentación.',
+            'cantidad.required' => 'La cantidad es obligatoria.',
+            'cantidad.integer' => 'La cantidad debe ser un número entero.',
+            'cantidad.min' => 'La cantidad debe ser mayor o igual a 1.',
+            'lotePresentacionId.required' => 'El lote es obligatorio.',
+            'tipoMerma.required' => 'El tipo de merma es obligatorio.',
+            'loteCodigo.required' => 'El código de lote es obligatorio.',
+            'fechaVencimiento.date' => 'La fecha de vencimiento debe ser una fecha válida.',
+            'costo.numeric' => 'El costo debe ser un valor numérico.',
+            'costo.min' => 'El costo no puede ser menor a 0.',
+            'totalPagado.numeric' => 'El total pagado debe ser un valor numérico.',
+            'totalPagado.min' => 'El total pagado no puede ser menor a 0.',
+            'proveedorId.exists' => 'El proveedor seleccionado no es válido.',
+        ];
     }
 
     public function render()
