@@ -2,6 +2,7 @@
 
 <div 
     x-data="{
+        activeTab: 'cart',
         theme: localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light'),
         init() {
             window.addEventListener('keydown', (e) => {
@@ -22,11 +23,16 @@
                 }
                 if (e.key === 'Escape') {
                     e.preventDefault();
-                    $wire.call('cancelarVenta');
+                    if ($wire.get('showSuccessModal')) {
+                        $wire.call('cerrarSuccessModal');
+                    } else {
+                        $wire.call('cancelarVenta');
+                    }
                 }
             });
         }
     }"
+    :class="{'pos-tab-catalog': activeTab === 'catalog', 'pos-tab-cart': activeTab === 'cart', 'pos-tab-payment': activeTab === 'payment'}"
     class="pos-viewport min-h-screen font-sans antialiased transition-all duration-300"
 >
     <style>
@@ -69,9 +75,13 @@
             position: fixed !important;
             inset: 0 !important;
             z-index: 9900 !important;
-            overflow-y: auto !important;
             background-color: var(--pos-bg) !important;
             color: var(--pos-text-main) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
         }
 
         .pos-viewport .pos-card {
@@ -94,26 +104,58 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.25) !important;
         }
 
-        /* Viewport Lock for laptops/tablets in landscape */
-        @media (min-width: 1024px) {
-            .pos-viewport {
+        .pos-viewport header,
+        .pos-viewport footer,
+        .pos-viewport .pos-bottom-bar {
+            flex-shrink: 0 !important;
+        }
+
+        .pos-viewport main {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            padding: 1rem !important;
+        }
+
+        @media (max-width: 1023px) {
+            .pos-col-catalog,
+            .pos-col-cart,
+            .pos-col-payment {
+                display: none !important;
+            }
+
+            .pos-tab-catalog .pos-col-catalog {
                 display: flex !important;
                 flex-direction: column !important;
-                height: 100vh !important;
-                max-height: 100vh !important;
-                overflow: hidden !important;
-            }
-
-            .pos-viewport header,
-            .pos-viewport footer,
-            .pos-viewport .pos-bottom-bar {
-                flex-shrink: 0 !important;
-            }
-
-            .pos-viewport main {
-                flex: 1 !important;
+                height: 100% !important;
                 min-height: 0 !important;
-                overflow: hidden !important;
+                gap: 1rem !important;
+            }
+            .pos-tab-cart .pos-col-cart {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                min-height: 0 !important;
+                gap: 1rem !important;
+            }
+            .pos-tab-payment .pos-col-payment {
+                display: flex !important;
+                flex-direction: column !important;
+                height: auto !important;
+                gap: 1rem !important;
+            }
+
+            .pos-main-grid {
+                overflow-y: auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+            }
+        }
+
+        /* Viewport Lock for laptops/tablets in landscape */
+        @media (min-width: 1024px) {
+            .pos-viewport main {
                 padding: 1.25rem !important;
             }
 
@@ -224,6 +266,16 @@
         html.dark .pos-viewport ::-webkit-scrollbar-thumb {
             background: #374151;
         }
+
+        /* Hide standard browser spinners for number inputs in POS */
+        .pos-viewport input[type="number"]::-webkit-inner-spin-button,
+        .pos-viewport input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+        .pos-viewport input[type="number"] {
+            -moz-appearance: textfield !important;
+        }
     </style>
 
     <!-- 1. Top Navigation Bar -->
@@ -324,12 +376,49 @@
         </div>
     </header>
 
+    <!-- Tabs Navigation Bar for Mobile/Tablet -->
+    <div class="lg:hidden flex border-b pos-border bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 shrink-0">
+        <button 
+            type="button" 
+            @click="activeTab = 'cart'" 
+            :class="activeTab === 'cart' ? 'border-blue-600 text-blue-600 dark:border-emerald-500 dark:text-emerald-400 font-extrabold' : 'border-transparent pos-text-muted hover:text-slate-900 dark:hover:text-white'" 
+            class="flex-1 py-3 text-center border-b-2 text-xs transition duration-150 flex items-center justify-center gap-1.5 focus:outline-none"
+        >
+            <span>🛒</span>
+            <span>Carrito</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-bold">
+                {{ count($cartItems) }}
+            </span>
+        </button>
+        <button 
+            type="button" 
+            @click="activeTab = 'payment'" 
+            :class="activeTab === 'payment' ? 'border-blue-600 text-blue-600 dark:border-emerald-500 dark:text-emerald-400 font-extrabold' : 'border-transparent pos-text-muted hover:text-slate-900 dark:hover:text-white'" 
+            class="flex-1 py-3 text-center border-b-2 text-xs transition duration-150 flex items-center justify-center gap-1.5 focus:outline-none"
+        >
+            <span>💳</span>
+            <span>Pago y Cliente</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold">
+                S/ {{ number_format($resumen['totales']['total_neto'], 2) }}
+            </span>
+        </button>
+        <button 
+            type="button" 
+            @click="activeTab = 'catalog'" 
+            :class="activeTab === 'catalog' ? 'border-blue-600 text-blue-600 dark:border-emerald-500 dark:text-emerald-400 font-extrabold' : 'border-transparent pos-text-muted hover:text-slate-900 dark:hover:text-white'" 
+            class="flex-1 py-3 text-center border-b-2 text-xs transition duration-150 flex items-center justify-center gap-1.5 focus:outline-none"
+        >
+            <span>📦</span>
+            <span>Catálogo</span>
+        </button>
+    </div>
+
     <!-- 2. Main Content Body (Grid cols 12) -->
     <main class="p-5">
         <div class="pos-main-grid">
             
             <!-- Column 1: CATEGORIES (Col span: 2) -->
-            <div class="col-span-12 lg:col-span-2 pos-column relative z-10">
+            <div class="col-span-12 lg:col-span-2 pos-column pos-col-catalog relative z-10">
                 <div class="pos-card p-4 flex flex-col h-full min-h-0">
                     <span class="text-xs font-black uppercase tracking-wider pos-text-muted block mb-3">Categorías</span>
                     <nav class="space-y-1.5 overflow-y-auto flex-1 pr-1">
@@ -372,13 +461,58 @@
                     </nav>
                 </div>
             </div>
-
             <!-- Column 2: Search & Cart (Col span: 4) -->
-            <div class="col-span-12 lg:col-span-4 pos-column relative z-30">
+            <div class="col-span-12 lg:col-span-4 pos-column pos-col-cart relative z-30">
                 
                 <!-- Search bar & Results -->
                 <div class="pos-card p-4 flex gap-3 items-center relative z-50">
-                    <div class="relative flex-1">
+                    <div 
+                        class="relative flex-1"
+                        x-data="{
+                            selectedIndex: -1,
+                            resultsCount: 0,
+                            selectNext() {
+                                if (this.resultsCount > 0) {
+                                    this.selectedIndex = (this.selectedIndex + 1) % this.resultsCount;
+                                    this.scrollToActive();
+                                }
+                            },
+                            selectPrev() {
+                                if (this.resultsCount > 0) {
+                                    this.selectedIndex = (this.selectedIndex - 1 + this.resultsCount) % this.resultsCount;
+                                    this.scrollToActive();
+                                }
+                            },
+                            scrollToActive() {
+                                this.$nextTick(() => {
+                                    const activeEl = this.$el.querySelector('[data-index=\'' + this.selectedIndex + '\']');
+                                    if (activeEl) {
+                                        activeEl.scrollIntoView({ block: 'nearest' });
+                                    }
+                                });
+                            },
+                            selectCurrent() {
+                                if (this.selectedIndex >= 0) {
+                                    const activeEl = this.$el.querySelector('[data-index=\'' + this.selectedIndex + '\']');
+                                    if (activeEl) {
+                                        activeEl.click();
+                                        this.selectedIndex = -1;
+                                    }
+                                } else {
+                                    $wire.call('procesarEnterBuscador');
+                                }
+                            }
+                        }"
+                        x-init="
+                            $watch('$wire.productosResultados', value => {
+                                resultsCount = value ? value.length : 0;
+                                selectedIndex = -1;
+                            });
+                        "
+                        @keydown.arrow-down.prevent="selectNext()"
+                        @keydown.arrow-up.prevent="selectPrev()"
+                        @keydown.enter.prevent="selectCurrent()"
+                    >
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -410,6 +544,8 @@
                                     <button 
                                         type="button" 
                                         wire:click="agregarProducto({{ $producto['producto_presentacion_id'] }})"
+                                        :class="{ 'bg-emerald-500/20': selectedIndex === {{ $loop->index }} }"
+                                        data-index="{{ $loop->index }}"
                                         class="w-full px-4 py-3 text-left hover:bg-emerald-500/10 transition duration-150 flex items-center justify-between gap-4 text-white"
                                     >
                                         <div class="space-y-0.5">
@@ -540,10 +676,12 @@
                                                     -
                                                 </button>
                                                 <input 
-                                                    type="text" 
+                                                    type="number" 
+                                                    step="0.001"
                                                     value="{{ $item['cantidad'] }}"
                                                     wire:change="actualizarCantidad({{ $index }}, $event.target.value)"
-                                                    class="w-6 text-center bg-transparent border-0 p-0 text-xs font-bold focus:ring-0 focus:outline-none pos-text"
+                                                    @keydown="if (['e', 'E', '+', '-'].includes($event.key)) $event.preventDefault();"
+                                                    class="w-8 text-center bg-transparent border-0 p-0 text-xs font-bold focus:ring-0 focus:outline-none pos-text"
                                                 >
                                                 <button 
                                                     type="button" 
@@ -556,8 +694,17 @@
                                         </td>
 
                                         <!-- Unit Price -->
-                                        <td class="py-2.5 text-right text-xs font-semibold pos-text">
-                                            S/{{ number_format($item['precio'], 2) }}
+                                        <td class="py-2.5 text-right w-24">
+                                             <div class="flex items-center justify-end">
+                                                 <span class="text-xs font-semibold pos-text mr-1">S/</span>
+                                                 <input 
+                                                     type="number" 
+                                                     step="0.01" 
+                                                     wire:model.live.debounce.350ms="cartItems.{{ $index }}.precio"
+                                                     @keydown="if (['e', 'E', '+', '-'].includes($event.key)) $event.preventDefault();"
+                                                     class="w-20 text-right bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-blue-500 focus:outline-none pos-text"
+                                                 >
+                                             </div>
                                         </td>
 
                                         <!-- Line Total -->
@@ -614,7 +761,7 @@
             </div>
 
             <!-- Column 3: Cliente, Comprobante & Medio de Pago (Col span: 3) -->
-            <div class="col-span-12 lg:col-span-3 pos-column pos-scrollable pr-1 relative z-20">
+            <div class="col-span-12 lg:col-span-3 pos-column pos-scrollable pos-col-payment pr-1 relative z-20">
                 
                 <!-- Cliente Card -->
                 <div class="pos-card p-4 space-y-3 relative z-50">
@@ -795,7 +942,7 @@
             </div>
 
             <!-- Column 4: Cajero image and Resumen (Col span: 3) -->
-            <div class="col-span-12 lg:col-span-3 pos-column pos-scrollable pr-1 relative z-10">
+            <div class="col-span-12 lg:col-span-3 pos-column pos-scrollable pos-col-payment pr-1 relative z-10">
                  <!-- Comprobante Card -->
                 <div class="pos-card p-4 space-y-3 relative z-20">
                     <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs uppercase tracking-wide">
@@ -899,6 +1046,31 @@
             ❌
             <span>Cancelar</span>
         </button>
+
+        <!-- Mobile Navigation Buttons -->
+        <div class="flex items-center gap-2 lg:hidden w-full sm:w-auto">
+            <!-- If activeTab === 'catalog', show button to switch to cart -->
+            <template x-if="activeTab === 'catalog'">
+                <button 
+                    type="button" 
+                    @click="activeTab = 'cart'"
+                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition focus:outline-none"
+                >
+                    <span>🛒 Ver Carrito</span>
+                </button>
+            </template>
+
+            <!-- If activeTab === 'payment', show button to switch back to cart -->
+            <template x-if="activeTab === 'payment'">
+                <button 
+                    type="button" 
+                    @click="activeTab = 'cart'"
+                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-300 font-bold text-sm flex items-center justify-center gap-2 transition focus:outline-none"
+                >
+                    <span>⬅️ Volver al Carrito</span>
+                </button>
+            </template>
+        </div>
         
         <!-- Submit (Registrar Venta) Button -->
         <button 
@@ -906,7 +1078,8 @@
             wire:click="guardarVenta"
             wire:loading.attr="disabled"
             @disabled(!$this->canSave)
-            class="px-8 py-3 rounded-xl font-extrabold text-sm flex items-center gap-2 transition shadow-md focus:outline-none {{ $this->canSave ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed' }}"
+            :class="{'hidden lg:flex': activeTab === 'catalog', 'flex': activeTab !== 'catalog'}"
+            class="px-8 py-3 rounded-xl font-extrabold text-sm items-center gap-2 transition shadow-md focus:outline-none {{ $this->canSave ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed' }}"
         >
             🛒
             <span wire:loading.remove wire:target="guardarVenta">Registrar Venta</span>
@@ -924,7 +1097,8 @@
             x-init="setTimeout(() => $refs.ticketBtn.focus(), 100)"
             @keydown.enter.prevent="$refs.ticketBtn.click()"
             @keydown.escape.prevent="$wire.cerrarSuccessModal()"
-            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350" style="z-index: 99999 !important;"
+            @click.self="$wire.cerrarSuccessModal()"
+            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350 cursor-pointer" style="z-index: 99999 !important;"
         >
             <div class="pos-card p-8 max-w-md w-full mx-4 space-y-6 text-center shadow-2xl border pos-border bg-white/90 dark:bg-slate-900/90 rounded-2xl">
                 <!-- Checkmark Icon -->
@@ -1413,6 +1587,45 @@
             updateTime();
             setSyncTime();
             setInterval(updateTime, 1000);
+
+            // --- INTUITIVE POS FOCUS REDIRECT ---
+            const searchInput = document.getElementById('search-producto-input');
+            if (searchInput) searchInput.focus();
+
+            const focusSearchInput = () => {
+                const active = document.activeElement;
+                if (active && active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT') {
+                    const input = document.getElementById('search-producto-input');
+                    if (input) input.focus();
+                }
+            };
+
+            window.addEventListener('focus-search-producto', () => {
+                const input = document.getElementById('search-producto-input');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            });
+
+            document.addEventListener('click', () => {
+                setTimeout(focusSearchInput, 50);
+            });
+        });
+
+        // For Livewire 3 request lifecycle
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.hook('request', ({ respond }) => {
+                respond(() => {
+                    setTimeout(() => {
+                        const active = document.activeElement;
+                        if (active && active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT') {
+                            const input = document.getElementById('search-producto-input');
+                            if (input) input.focus();
+                        }
+                    }, 50);
+                });
+            });
         });
     </script>
     {{-- Modal incluido dentro del div raíz de Livewire para asegurar el correcto renderizado y reactividad --}}

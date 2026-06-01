@@ -22,4 +22,9 @@ class Categoria extends Model
     {
         return $this->belongsTo(Empresa::class);
     }
+
+    public function productos()
+    {
+        return $this->hasMany(Producto::class, 'categoria_id');
+    }
 }

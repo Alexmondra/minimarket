@@ -11,17 +11,34 @@ class ListEnviosSunat extends ListRecords
 {
     protected static string $resource = EnvioSunatResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Envíos SUNAT & Monitor';
+    }
+
+
     public function getTabs(): array
     {
         return [
+            'general_monitor' => Tab::make('Monitor General')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where(fn ($q) => $q->where('estado_sunat', false)->orWhere('codigo_respuesta_sunat', '!=', '0')->orWhereNull('codigo_respuesta_sunat')))
+                ->badge(fn () => static::getResource()::getEloquentQuery()->where(fn ($q) => $q->where('estado_sunat', false)->orWhere('codigo_respuesta_sunat', '!=', '0')->orWhereNull('codigo_respuesta_sunat'))->count())
+                ->badgeColor('danger'),
+            'boletas_facturas' => Tab::make('Boletas y Facturas')
+                ->icon('heroicon-o-document-text')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('documento', fn ($q) => $q->whereIn('tipo_comprobante', ['BOLETA', 'FACTURA'])))
+                ->badge(fn () => static::getResource()::getEloquentQuery()->whereHas('documento', fn ($q) => $q->whereIn('tipo_comprobante', ['BOLETA', 'FACTURA']))->count())
+                ->badgeColor('success'),
+            'notas_credito' => Tab::make('Notas de Crédito')
+                ->icon('heroicon-o-document-duplicate')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('documento', fn ($q) => $q->where('tipo_comprobante', 'NOTA_CREDITO')))
+                ->badge(fn () => static::getResource()::getEloquentQuery()->whereHas('documento', fn ($q) => $q->where('tipo_comprobante', 'NOTA_CREDITO'))->count())
+                ->badgeColor('warning'),
             'todos' => Tab::make('Todos')
-                ->badge(fn () => $this->getEloquentQuery()->count()),
-            'aceptados' => Tab::make('Aceptados')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('estado_sunat', true))
-                ->badge(fn () => $this->getEloquentQuery()->where('estado_sunat', true)->count()),
-            'con_error' => Tab::make('Con Error')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('estado_sunat', false))
-                ->badge(fn () => $this->getEloquentQuery()->where('estado_sunat', false)->count()),
+                ->icon('heroicon-o-queue-list')
+                ->badge(fn () => static::getResource()::getEloquentQuery()->count())
+                ->badgeColor('gray'),
         ];
     }
 }

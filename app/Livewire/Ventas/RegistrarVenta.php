@@ -155,6 +155,23 @@ trait RegistrarVentaBehavior
             ->where('estado', true)
             ->get()
             ->toArray();
+
+        // Cargar estado guardado en sesión
+        if (session()->has('pos_cart_items')) {
+            $this->cartItems = session()->get('pos_cart_items', []);
+        }
+        if (session()->has('pos_medio_pago')) {
+            $this->medioPago = session()->get('pos_medio_pago', 'EFECTIVO');
+        }
+        if (session()->has('pos_tipo_comprobante')) {
+            $this->tipoComprobante = session()->get('pos_tipo_comprobante', 'TICKET');
+        }
+        if (session()->has('pos_cliente_id')) {
+            $clienteId = session()->get('pos_cliente_id');
+            if ($clienteId) {
+                $this->seleccionarCliente($clienteId);
+            }
+        }
     }
 
     public function updatedTipoComprobante(string $value): void
@@ -957,14 +974,112 @@ trait RegistrarVentaBehavior
     {
         return app(VentaCalculator::class)->calcular(
             collect($this->cartItems)->map(fn (array $item) => [
-                'cantidad' => (float) $item['cantidad'],
-                'precio_unitario' => (float) $item['precio'],
-                'afecto_igv' => (bool) $item['afecto_igv'],
+                'cantidad' => max((float) ($item['cantidad'] ?? 1.0), 0.0),
+                'precio_unitario' => max((float) ($item['precio'] ?? 0.0), 0.0),
+                'afecto_igv' => (bool) ($item['afecto_igv'] ?? true),
             ])->all(),
             $this->preciosIncluyenImpuesto,
             $this->porcentajeIgv,
             $this->usarPuntos ? app(PuntosService::class)->descuentoPorPuntos($this->puntosCanjear) : 0
         );
+    }
+
+    public function actualizarPrecio(int $index, $precio): void
+    {
+        if (! isset($this->cartItems[$index])) {
+            return;
+        }
+
+        $precio = max((float) $precio, 0.0);
+        $this->cartItems[$index]['precio'] = round($precio, 2);
+        $this->cartItems[$index]['precio_manual'] = true;
+    }
+
+    public function procesarEnterBuscador(): void
+    {
+        $term = trim($this->searchProducto);
+        if ($term === '') {
+            return;
+        }
+
+        if ($this->sucursalId) {
+            $exactMatch = ProductoSucursal::query()
+                ->where('sucursal_id', $this->sucursalId)
+                ->where('activo', true)
+                ->whereHas('producto', function ($query) {
+                    $query->where('empresa_id', Auth::user()->empresa_id)
+                        ->where('activo', true);
+                })
+                ->where(function ($query) use ($term) {
+                    $query->whereHas('producto', function ($q) use ($term) {
+                        $q->where('codigo_interno', $term);
+                    })->orWhereHas('lotePresentacion.productoPresentacion', function ($q) use ($term) {
+                        $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
+                    });
+                })
+                ->whereHas('lotePresentacion', fn ($q) => $q->where('stock', '>', 0))
+                ->first();
+
+            if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
+                $this->agregarProducto($exactMatch->lotePresentacion->producto_presentacion_id);
+                $this->searchProducto = '';
+                $this->productosResultados = [];
+                $this->showProductoDropdown = false;
+                return;
+            }
+        }
+
+        if (! empty($this->productosResultados)) {
+            $first = $this->productosResultados[0];
+            $this->agregarProducto($first['producto_presentacion_id']);
+            $this->searchProducto = '';
+            $this->productosResultados = [];
+            $this->showProductoDropdown = false;
+        }
+    }
+
+    public function updatedCartItems($value, $key): void
+    {
+        if (str_contains($key, '.precio')) {
+            $parts = explode('.', $key);
+            $index = (int) $parts[0];
+            if (isset($this->cartItems[$index])) {
+                $this->cartItems[$index]['precio_manual'] = true;
+                $val = $this->cartItems[$index]['precio'];
+                $this->cartItems[$index]['precio'] = max((float) $val, 0.0);
+            }
+        }
+    }
+
+    public function rendering(): void
+    {
+        if ($this->showSuccessModal) {
+            $this->limpiarSesionPOS();
+        } else {
+            $this->guardarSesionPOS();
+        }
+    }
+
+    protected function guardarSesionPOS(): void
+    {
+        if (! empty($this->cartItems)) {
+            session()->put('pos_cart_items', $this->cartItems);
+            session()->put('pos_cliente_id', $this->clienteId);
+            session()->put('pos_medio_pago', $this->medioPago);
+            session()->put('pos_tipo_comprobante', $this->tipoComprobante);
+        } else {
+            $this->limpiarSesionPOS();
+        }
+    }
+
+    protected function limpiarSesionPOS(): void
+    {
+        session()->forget([
+            'pos_cart_items',
+            'pos_cliente_id',
+            'pos_medio_pago',
+            'pos_tipo_comprobante',
+        ]);
     }
 
     protected function recalcularPrecio(int $index): void
@@ -974,6 +1089,11 @@ trait RegistrarVentaBehavior
         }
 
         $item = $this->cartItems[$index];
+
+        if (isset($item['precio_manual']) && $item['precio_manual']) {
+            return;
+        }
+
         $precio = $item['precio_regular'];
 
         if ($item['precio_mayorista'] !== null && $item['cantidad'] >= $item['minimo_mayorista']) {

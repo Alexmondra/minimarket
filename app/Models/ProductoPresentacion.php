@@ -46,6 +46,23 @@ class ProductoPresentacion extends Model
         return $this->hasMany(ProductoPresentacionBarra::class, 'producto_presentacion_id');
     }
 
+    public function lotePresentaciones()
+    {
+        return $this->hasMany(LotePresentacion::class, 'producto_presentacion_id');
+    }
+
+    public function productoSucursales()
+    {
+        return $this->hasManyThrough(
+            ProductoSucursal::class,
+            LotePresentacion::class,
+            'producto_presentacion_id',
+            'lote_presentacion_id',
+            'id',
+            'id'
+        );
+    }
+
     /**
      * Get the full URL of the imagen.
      */
