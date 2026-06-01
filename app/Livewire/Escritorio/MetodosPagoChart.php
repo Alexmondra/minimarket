@@ -2,14 +2,13 @@
 
 namespace App\Livewire\Escritorio;
 
+use App\Livewire\Escritorio\Concerns\HasEscritorioChart;
 use App\Support\Reportes\MetricCalculator;
 use Livewire\Component;
 
 class MetodosPagoChart extends Component
 {
-    public string $chartId;
-    public array $chartConfig = [];
-    public bool $loaded = false;
+    use HasEscritorioChart;
 
     private const COLORS = [
         'EFECTIVO' => ['#10b981', '#34d399'],
@@ -22,8 +21,7 @@ class MetodosPagoChart extends Component
 
     public function mount(): void
     {
-        $this->chartId = 'chart_metodos_pago_' . uniqid();
-        $this->loadData();
+        $this->initializeChart('chart_metodos_pago');
     }
 
     public function loadData(): void
@@ -53,8 +51,6 @@ class MetodosPagoChart extends Component
                     'data' => $values,
                     'backgroundColor' => $bgColors,
                     'borderColor' => $colors,
-                    'borderWidth' => 2,
-                    'hoverBorderWidth' => 3,
                 ]],
             ],
         ];
@@ -71,8 +67,4 @@ class MetodosPagoChart extends Component
         HTML;
     }
 
-    public function render()
-    {
-        return view('livewire.escritorio.metodos-pago-chart');
-    }
 }

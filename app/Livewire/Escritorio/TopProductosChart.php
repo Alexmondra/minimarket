@@ -2,19 +2,17 @@
 
 namespace App\Livewire\Escritorio;
 
+use App\Livewire\Escritorio\Concerns\HasEscritorioChart;
 use App\Support\Reportes\MetricCalculator;
 use Livewire\Component;
 
 class TopProductosChart extends Component
 {
-    public string $chartId;
-    public array $chartConfig = [];
-    public bool $loaded = false;
+    use HasEscritorioChart;
 
     public function mount(): void
     {
-        $this->chartId = 'chart_top_productos_' . uniqid();
-        $this->loadData();
+        $this->initializeChart('chart_top_productos');
     }
 
     public function loadData(): void
@@ -40,11 +38,6 @@ class TopProductosChart extends Component
                 'datasets' => [[
                     'label' => 'Ventas',
                     'data' => $values,
-                    'backgroundColor' => array_map(fn() => 'rgba(139, 92, 246, 0.6)', $values),
-                    'borderColor' => 'rgba(139, 92, 246, 0.8)',
-                    'borderWidth' => 1,
-                    'borderRadius' => 4,
-                    'borderSkipped' => false,
                 ]],
             ],
         ];
@@ -63,8 +56,4 @@ class TopProductosChart extends Component
         HTML;
     }
 
-    public function render()
-    {
-        return view('livewire.escritorio.top-productos-chart');
-    }
 }

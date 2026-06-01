@@ -2,19 +2,17 @@
 
 namespace App\Livewire\Escritorio;
 
+use App\Livewire\Escritorio\Concerns\HasEscritorioChart;
 use App\Support\Reportes\MetricCalculator;
 use Livewire\Component;
 
 class VentasPorDiaChart extends Component
 {
-    public string $chartId;
-    public array $chartConfig = [];
-    public bool $loaded = false;
+    use HasEscritorioChart;
 
     public function mount(): void
     {
-        $this->chartId = 'chart_ventas_dia_' . uniqid();
-        $this->loadData();
+        $this->initializeChart('chart_ventas_dia');
     }
 
     public function loadData(): void
@@ -29,15 +27,6 @@ class VentasPorDiaChart extends Component
                 'datasets' => [[
                     'label' => 'Ventas',
                     'data' => $result['data'],
-                    'borderColor' => 'rgb(16, 185, 129)',
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.08)',
-                    'fill' => true,
-                    'tension' => 0.4,
-                    'pointRadius' => 4,
-                    'pointBackgroundColor' => 'rgb(16, 185, 129)',
-                    'pointBorderColor' => '#fff',
-                    'pointBorderWidth' => 2,
-                    'borderWidth' => 3,
                 ]],
             ],
         ];
@@ -54,8 +43,4 @@ class VentasPorDiaChart extends Component
         HTML;
     }
 
-    public function render()
-    {
-        return view('livewire.escritorio.ventas-por-dia-chart');
-    }
 }
