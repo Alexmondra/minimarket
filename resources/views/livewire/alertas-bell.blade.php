@@ -121,7 +121,7 @@
 
         <!-- Footer Actions -->
         <div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-700 flex justify-between text-[11px] font-medium">
-            <a href="{{ \App\Filament\Clusters\Compras\Resources\Lotes\LoteResource::getUrl('index') }}" class="text-primary-600 dark:text-primary-400 hover:underline">Ver Lotes</a>
+            <a href="{{ \App\Filament\Clusters\Inventario\Resources\Lotes\LoteResource::getUrl('index') }}" class="text-primary-600 dark:text-primary-400 hover:underline">Ver Lotes</a>
             <a href="{{ \App\Filament\Clusters\Almacen\Resources\StockSucursal\StockSucursalResource::getUrl('index') }}" class="text-primary-600 dark:text-primary-400 hover:underline">Ver Stock de Sucursal</a>
         </div>
     </div>

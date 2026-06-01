@@ -25,8 +25,8 @@ class MovimientoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrows-right-left';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Movimientos';
-    protected static ?int $navigationSort = 1;
+    protected static string|UnitEnum|null $navigationGroup = 'Inventario';
+    protected static ?int $navigationSort = 101;
 
     protected static ?string $navigationLabel = 'Movimientos';
 

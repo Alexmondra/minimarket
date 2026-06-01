@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Catálogo Global',
                 'Compras',
-                'Almacén',
+                'Inventario',
                 'Movimientos',
                 'Reportes',
                 'Sunat',

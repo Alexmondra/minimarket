@@ -21,9 +21,9 @@ class StockSucursalResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Almacén';
+    protected static string|UnitEnum|null $navigationGroup = 'Inventario';
 
-    protected static ?string $navigationLabel = 'Stock x Sucursal';
+    protected static ?string $navigationLabel = 'Control de Existencias';
 
     public static function getPages(): array
     {

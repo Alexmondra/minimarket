@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\Compras\Resources\Lotes;
+namespace App\Filament\Clusters\Inventario\Resources\Lotes;
 
-use App\Filament\Clusters\Compras\Resources\Lotes\Pages\ListLotes;
+use App\Filament\Clusters\Inventario\Resources\Lotes\Pages\ListLotes;
 use App\Models\Lote;
 use App\Support\SucursalContext;
 use BackedEnum;
@@ -16,7 +16,7 @@ class LoteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Compras';
+    protected static string|UnitEnum|null $navigationGroup = 'Inventario';
 
     protected static ?string $navigationLabel = 'Lotes';
 
