@@ -10,15 +10,23 @@ class TopProductosChart extends Component
 {
     use HasEscritorioChart;
 
+    public string $periodo = 'mes';
+
     public function mount(): void
     {
         $this->initializeChart('chart_top_productos');
     }
 
+    public function setPeriodo(string $periodo): void
+    {
+        $this->periodo = $periodo;
+        $this->loadData();
+    }
+
     public function loadData(): void
     {
         $calc = app(MetricCalculator::class);
-        $data = $calc->topProductos(10);
+        $data = $calc->topProductosPeriodo($this->periodo, 10);
 
         $labels = [];
         $values = [];

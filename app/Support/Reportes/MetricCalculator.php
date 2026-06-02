@@ -307,6 +307,67 @@ class MetricCalculator
     }
 
     /**
+     * Compute real profit in one query using direct DB Query Builder joins.
+     */
+    public function calcularGananciaRealQuery(array $documentoIds): float
+    {
+        if (empty($documentoIds)) {
+            return 0.0;
+        }
+
+        return (float) DB::table('documentos_detalles')
+            ->join('lotes', function ($join) {
+                $join->on('documentos_detalles.lote_id', '=', 'lotes.id')
+                    ->whereNull('lotes.deleted_at');
+            })
+            ->leftJoin('lote_presentacion', function ($join) {
+                $join->on('lote_presentacion.lote_id', '=', 'lotes.id')
+                    ->on('lote_presentacion.producto_presentacion_id', '=', 'documentos_detalles.producto_presentacion_id');
+            })
+            ->leftJoin('detalle_compras', function ($join) {
+                $join->on('detalle_compras.lote_id', '=', 'lotes.id')
+                    ->whereNull('detalle_compras.deleted_at');
+            })
+            ->leftJoin('compras', function ($join) {
+                $join->on('compras.id', '=', 'detalle_compras.compra_id')
+                    ->whereNull('compras.deleted_at');
+            })
+            ->leftJoin(
+                DB::raw('(SELECT lote_id, SUM(stock) as stock_total FROM lote_presentacion GROUP BY lote_id) as stock_totals'),
+                'stock_totals.lote_id',
+                '=',
+                'lotes.id'
+            )
+            ->whereIn('documentos_detalles.documento_id', $documentoIds)
+            ->whereNull('documentos_detalles.deleted_at')
+            ->selectRaw("
+                SUM(
+                    CASE 
+                        WHEN (compras.id IS NULL OR compras.estado = 'completada')
+                        THEN COALESCE(documentos_detalles.cantidad, 0) * (
+                            COALESCE(documentos_detalles.precio_unitario, 0) - COALESCE(
+                                CASE
+                                    WHEN lote_presentacion.precio_compra IS NOT NULL AND lote_presentacion.precio_compra > 0
+                                    THEN lote_presentacion.precio_compra
+                                    ELSE (
+                                        CASE 
+                                            WHEN COALESCE(detalle_compras.precio_compra, lotes.precio_compra, 0) > 100 AND COALESCE(stock_totals.stock_total, 0) > 0 
+                                            THEN COALESCE(detalle_compras.precio_compra, lotes.precio_compra, 0) / stock_totals.stock_total
+                                            ELSE COALESCE(detalle_compras.precio_compra, lotes.precio_compra, 0)
+                                        END
+                                    )
+                                END,
+                                0
+                            )
+                        )
+                        ELSE 0
+                    END
+                ) as total_ganancia
+            ")
+            ->value('total_ganancia') ?? 0.0;
+    }
+
+    /**
      * Get daily sales for the last N days (for charts).
      */
     public function ventasUltimosDias(int $dias = 7): array
@@ -440,4 +501,197 @@ class MetricCalculator
 
         return compact('labels', 'ingresos', 'costos', 'ganancias');
     }
+
+    /**
+     * Get cumulative weekly sales (Monday to Sunday) for current week.
+     */
+    public function ventasAcumuladasSemana(): array
+    {
+        $labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        $data = [];
+        $qb = app(ReporteQueryBuilder::class);
+        
+        $startOfWeek = now()->startOfWeek();
+        $today = today();
+        
+        $startOfWeekStr = $startOfWeek->toDateString();
+        $todayStr = $today->toDateString();
+
+        $ventasPorFecha = (clone $qb->ventasBase())
+            ->whereBetween('fecha_emision', [$startOfWeekStr, $todayStr])
+            ->select('fecha_emision', DB::raw('SUM(total_neto) as total'))
+            ->groupBy('fecha_emision')
+            ->pluck('total', 'fecha_emision')
+            ->toArray();
+
+        $ncPorFecha = (clone $qb->notasCreditoBase())
+            ->whereBetween('fecha_emision', [$startOfWeekStr, $todayStr])
+            ->select('fecha_emision', DB::raw('SUM(total_neto) as total'))
+            ->groupBy('fecha_emision')
+            ->pluck('total', 'fecha_emision')
+            ->toArray();
+
+        $cumulative = 0.0;
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startOfWeek->copy()->addDays($i);
+            
+            if ($date->greaterThan($today)) {
+                $data[] = null;
+            } else {
+                $dateStr = $date->toDateString();
+                $ventas = (float) ($ventasPorFecha[$dateStr] ?? 0.0);
+                $nc = (float) ($ncPorFecha[$dateStr] ?? 0.0);
+                
+                $net = $ventas - $nc;
+                $cumulative += $net;
+                $data[] = $cumulative;
+            }
+        }
+
+        // Last non-null value is the cumulative week total
+        $total = 0.0;
+        foreach (array_reverse($data) as $v) {
+            if ($v !== null) {
+                $total = $v;
+                break;
+            }
+        }
+
+        return compact('labels', 'data', 'total');
+    }
+
+    /**
+     * Get daily sales for a specific month and year.
+     */
+    public function ventasDiariasMes(int $year, int $month): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        $date = Carbon::create($year, $month, 1);
+        $daysInMonth = $date->daysInMonth;
+        
+        $isCurrentMonth = ($year === today()->year && $month === today()->month);
+        $limitDay = $isCurrentMonth ? today()->day : $daysInMonth;
+
+        $ventas = $qb->ventasBase()
+            ->whereYear('fecha_emision', $year)
+            ->whereMonth('fecha_emision', $month)
+            ->select(DB::raw('DAY(fecha_emision) as dia'), DB::raw('SUM(total_neto) as total'))
+            ->groupBy('dia')
+            ->pluck('total', 'dia')
+            ->toArray();
+
+        $notasCredito = $qb->notasCreditoBase()
+            ->whereYear('fecha_emision', $year)
+            ->whereMonth('fecha_emision', $month)
+            ->select(DB::raw('DAY(fecha_emision) as dia'), DB::raw('SUM(total_neto) as total'))
+            ->groupBy('dia')
+            ->pluck('total', 'dia')
+            ->toArray();
+
+        $labels = [];
+        $data = [];
+
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $labels[] = $d;
+            
+            if ($isCurrentMonth && $d > $limitDay) {
+                $data[] = null;
+            } else {
+                $v = (float) ($ventas[$d] ?? 0.0);
+                $nc = (float) ($notasCredito[$d] ?? 0.0);
+                $data[] = max(0.0, $v - $nc);
+            }
+        }
+
+        return compact('labels', 'data');
+    }
+
+    /**
+     * Get monthly profit vs investment vs sales for the last N months.
+     * Real profit is only calculated if the lot has been paid (compra.estado = 'completada' or no purchase detail).
+     */
+    public function gananciasIngresosVentas(int $meses = 3): array
+    {
+        $labels = [];
+        $ingresos = [];
+        $ventas = [];
+        $ganancias = [];
+        $qb = app(ReporteQueryBuilder::class);
+
+        for ($i = $meses - 1; $i >= 0; $i--) {
+            $fecha = today()->subMonths($i);
+            $labels[] = ucfirst($fecha->translatedFormat('M'));
+            
+            $startOfMonth = $fecha->copy()->startOfMonth();
+            $endOfMonth = $fecha->copy()->endOfMonth();
+
+            // 1. Inversión (Ingreso de Inventario en el mes)
+            $loteQuery = \App\Models\Lote::query();
+            $this->context->applyToQuery($loteQuery, 'sucursal_id');
+            $loteIds = $loteQuery->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                ->pluck('id');
+
+            $inversion = 0.0;
+            if ($loteIds->isNotEmpty()) {
+                $inversion = (float) \App\Models\LotePresentacion::whereIn('lote_id', $loteIds)
+                    ->selectRaw('SUM(stock_inicial * precio_compra) as total')
+                    ->value('total') ?? 0.0;
+            }
+            $ingresos[] = $inversion;
+
+            // 2. Ventas (Ventas Reales en el mes)
+            $ventasQuery = (clone $qb->ventasBase())
+                ->whereBetween('fecha_emision', [$startOfMonth, $endOfMonth]);
+            
+            $ncQuery = (clone $qb->notasCreditoBase())
+                ->whereBetween('fecha_emision', [$startOfMonth, $endOfMonth]);
+
+            $ventas[] = max(0.0, $this->ingresosNetos($ventasQuery, $ncQuery));
+
+            // 3. Ganancia Real
+            $ventasIds = (clone $ventasQuery)->pluck('id')->toArray();
+            $ncIds = (clone $ncQuery)->pluck('id')->toArray();
+
+            $gananciaReal = $this->calcularGananciaRealQuery($ventasIds) - $this->calcularGananciaRealQuery($ncIds);
+
+            $ganancias[] = max(0.0, $gananciaReal);
+        }
+
+        return compact('labels', 'ingresos', 'ventas', 'ganancias');
+    }
+
+    /**
+     * Get top products for a specific period (dia, semana, mes).
+     */
+    public function topProductosPeriodo(string $periodo = 'mes', int $limit = 10): array
+    {
+        $qb = app(ReporteQueryBuilder::class);
+        
+        $query = match ($periodo) {
+            'dia' => $qb->ventasHoy(),
+            'semana' => $qb->ventasEnRango(now()->startOfWeek(), now()->endOfWeek()),
+            'mes' => $qb->ventasMesActual(),
+            default => $qb->ventasMesActual(),
+        };
+
+        $docIds = $query->pluck('id');
+
+        if ($docIds->isEmpty()) {
+            return [];
+        }
+
+        return DetalleDocumento::whereIn('documento_id', $docIds)
+            ->select(
+                'producto_nombre',
+                DB::raw('COUNT(*) as total_ventas'),
+                DB::raw('SUM(subtotal_neto) as total_ingresos')
+            )
+            ->groupBy('producto_nombre')
+            ->orderByDesc('total_ventas')
+            ->limit($limit)
+            ->get()
+            ->toArray();
+    }
 }
+

@@ -10,6 +10,8 @@ class MetodosPagoChart extends Component
 {
     use HasEscritorioChart;
 
+    public array $legendData = [];
+
     private const COLORS = [
         'EFECTIVO' => ['#10b981', '#34d399'],
         'YAPE' => ['#8b5cf6', '#a78bfa'],
@@ -33,14 +35,46 @@ class MetodosPagoChart extends Component
         $values = [];
         $colors = [];
         $bgColors = [];
+        $rawLegend = [];
 
+        $totalSum = 0.0;
         foreach ($data as $row) {
-            $mp = $row['medio_pago'] ?? 'OTRO';
-            $labels[] = ucfirst(strtolower($mp));
-            $values[] = (float) $row['total'];
-            $c = self::COLORS[$mp] ?? self::COLORS['OTRO'];
+            $rawMp = $row['medio_pago'] ?? 'OTRO';
+            $mpKey = strtoupper(trim($rawMp));
+            $labels[] = ucfirst(strtolower($rawMp));
+            
+            $totalVal = (float) $row['total'];
+            $values[] = $totalVal;
+            $totalSum += $totalVal;
+            
+            $c = self::COLORS[$mpKey] ?? self::COLORS['OTRO'];
             $colors[] = $c[0];
             $bgColors[] = $c[1];
+            
+            $rawLegend[] = [
+                'label' => ucfirst(strtolower($rawMp)),
+                'value' => $totalVal,
+                'color' => $c[0],
+            ];
+        }
+
+        if (empty($values)) {
+            $labels = ['Sin datos'];
+            $values = [1.0];
+            $colors = ['#cbd5e1'];
+            $bgColors = ['#e2e8f0'];
+            $this->legendData = [];
+        } else {
+            $this->legendData = [];
+            foreach ($rawLegend as $item) {
+                $pct = $totalSum > 0 ? ($item['value'] / $totalSum) * 100 : 0;
+                $this->legendData[] = [
+                    'label' => $item['label'],
+                    'value' => $item['value'],
+                    'percentage' => $pct,
+                    'color' => $item['color'],
+                ];
+            }
         }
 
         $this->chartConfig = [

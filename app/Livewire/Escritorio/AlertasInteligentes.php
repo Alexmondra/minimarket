@@ -86,6 +86,9 @@ class AlertasInteligentes extends Component
             ];
         }
 
+        // Limit to a maximum of 4 alerts
+        $this->alertas = array_slice($this->alertas, 0, 4);
+
         $this->loaded = true;
     }
 

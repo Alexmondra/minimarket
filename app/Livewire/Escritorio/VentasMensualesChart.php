@@ -10,22 +10,46 @@ class VentasMensualesChart extends Component
 {
     use HasEscritorioChart;
 
+    public array $availableMonths = [];
+    public string $selectedMonth;
+
     public function mount(): void
     {
+        $this->availableMonths = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = today()->subMonths($i);
+            $this->availableMonths[] = [
+                'value' => $date->format('Y-m'),
+                'label' => ucfirst($date->translatedFormat('F')),
+                'short' => ucfirst($date->translatedFormat('M')),
+            ];
+        }
+        $this->selectedMonth = today()->format('Y-m');
+
         $this->initializeChart('chart_ventas_mes');
+    }
+
+    public function selectMonth(string $month): void
+    {
+        $this->selectedMonth = $month;
+        $this->loadData();
     }
 
     public function loadData(): void
     {
+        $parts = explode('-', $this->selectedMonth);
+        $year = (int) $parts[0];
+        $month = (int) $parts[1];
+
         $calc = app(MetricCalculator::class);
-        $result = $calc->ventasUltimosMeses(12);
+        $result = $calc->ventasDiariasMes($year, $month);
 
         $this->chartConfig = [
             'type' => 'bar',
             'data' => [
                 'labels' => $result['labels'],
                 'datasets' => [[
-                    'label' => 'Ventas Mensuales',
+                    'label' => 'Ventas Diarias',
                     'data' => $result['data'],
                 ]],
             ],

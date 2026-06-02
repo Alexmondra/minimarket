@@ -103,12 +103,10 @@ class ListStockSucursal extends Page
 
     public function updatedSelectedSucursalId($value): void
     {
-        // Only update active sucursal in session if top-bar allows/does not lock it
-        if (! $this->isSucursalLocked && $value !== 'all') {
-            app(SucursalContext::class)->selectSucursal((int) $value);
-        } elseif ($value === 'all') {
-            app(SucursalContext::class)->selectSucursal(null);
+        if ($value === 'all') {
             $this->selectedSucursalId = null;
+        } else {
+            $this->selectedSucursalId = (int) $value;
         }
         $this->resetPage();
     }
@@ -459,12 +457,12 @@ class ListStockSucursal extends Page
 
     public function dispatchAbrirAjusteEntrada(): void
     {
-        $this->dispatch('abrirAjusteEntrada')->to('almacen.ajuste-stock');
+        $this->dispatch('abrirAjusteEntrada', sucursalId: $this->selectedSucursalId)->to('almacen.ajuste-stock');
     }
 
     public function dispatchAbrirAjusteSalida(): void
     {
-        $this->dispatch('abrirAjusteSalida')->to('almacen.ajuste-stock');
+        $this->dispatch('abrirAjusteSalida', sucursalId: $this->selectedSucursalId)->to('almacen.ajuste-stock');
     }
 
     public function getFooter(): ?View

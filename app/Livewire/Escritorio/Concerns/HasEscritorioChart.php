@@ -31,12 +31,32 @@ trait HasEscritorioChart
     }
 
     /**
+     * After chartConfig is updated (e.g. month/period change), push the
+     * new config to the browser so the chart inside wire:ignore can
+     * pick it up and re-render.
+     */
+    public function updatedChartConfig(): void
+    {
+        $this->dispatch('chart-refresh', [
+            'chartId' => $this->chartId,
+            'config' => $this->chartConfig,
+        ]);
+    }
+
+    /**
      * Render the Livewire component dynamically based on the class name.
      */
     public function render()
     {
+        if ($this->loaded && request()->hasHeader('X-Livewire')) {
+            $this->dispatch('chart-refresh', [
+                'chartId' => $this->chartId,
+                'config' => $this->chartConfig,
+            ]);
+        }
+
         $viewName = 'livewire.escritorio.' . Str::kebab(class_basename($this));
-        
+
         return view($viewName);
     }
 }

@@ -10,22 +10,26 @@ class VentasPorDiaChart extends Component
 {
     use HasEscritorioChart;
 
+    public float $totalSemana = 0.0;
+
     public function mount(): void
     {
-        $this->initializeChart('chart_ventas_dia');
+        $this->initializeChart('chart_ventas_semana');
     }
 
     public function loadData(): void
     {
         $calc = app(MetricCalculator::class);
-        $result = $calc->ventasUltimosDias(7);
+        $result = $calc->ventasAcumuladasSemana();
+
+        $this->totalSemana = (float) ($result['total'] ?? 0.0);
 
         $this->chartConfig = [
             'type' => 'line',
             'data' => [
                 'labels' => $result['labels'],
                 'datasets' => [[
-                    'label' => 'Ventas',
+                    'label' => 'Ventas Acumuladas',
                     'data' => $result['data'],
                 ]],
             ],

@@ -1,48 +1,125 @@
+import Chart from 'chart.js/auto';
 import { isDarkMode, getTextColor, getGridColor, getFontFamily } from './chart-helpers.js';
 
 // Global Chart.js registry to avoid duplicate instances on Livewire re-render
 const chartInstances = {};
 
-// Enrich config with premium styles, gradients, and custom tooltips
+// ─── Smart Dynamic Scale ───────────────────────────────────────────
+// Calculates a suggestedMax based on actual data so charts look
+// proportional with 1 sale or 10,000 sales — no microscopic bars, no
+// broken scales.
+
+function calcSmartMax(dataValues, { currency = false, floor = null } = {}) {
+    const nums = dataValues.filter(v => v != null && !isNaN(v) && isFinite(v));
+    if (!nums.length) {
+        return floor ?? (currency ? 50 : 5);
+    }
+    const max = Math.max(...nums);
+    if (max <= 0) {
+        return floor ?? (currency ? 50 : 5);
+    }
+    const headroom = max * 1.18;
+    const effectiveFloor = floor ?? (currency ? 50 : 5);
+    return Math.max(headroom, effectiveFloor);
+}
+
+// Collect *all* numeric values from every dataset in the config into a
+// flat array so we can compute a single smart Y-max for multi-series
+// charts (e.g. ganancias has 3 series).
+
+function collectAllValues(config) {
+    const all = [];
+    if (config?.data?.datasets) {
+        for (const ds of config.data.datasets) {
+            if (Array.isArray(ds.data)) {
+                for (const v of ds.data) {
+                    all.push(v);
+                }
+            }
+        }
+    }
+    return all;
+}
+
+// ─── Donut Center Text Plugin ─────────────────────────────────────
+// Renders the total in the centre of the doughnut for a premium feel.
+
+const donutCenterPlugin = {
+    id: 'donutCenterText',
+    afterDraw(chart) {
+        const { ctx, chartArea: { width, height, top, left } } = chart;
+        if (!width || !height) return;
+
+        const dataset = chart.data.datasets?.[0];
+        if (!dataset) return;
+        const total = dataset.data.reduce((a, b) => a + b, 0);
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const centerX = left + width / 2;
+        const centerY = top + height / 2;
+
+        // Label
+        ctx.font = `600 10px ${getFontFamily()}`;
+        ctx.fillStyle = getTextColor();
+        ctx.fillText('Total', centerX, centerY - 8);
+
+        // Value
+        ctx.font = `800 14px ${getFontFamily()}`;
+        ctx.fillStyle = isDarkMode() ? '#f1f5f9' : '#0f172a';
+        ctx.fillText('S/ ' + Number(total).toLocaleString('es-PE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }), centerX, centerY + 9);
+
+        ctx.restore();
+    }
+};
+
+// ─── Enrich Chart Config ──────────────────────────────────────────
+// Applies premium SaaS styling, smart scales, and per-chart visual
+// identity based on the chart ID.
+
 function enrichChartConfig(id, config, ctx) {
     if (!ctx) return config;
     const dark = isDarkMode();
     const txtColor = getTextColor();
     const gridColor = getGridColor();
     const fontFam = getFontFamily();
+    const allValues = collectAllValues(config);
+    const isCurrency = !id.includes('top_productos');
 
-    // 1. Base options structure
+    // ── Base options ────────────────────────────────────────────
     config.options = config.options || {};
     config.options.responsive = true;
     config.options.maintainAspectRatio = false;
-    
-    // Smooth transitions
     config.options.animation = {
-        duration: 1000,
-        easing: 'easeOutQuart'
+        duration: 800,
+        easing: 'easeOutQuart',
     };
 
     config.options.plugins = config.options.plugins || {};
-    
-    // Premium SaaS tooltips
+
+    // ── Premium glassmorphism tooltips ──────────────────────────
     config.options.plugins.tooltip = {
-        backgroundColor: dark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: dark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)',
         titleColor: dark ? '#f1f5f9' : '#0f172a',
         bodyColor: dark ? '#cbd5e1' : '#475569',
         borderColor: dark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
         borderWidth: 1,
         padding: 12,
-        cornerRadius: 12,
+        cornerRadius: 11,
         titleFont: { family: fontFam, size: 12, weight: '700' },
         bodyFont: { family: fontFam, size: 11 },
-        displayColors: id.includes('metodos_pago'), // only show colors in payment methods ring
+        displayColors: id.includes('metodos_pago') || id.includes('ganancias'),
         boxWidth: 8,
         boxHeight: 8,
         boxPadding: 4,
-        ...config.options.plugins.tooltip
+        ...config.options.plugins.tooltip,
     };
 
-    // Default legend config (clean look)
+    // ── Legend defaults ─────────────────────────────────────────
     config.options.plugins.legend = config.options.plugins.legend || {};
     if (config.options.plugins.legend.display === undefined) {
         config.options.plugins.legend.display = false;
@@ -53,214 +130,310 @@ function enrichChartConfig(id, config, ctx) {
         usePointStyle: true,
         pointStyleWidth: 8,
         padding: 15,
-        ...config.options.plugins.legend.labels
+        ...config.options.plugins.legend.labels,
     };
 
     config.options.scales = config.options.scales || {};
 
-    const scaleDefaults = (scaleId, isCurrency) => {
+    function applyScale(scaleId, opts = {}) {
         config.options.scales[scaleId] = config.options.scales[scaleId] || {};
-        config.options.scales[scaleId].grid = {
+        const s = config.options.scales[scaleId];
+        s.grid = {
             color: gridColor,
             drawBorder: false,
-            ...config.options.scales[scaleId].grid
+            ...s.grid,
         };
-        config.options.scales[scaleId].ticks = {
+        s.ticks = {
             color: txtColor,
             font: { family: fontFam, size: 10 },
-            ...config.options.scales[scaleId].ticks
+            ...s.ticks,
         };
-        if (isCurrency && scaleId === 'y') {
-            config.options.scales[scaleId].ticks.callback = (v) => 'S/ ' + Number(v).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (opts.currency && scaleId === 'y') {
+            s.ticks.callback = (v) =>
+                'S/ ' + Number(v).toLocaleString('es-PE', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                });
         }
-    };
+        if (opts.beginAtZero !== undefined) s.beginAtZero = opts.beginAtZero;
+        if (opts.suggestedMin !== undefined) s.suggestedMin = opts.suggestedMin;
+        if (opts.suggestedMax !== undefined) s.suggestedMax = opts.suggestedMax;
+    }
 
-    // 2. Specific chart modifications based on ID
-    if (id.includes('ventas_dia')) {
-        // Line chart
-        scaleDefaults('x', false);
-        scaleDefaults('y', true);
+    // ═══════════════════════════════════════════════════════════════
+    // 1. VENTAS ACUMULADAS DE LA SEMANA — Cumulative Emerald Line
+    // ═══════════════════════════════════════════════════════════════
+    if (id.includes('ventas_semana')) {
+        applyScale('x', {});
+        applyScale('y', {
+            currency: true,
+            beginAtZero: true,
+            suggestedMin: 0,
+            suggestedMax: calcSmartMax(allValues, { currency: true }),
+        });
+
         config.options.interaction = { intersect: false, mode: 'index' };
-        
-        if (config.data && config.data.datasets && config.data.datasets[0]) {
-            const ds = config.data.datasets[0];
-            ds.borderColor = 'rgb(16, 185, 129)'; // Emerald border
-            ds.borderWidth = 3;
-            ds.tension = 0.4;
-            ds.fill = true;
-            
-            // Soft emerald desaturated gradient fill
-            const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-            grad.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
-            grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
-            ds.backgroundColor = grad;
 
-            // Sleek hover point animation
-            ds.pointRadius = 0;
+        if (config.data?.datasets?.[0]) {
+            const ds = config.data.datasets[0];
+            ds.borderColor = '#10b981';
+            ds.borderWidth = 3;
+            ds.tension = 0.45;
+            ds.fill = true;
+            ds.pointRadius = 5;
             ds.pointHitRadius = 20;
-            ds.pointHoverRadius = 6;
+            ds.pointHoverRadius = 7;
             ds.pointHoverBorderWidth = 3;
             ds.pointHoverBorderColor = '#fff';
-            ds.pointHoverBackgroundColor = 'rgb(16, 185, 129)';
+            ds.pointHoverBackgroundColor = '#10b981';
+            ds.pointBackgroundColor = '#10b981';
+            ds.pointBorderColor = '#fff';
+            ds.pointBorderWidth = 2;
+            ds.spanGaps = false; // break line for future days (null)
+
+            const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
+            grad.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+            grad.addColorStop(0.5, 'rgba(16, 185, 129, 0.08)');
+            grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            ds.backgroundColor = grad;
         }
 
         config.options.plugins.tooltip.callbacks = {
-            label: (context) => ` Ventas: S/ ${context.parsed.y.toFixed(2)}`
+            label: (ctx) => {
+                const v = ctx.parsed.y;
+                if (v == null) return ' Aún sin datos';
+                return ` Acumulado: S/ ${v.toFixed(2)}`;
+            },
         };
+    }
 
-    } else if (id.includes('ventas_mes')) {
-        // Vertical Bar Chart
-        scaleDefaults('x', false);
-        scaleDefaults('y', true);
+    // ═══════════════════════════════════════════════════════════════
+    // 2. VENTAS MENSUALES — Vertical Bar Chart (Indigo)
+    // ═══════════════════════════════════════════════════════════════
+    else if (id.includes('ventas_mes')) {
+        applyScale('x', {});
+        applyScale('y', {
+            currency: true,
+            beginAtZero: true,
+            suggestedMin: 0,
+            suggestedMax: calcSmartMax(allValues, { currency: true }),
+        });
 
-        if (config.data && config.data.datasets && config.data.datasets[0]) {
+        if (config.data?.datasets?.[0]) {
             const ds = config.data.datasets[0];
             ds.borderWidth = 0;
             ds.borderRadius = { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 };
-            
-            // Smooth Indigo gradient
+            ds.maxBarThickness = 32;
+            ds.borderSkipped = false;
+
             const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-            grad.addColorStop(0, 'rgba(99, 102, 241, 0.85)');
-            grad.addColorStop(1, 'rgba(99, 102, 241, 0.15)');
+            grad.addColorStop(0, 'rgba(99, 102, 241, 0.92)');
+            grad.addColorStop(1, 'rgba(99, 102, 241, 0.18)');
             ds.backgroundColor = grad;
+
+            ds.hoverBackgroundColor = 'rgba(99, 102, 241, 1)';
+            ds.hoverBorderColor = 'rgba(255,255,255,0.3)';
+            ds.hoverBorderWidth = 2;
         }
 
         config.options.plugins.tooltip.callbacks = {
-            label: (context) => ` Ventas: S/ ${context.parsed.y.toFixed(2)}`
+            label: (ctx) => {
+                if (ctx.parsed.y == null) return ' Sin ventas este día';
+                return ` Ventas: S/ ${ctx.parsed.y.toFixed(2)}`;
+            },
         };
+    }
 
-    } else if (id.includes('metodos_pago')) {
-        // Doughnut Chart
-        delete config.options.scales; // Doughnut doesn't use scales
-        config.options.plugins.legend.display = true;
-        config.options.plugins.legend.position = 'right';
+    // ═══════════════════════════════════════════════════════════════
+    // 3. MÉTODOS DE PAGO — Premium Donut
+    // ═══════════════════════════════════════════════════════════════
+    else if (id.includes('metodos_pago')) {
+        delete config.options.scales; // donut has no scales
+        config.options.plugins.legend.display = false;
+        config.options.cutout = '72%';
 
-        if (config.data && config.data.datasets && config.data.datasets[0]) {
+        // Inject center-text plugin if not already present
+        if (!config.options.plugins[donutCenterPlugin.id]) {
+            config.options.plugins[donutCenterPlugin.id] = donutCenterPlugin;
+        }
+
+        if (config.data?.datasets?.[0]) {
             const ds = config.data.datasets[0];
-            ds.spacing = 5;
-            ds.borderRadius = 6;
-            ds.borderWidth = dark ? 2 : 1;
-            ds.borderColor = dark ? '#0f172a' : '#fff'; // card bg color matching
+            ds.spacing = 6;
+            ds.borderRadius = 8;
+            ds.borderWidth = dark ? 2 : 1.5;
+            ds.borderColor = dark ? '#0f172a' : '#fff';
+            ds.hoverBorderWidth = 3;
+            ds.hoverBorderColor = dark ? '#1e293b' : '#f8fafc';
         }
 
-        config.options.cutout = '75%';
-
         config.options.plugins.tooltip.callbacks = {
-            label: function(context) {
-                const label = context.label || '';
-                const value = context.parsed || 0;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                return ` ${label}: S/ ${value.toFixed(2)} (${percentage}%)`;
-            }
+            label: function (ctx) {
+                const label = ctx.label || '';
+                if (label === 'Sin datos') {
+                    return ' Sin transacciones este mes';
+                }
+                const value = ctx.parsed || 0;
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return ` ${label}: S/ ${value.toFixed(2)} (${pct}%)`;
+            },
         };
+    }
 
-    } else if (id.includes('ganancias')) {
-        // Double Area Chart (Ingresos vs Ganancias)
-        scaleDefaults('x', false);
-        scaleDefaults('y', true);
+    // ═══════════════════════════════════════════════════════════════
+    // 4. INGRESOS VS GANANCIA — Overlapping Area Chart
+    // ═══════════════════════════════════════════════════════════════
+    else if (id.includes('ganancias')) {
+        applyScale('x', {});
+        applyScale('y', {
+            currency: true,
+            beginAtZero: true,
+            suggestedMin: 0,
+            suggestedMax: calcSmartMax(allValues, { currency: true }),
+        });
+
         config.options.plugins.legend.display = true;
         config.options.plugins.legend.position = 'top';
+        config.options.plugins.legend.align = 'center';
         config.options.interaction = { intersect: false, mode: 'index' };
 
-        if (config.data && config.data.datasets) {
-            // Ingresos (Blue gradient)
+        if (config.data?.datasets) {
+            // [0] Inversión — Blue, dashed, subtle area
             if (config.data.datasets[0]) {
-                const ds = config.data.datasets[0];
-                ds.borderColor = 'rgb(59, 130, 246)';
-                ds.borderWidth = 2.5;
-                ds.tension = 0.4;
-                ds.fill = true;
-                
-                const gradBlue = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-                gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
-                gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0)');
-                ds.backgroundColor = gradBlue;
+                const d = config.data.datasets[0];
+                d.borderColor = '#3b82f6';
+                d.borderWidth = 2.5;
+                d.borderDash = [6, 3];
+                d.tension = 0.4;
+                d.fill = true;
+                d.pointRadius = 3;
+                d.pointHitRadius = 15;
+                d.pointHoverRadius = 5;
+                d.pointHoverBorderWidth = 2;
+                d.pointHoverBorderColor = '#fff';
+                d.pointHoverBackgroundColor = '#3b82f6';
+                d.pointBackgroundColor = '#3b82f6';
+                d.pointBorderColor = '#fff';
+                d.pointBorderWidth = 1.5;
 
-                ds.pointRadius = 0;
-                ds.pointHitRadius = 15;
-                ds.pointHoverRadius = 5;
-                ds.pointHoverBorderWidth = 2.5;
-                ds.pointHoverBorderColor = '#fff';
-                ds.pointHoverBackgroundColor = 'rgb(59, 130, 246)';
+                const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
+                g.addColorStop(0, 'rgba(59, 130, 246, 0.10)');
+                g.addColorStop(1, 'rgba(59, 130, 246, 0)');
+                d.backgroundColor = g;
             }
-            // Ganancias (Teal gradient)
-            if (config.data.datasets[1]) {
-                const ds = config.data.datasets[1];
-                ds.borderColor = 'rgb(20, 184, 166)';
-                ds.borderWidth = 3;
-                ds.tension = 0.4;
-                ds.fill = true;
-                
-                const gradTeal = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-                gradTeal.addColorStop(0, 'rgba(20, 184, 166, 0.22)');
-                gradTeal.addColorStop(1, 'rgba(20, 184, 166, 0)');
-                ds.backgroundColor = gradTeal;
 
-                ds.pointRadius = 0;
-                ds.pointHitRadius = 15;
-                ds.pointHoverRadius = 6;
-                ds.pointHoverBorderWidth = 3;
-                ds.pointHoverBorderColor = '#fff';
-                ds.pointHoverBackgroundColor = 'rgb(20, 184, 166)';
+            // [1] Ventas — Indigo, solid, prominent
+            if (config.data.datasets[1]) {
+                const d = config.data.datasets[1];
+                d.borderColor = '#6366f1';
+                d.borderWidth = 2.5;
+                d.tension = 0.4;
+                d.fill = true;
+                d.pointRadius = 4;
+                d.pointHitRadius = 15;
+                d.pointHoverRadius = 6;
+                d.pointHoverBorderWidth = 2.5;
+                d.pointHoverBorderColor = '#fff';
+                d.pointHoverBackgroundColor = '#6366f1';
+                d.pointBackgroundColor = '#6366f1';
+                d.pointBorderColor = '#fff';
+                d.pointBorderWidth = 2;
+
+                const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
+                g.addColorStop(0, 'rgba(99, 102, 241, 0.16)');
+                g.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                d.backgroundColor = g;
+            }
+
+            // [2] Ganancia Real — Teal, thickest, most prominent
+            if (config.data.datasets[2]) {
+                const d = config.data.datasets[2];
+                d.borderColor = '#14b8a6';
+                d.borderWidth = 3.5;
+                d.tension = 0.4;
+                d.fill = true;
+                d.pointRadius = 5;
+                d.pointHitRadius = 20;
+                d.pointHoverRadius = 7;
+                d.pointHoverBorderWidth = 3;
+                d.pointHoverBorderColor = '#fff';
+                d.pointHoverBackgroundColor = '#14b8a6';
+                d.pointBackgroundColor = '#14b8a6';
+                d.pointBorderColor = '#fff';
+                d.pointBorderWidth = 2.5;
+
+                const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
+                g.addColorStop(0, 'rgba(20, 184, 166, 0.26)');
+                g.addColorStop(1, 'rgba(20, 184, 166, 0)');
+                d.backgroundColor = g;
             }
         }
 
         config.options.plugins.tooltip.callbacks = {
-            label: (context) => ` ${context.dataset.label}: S/ ${context.parsed.y.toFixed(2)}`
+            label: (ctx) => ` ${ctx.dataset.label}: S/ ${ctx.parsed.y.toFixed(2)}`,
         };
+    }
 
-    } else if (id.includes('top_productos')) {
-        // Horizontal Bar Chart
+    // ═══════════════════════════════════════════════════════════════
+    // 5. TOP 10 PRODUCTOS — Horizontal Bar Chart (Violet→Pink)
+    // ═══════════════════════════════════════════════════════════════
+    else if (id.includes('top_productos')) {
         config.options.indexAxis = 'y';
-        
-        scaleDefaults('x', false); // quantities on X
-        scaleDefaults('y', false); // product names on Y
+
+        applyScale('x', {
+            beginAtZero: true,
+            suggestedMin: 0,
+            suggestedMax: calcSmartMax(allValues, { currency: false, floor: 5 }),
+        });
+        applyScale('y', {});
 
         config.options.scales.x.ticks.precision = 0;
         config.options.scales.x.grid.display = false;
-        
         config.options.scales.y.grid.display = false;
-        config.options.scales.y.ticks.callback = function(value, index) {
-            if (config.data && config.data.labels) {
-                const label = config.data.labels[index];
-                if (label && label.length > 20) {
-                    return label.substring(0, 17) + '...';
-                }
-                return label;
+
+        config.options.scales.y.ticks.callback = function (value, index) {
+            const label = config.data?.labels?.[index];
+            if (label && label.length > 20) {
+                return label.substring(0, 17) + '...';
             }
-            return value;
+            return label || '';
         };
 
-        if (config.data && config.data.datasets && config.data.datasets[0]) {
+        if (config.data?.datasets?.[0]) {
             const ds = config.data.datasets[0];
             ds.borderWidth = 0;
-            ds.borderRadius = 4;
-            
-            // Premium Violet to Pink horizontal gradient
+            ds.borderRadius = 5;
+            ds.maxBarThickness = 22;
+            ds.borderSkipped = false;
+
             const grad = ctx.createLinearGradient(0, 0, ctx.canvas.clientWidth || 350, 0);
-            grad.addColorStop(0, 'rgba(139, 92, 246, 0.85)');
-            grad.addColorStop(1, 'rgba(236, 72, 153, 0.4)');
+            grad.addColorStop(0, 'rgba(139, 92, 246, 0.92)');
+            grad.addColorStop(0.5, 'rgba(168, 85, 247, 0.7)');
+            grad.addColorStop(1, 'rgba(236, 72, 153, 0.45)');
             ds.backgroundColor = grad;
+
+            ds.hoverBackgroundColor = 'rgba(139, 92, 246, 1)';
+            ds.hoverBorderColor = 'rgba(255,255,255,0.25)';
+            ds.hoverBorderWidth = 1.5;
         }
 
         config.options.plugins.tooltip.callbacks = {
-            label: (context) => ` Ventas: ${context.parsed.x} unidades`
+            label: (ctx) => ` ${ctx.parsed.x} unidades vendidas`,
         };
     }
 
     return config;
 }
 
+// ─── Public API ────────────────────────────────────────────────────
+
 export function registerChart(id, config) {
     destroyChart(id);
     const canvas = document.getElementById(id);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
-    
-    // Apply premium styling logic
     const enriched = enrichChartConfig(id, config, ctx);
-    
     chartInstances[id] = new Chart(ctx, enriched);
     return chartInstances[id];
 }
@@ -276,7 +449,8 @@ export function destroyAll() {
     Object.keys(chartInstances).forEach(destroyChart);
 }
 
-// Update scales and fonts dynamically on theme changes
+// ─── Theme reactivity ─────────────────────────────────────────────
+
 export function updateChartThemes() {
     const dark = isDarkMode();
     const txtColor = getTextColor();
@@ -290,9 +464,7 @@ export function updateChartThemes() {
         if (chart.options.scales) {
             Object.keys(chart.options.scales).forEach(scaleId => {
                 const scale = chart.options.scales[scaleId];
-                if (scale.grid) {
-                    scale.grid.color = gridColor;
-                }
+                if (scale.grid) scale.grid.color = gridColor;
                 if (scale.ticks) {
                     scale.ticks.color = txtColor;
                     scale.ticks.font = { ...scale.ticks.font, family: fontFam };
@@ -301,31 +473,55 @@ export function updateChartThemes() {
         }
 
         if (chart.options.plugins) {
-            if (chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+            if (chart.options.plugins.legend?.labels) {
                 chart.options.plugins.legend.labels.color = txtColor;
                 chart.options.plugins.legend.labels.font = {
                     ...chart.options.plugins.legend.labels.font,
-                    family: fontFam
+                    family: fontFam,
                 };
             }
             if (chart.options.plugins.tooltip) {
-                chart.options.plugins.tooltip.backgroundColor = dark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+                chart.options.plugins.tooltip.backgroundColor = dark
+                    ? 'rgba(15, 23, 42, 0.96)'
+                    : 'rgba(255, 255, 255, 0.96)';
                 chart.options.plugins.tooltip.titleColor = dark ? '#f1f5f9' : '#0f172a';
                 chart.options.plugins.tooltip.bodyColor = dark ? '#cbd5e1' : '#475569';
-                chart.options.plugins.tooltip.borderColor = dark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)';
+                chart.options.plugins.tooltip.borderColor = dark
+                    ? 'rgba(51, 65, 85, 0.5)'
+                    : 'rgba(226, 232, 240, 0.8)';
             }
         }
 
-        if (id.includes('metodos_pago') && chart.data.datasets && chart.data.datasets[0]) {
+        if (id.includes('metodos_pago') && chart.data.datasets?.[0]) {
             chart.data.datasets[0].borderColor = dark ? '#0f172a' : '#fff';
-            chart.data.datasets[0].borderWidth = dark ? 2 : 1;
+            chart.data.datasets[0].borderWidth = dark ? 2 : 1.5;
         }
 
         chart.update();
     });
 }
 
-// Alpine.js directive for chart components
+// ─── Chart refresh (called when Livewire dispatches chart-refresh) ─
+
+function refreshChart(chartId, newConfig) {
+    const chart = chartInstances[chartId];
+    if (!chart) return;
+
+    // Strip any Alpine reactive proxy wrappers
+    const clean = JSON.parse(JSON.stringify(newConfig));
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const enriched = enrichChartConfig(chartId, clean, ctx);
+
+    chart.data = enriched.data;
+    chart.options = enriched.options;
+    chart.update();
+}
+
+// ─── Alpine.js directive ──────────────────────────────────────────
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('chartComponent', (chartId, config) => ({
         chart: null,
@@ -333,29 +529,35 @@ document.addEventListener('alpine:init', () => {
             this.$nextTick(() => {
                 this.chart = registerChart(chartId, config);
             });
-            // Watch for changes in Livewire's chartConfig property
-            if (this.$wire) {
-                this.$wire.$watch('chartConfig', (newConfig) => {
-                    if (newConfig && this.chart) {
-                        this.chart.data = newConfig.data;
-                        if (newConfig.options) {
-                            this.chart.options = { ...this.chart.options, ...newConfig.options };
-                        }
-                        this.chart.update();
-                    }
-                });
-            }
         },
         destroy() {
             if (this.chart) {
                 this.chart.destroy();
                 this.chart = null;
             }
-        }
+        },
     }));
 });
 
-// Watch html theme changes
+// ─── Livewire event: chart data changed (from PHP updatedChartConfig) ─
+
+document.addEventListener('livewire:initialized', () => {
+    Livewire.on('chart-refresh', (payload) => {
+        if (Array.isArray(payload)) {
+            // Livewire 3 wraps event params in an array
+            for (const item of payload) {
+                if (item?.chartId && item?.config) {
+                    refreshChart(item.chartId, item.config);
+                }
+            }
+        } else if (payload?.chartId && payload?.config) {
+            refreshChart(payload.chartId, payload.config);
+        }
+    });
+});
+
+// ─── Dark-mode observer ──────────────────────────────────────────
+
 if (typeof window !== 'undefined') {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -366,12 +568,12 @@ if (typeof window !== 'undefined') {
     });
     observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['class']
+        attributeFilter: ['class'],
     });
 }
 
-// Listen for Livewire navigation to clean up charts
+// ─── Livewire navigation cleanup ──────────────────────────────────
+
 document.addEventListener('livewire:navigating', () => {
     destroyAll();
 });
-

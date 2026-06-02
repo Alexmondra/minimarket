@@ -30,7 +30,7 @@ class AjusteStock extends Component
 
     public ?int $presentacionId = null;
 
-    public int $cantidad = 1;
+    public ?int $cantidad = 1;
 
     public string $motivo = '';
 
@@ -78,19 +78,19 @@ class AjusteStock extends Component
         'abrirAjusteSalida' => 'abrirSalida',
     ];
 
-    public function abrirEntrada(): void
+    public function abrirEntrada(?int $sucursalId = null): void
     {
         $this->resetForm();
         $this->tipoAjuste = 'entrada';
-        $this->aplicarLogicaSucursal();
+        $this->aplicarLogicaSucursal($sucursalId);
         $this->showModal = true;
     }
 
-    public function abrirSalida(): void
+    public function abrirSalida(?int $sucursalId = null): void
     {
         $this->resetForm();
         $this->tipoAjuste = 'salida';
-        $this->aplicarLogicaSucursal();
+        $this->aplicarLogicaSucursal($sucursalId);
         $this->showModal = true;
     }
 
@@ -119,7 +119,7 @@ class AjusteStock extends Component
         }
     }
 
-    public function aplicarLogicaSucursal(): void
+    public function aplicarLogicaSucursal(?int $passedSucursalId = null): void
     {
         $context = app(SucursalContext::class);
         $user = auth()->user();
@@ -133,7 +133,11 @@ class AjusteStock extends Component
             $this->sucursalId = $allowed->first()->id;
             $this->isSucursalLocked = true;
         } else {
-            $this->sucursalId = null;
+            if ($passedSucursalId && $context->canAccessSucursal($passedSucursalId, $user)) {
+                $this->sucursalId = $passedSucursalId;
+            } else {
+                $this->sucursalId = null;
+            }
             $this->isSucursalLocked = false;
         }
     }

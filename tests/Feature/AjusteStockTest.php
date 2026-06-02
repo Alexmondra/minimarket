@@ -167,4 +167,25 @@ class AjusteStockTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('showConfirmStep', true);
     }
+
+    public function test_cantidad_null_shows_validation_error(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(AjusteStock::class)
+            ->call('abrirSalida')
+            ->set('sucursalId', $this->sucursal->id)
+            ->call('seleccionarPresentacion', [
+                'producto_id' => $this->producto->id,
+                'presentacion_id' => $this->presentacion->id,
+                'producto_nombre' => $this->producto->nombre,
+                'tipo_presentacion' => $this->presentacion->tipo_presentacion,
+                'unidad_medida_abr' => 'und',
+                'codigo_interno' => null
+            ])
+            ->set('cantidad', null)
+            ->set('tipoMerma', 'roto')
+            ->call('guardar')
+            ->assertHasErrors(['cantidad']);
+    }
 }

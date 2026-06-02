@@ -10,15 +10,24 @@ class GananciasChart extends Component
 {
     use HasEscritorioChart;
 
+    public int $meses = 3;
+
     public function mount(): void
     {
+        $this->meses = (int) config('app.dashboard_ganancias_meses', 3);
         $this->initializeChart('chart_ganancias');
+    }
+
+    public function setMeses(int $meses): void
+    {
+        $this->meses = $meses;
+        $this->loadData();
     }
 
     public function loadData(): void
     {
         $calc = app(MetricCalculator::class);
-        $result = $calc->gananciasUltimosMeses(12);
+        $result = $calc->gananciasIngresosVentas($this->meses);
 
         $this->chartConfig = [
             'type' => 'line',
@@ -26,11 +35,15 @@ class GananciasChart extends Component
                 'labels' => $result['labels'],
                 'datasets' => [
                     [
-                        'label' => 'Ingresos',
+                        'label' => 'Inversión (Ingreso)',
                         'data' => $result['ingresos'],
                     ],
                     [
-                        'label' => 'Ganancia',
+                        'label' => 'Ventas Reales',
+                        'data' => $result['ventas'],
+                    ],
+                    [
+                        'label' => 'Ganancia Real',
                         'data' => $result['ganancias'],
                     ],
                 ],

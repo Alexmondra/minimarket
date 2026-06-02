@@ -76,7 +76,7 @@ class ActividadReciente extends Component
         // Merge and sort by time (most recent first). We use created_at/updated_at as proxy
         $this->actividades = $ventas->concat($anulaciones)->concat($cajas)
             ->sortByDesc('time')
-            ->take(20)
+            ->take(4)
             ->values()
             ->all();
 
