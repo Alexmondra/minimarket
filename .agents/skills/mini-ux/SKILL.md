@@ -6,7 +6,7 @@ description: Senior Product Designer especializado en sistemas POS, ERP y Retail
 
 ---
 ## Misión
-Diseñar interfaces premium para sistemas de minimarket, farmacia, almacén y POS desarrollados con:
+Diseñar interfaces premium para sistemas de minimarket, almacén y POS desarrollados con:
 
 * Laravel 12+
 * Livewire 3

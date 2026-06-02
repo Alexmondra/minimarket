@@ -6,6 +6,14 @@
 @source '../../../../app/Livewire';
 @source '../../../../resources/views/livewire';
 
+/* --- GLOBAL APP BACKGROUND TONE (COOL SOFT SLATE) --- */
+.fi-layout, body.fi-body {
+    background-color: #f1f5f9 !important; /* Soft Slate 50 off-white for the entire system */
+}
+.dark .fi-layout, .dark body.fi-body {
+    background-color: #090b11 !important; /* Deep dark blue-gray background in Dark Mode */
+}
+
 /* --- GLASSMORPHIC SIDEBAR MAIN CONTAINER --- */
 .fi-sidebar.fi-main-sidebar {
     @apply bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl border-r border-slate-200/40 dark:border-slate-800/40 shadow-2xl ring-1 ring-slate-950/5 dark:ring-white/5 transition-all duration-300;
@@ -507,56 +515,283 @@
 
 /* ============ DASHBOARD STYLES ============ */
 
+/* --- PREMIUM DASHBOARD CANVAS BACKGROUND --- */
+.escritorio-dashboard {
+    position: relative;
+    z-index: 1;
+}
+
+.escritorio-dashboard::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: 
+        radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 40%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+        #f1f5f9;
+    transition: background 0.3s ease;
+}
+
+.dark .escritorio-dashboard::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: 
+        radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 40%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+        #090b11;
+}
+
 /* Glass card base */
 .glass-card {
-    @apply relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md shadow-sm transition-all duration-300;
+    @apply relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/40 backdrop-blur-md shadow-sm transition-all duration-300;
+    background: #ffffff !important;
+}
+.dark .glass-card {
+    background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.45), rgba(8, 12, 24, 0.65)) !important;
 }
 .glass-card:hover {
-    @apply shadow-lg -translate-y-0.5 border-slate-300/80 dark:border-slate-700/80;
+    @apply shadow-md -translate-y-0.5 border-slate-300/80 dark:border-slate-700/60 shadow-slate-100/50 dark:shadow-none;
 }
 
 /* KPI Card */
 .kpi-card {
-    @apply relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 p-4 sm:p-5;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem; /* rounded-2xl */
+    transition: all 0.3s ease;
+    padding: 1.25rem;
+    border: none !important;
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
 }
 .kpi-card::before {
     content: '';
-    @apply absolute top-0 left-0 right-0 h-1 rounded-t-2xl;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
 }
 .kpi-card:hover {
-    @apply shadow-lg -translate-y-1;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+    transform: translateY(-4px) scale(1.02) !important;
 }
+.kpi-card:hover::before {
+    opacity: 1;
+}
+
+/* Light Mode: Vibrant typography overrides */
+.kpi-card p,
+.kpi-card p span,
+.kpi-card .text-slate-400,
+.kpi-card .text-slate-500,
+.kpi-card .text-slate-900 {
+    color: rgba(255, 255, 255, 0.82) !important;
+}
+.kpi-card p:last-of-type,
+.kpi-card p:last-of-type span,
+.kpi-card p:last-of-type .text-slate-900 {
+    color: #ffffff !important;
+}
+.kpi-card .flex.h-9.w-9 {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.kpi-card span.inline-flex {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+}
+
+/* Dark Mode Overrides (Translucent clean backplate and regular dark colors) */
 .dark .kpi-card {
-    @apply border-slate-800;
+    border: 1px solid rgba(51, 65, 85, 0.6) !important;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.01), rgba(15, 23, 42, 0.45)) !important;
+    box-shadow: none !important;
+}
+.dark .kpi-card p {
+    color: #94a3b8 !important;
+}
+.dark .kpi-card p:last-of-type {
+    color: #ffffff !important;
+}
+.dark .kpi-card p:last-of-type span {
+    color: #64748b !important;
+}
+.dark .kpi-card .flex.h-9.w-9 {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* KPI color variants */
-.kpi-emerald { @apply border-emerald-200/80 dark:border-emerald-800/40; }
-.kpi-emerald::before { @apply bg-gradient-to-r from-emerald-400 to-teal-500; }
+/* KPI color variants - Premium Light Mode Vivid Gradients */
+.kpi-emerald {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+.dark .kpi-emerald {
+    border-color: rgba(16, 185, 129, 0.22) !important;
+}
+.dark .kpi-emerald .flex.h-9.w-9 {
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .kpi-emerald span.inline-flex {
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+}
+.kpi-emerald::before { @apply bg-gradient-to-r from-emerald-300 to-teal-400; }
 
-.kpi-teal { @apply border-teal-200/80 dark:border-teal-800/40; }
-.kpi-teal::before { @apply bg-gradient-to-r from-teal-400 to-cyan-500; }
+.kpi-teal {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+}
+.dark .kpi-teal {
+    border-color: rgba(20, 184, 166, 0.22) !important;
+}
+.dark .kpi-teal .flex.h-9.w-9 {
+    color: #2dd4bf !important;
+    background: rgba(20, 184, 166, 0.1) !important;
+    border-color: rgba(20, 184, 166, 0.15) !important;
+}
+.dark .kpi-teal span.inline-flex {
+    color: #2dd4bf !important;
+    background: rgba(20, 184, 166, 0.1) !important;
+}
+.kpi-teal::before { @apply bg-gradient-to-r from-teal-300 to-cyan-400; }
 
-.kpi-blue { @apply border-blue-200/80 dark:border-blue-800/40; }
-.kpi-blue::before { @apply bg-gradient-to-r from-blue-400 to-indigo-500; }
+.kpi-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+}
+.dark .kpi-blue {
+    border-color: rgba(59, 130, 246, 0.22) !important;
+}
+.dark .kpi-blue .flex.h-9.w-9 {
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.15) !important;
+}
+.dark .kpi-blue span.inline-flex {
+    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+.kpi-blue::before { @apply bg-gradient-to-r from-blue-300 to-indigo-400; }
 
-.kpi-indigo { @apply border-indigo-200/80 dark:border-indigo-800/40; }
-.kpi-indigo::before { @apply bg-gradient-to-r from-indigo-400 to-violet-500; }
+.kpi-indigo {
+    background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important;
+}
+.dark .kpi-indigo {
+    border-color: rgba(99, 102, 241, 0.22) !important;
+}
+.dark .kpi-indigo .flex.h-9.w-9 {
+    color: #818cf8 !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.15) !important;
+}
+.dark .kpi-indigo span.inline-flex {
+    color: #818cf8 !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+.kpi-indigo::before { @apply bg-gradient-to-r from-indigo-300 to-violet-400; }
 
-.kpi-amber { @apply border-amber-200/80 dark:border-amber-800/40; }
-.kpi-amber::before { @apply bg-gradient-to-r from-amber-400 to-orange-500; }
+.kpi-amber {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+.dark .kpi-amber {
+    border-color: rgba(245, 158, 11, 0.22) !important;
+}
+.dark .kpi-amber .flex.h-9.w-9 {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .kpi-amber span.inline-flex {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+}
+.kpi-amber::before { @apply bg-gradient-to-r from-amber-300 to-orange-500; }
 
-.kpi-orange { @apply border-orange-200/80 dark:border-orange-800/40; }
-.kpi-orange::before { @apply bg-gradient-to-r from-orange-400 to-red-500; }
+.kpi-orange {
+    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%) !important;
+}
+.dark .kpi-orange {
+    border-color: rgba(251, 146, 60, 0.22) !important;
+}
+.dark .kpi-orange .flex.h-9.w-9 {
+    color: #fdba74 !important;
+    background: rgba(251, 146, 60, 0.1) !important;
+    border-color: rgba(251, 146, 60, 0.15) !important;
+}
+.dark .kpi-orange span.inline-flex {
+    color: #fdba74 !important;
+    background: rgba(251, 146, 60, 0.1) !important;
+}
+.kpi-orange::before { @apply bg-gradient-to-r from-orange-300 to-red-400; }
 
-.kpi-violet { @apply border-violet-200/80 dark:border-violet-800/40; }
-.kpi-violet::before { @apply bg-gradient-to-r from-violet-400 to-purple-500; }
+.kpi-violet {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+}
+.dark .kpi-violet {
+    border-color: rgba(139, 92, 246, 0.22) !important;
+}
+.dark .kpi-violet .flex.h-9.w-9 {
+    color: #a78bfa !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-color: rgba(139, 92, 246, 0.15) !important;
+}
+.dark .kpi-violet span.inline-flex {
+    color: #a78bfa !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+.kpi-violet::before { @apply bg-gradient-to-r from-violet-300 to-purple-400; }
 
-.kpi-rose { @apply border-rose-200/80 dark:border-rose-800/40; }
-.kpi-rose::before { @apply bg-gradient-to-r from-rose-400 to-pink-500; }
+.kpi-rose {
+    background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
+}
+.dark .kpi-rose {
+    border-color: rgba(244, 63, 94, 0.22) !important;
+}
+.dark .kpi-rose .flex.h-9.w-9 {
+    color: #fb7185 !important;
+    background: rgba(244, 63, 94, 0.1) !important;
+    border-color: rgba(244, 63, 94, 0.15) !important;
+}
+.dark .kpi-rose span.inline-flex {
+    color: #fb7185 !important;
+    background: rgba(244, 63, 94, 0.1) !important;
+}
+.kpi-rose::before { @apply bg-gradient-to-r from-rose-300 to-pink-400; }
 
-.kpi-slate { @apply border-slate-200/80 dark:border-slate-700/40; }
-.kpi-slate::before { @apply bg-gradient-to-r from-slate-300 to-slate-500; }
+.kpi-slate {
+    background: linear-gradient(135deg, #64748b 0%, #334155 100%) !important;
+}
+.dark .kpi-slate {
+    border-color: rgba(148, 163, 184, 0.22) !important;
+}
+.dark .kpi-slate .flex.h-9.w-9 {
+    color: #cbd5e1 !important;
+    background: rgba(148, 163, 184, 0.1) !important;
+    border-color: rgba(148, 163, 184, 0.15) !important;
+}
+.dark .kpi-slate span.inline-flex {
+    color: #cbd5e1 !important;
+    background: rgba(148, 163, 184, 0.1) !important;
+}
+.kpi-slate::before { @apply bg-gradient-to-r from-slate-300 to-slate-400; }
 
 /* Skeleton loader */
 .skeleton {
@@ -566,7 +801,7 @@
     @apply rounded-lg;
 }
 .dark .skeleton {
-    background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
     background-size: 200% 100%;
 }
 @keyframes skeleton-shimmer {
@@ -576,13 +811,16 @@
 
 /* Activity timeline */
 .activity-line {
-    @apply relative pl-6 pb-6 border-l-2 border-slate-200 dark:border-slate-800;
+    @apply relative pl-6 pb-6 border-l border-slate-200 dark:border-slate-800/80;
 }
 .activity-line:last-child {
     @apply pb-0 border-l-0;
 }
 .activity-dot {
-    @apply absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900;
+    @apply absolute -left-[4.5px] top-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-slate-900 shadow-sm transition-transform duration-300;
+}
+.activity-line:hover .activity-dot {
+    @apply scale-150;
 }
 
 /* Alert card pulses */
@@ -590,8 +828,8 @@
     animation: alert-pulse 2s ease-in-out infinite;
 }
 @keyframes alert-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25); }
+    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
 /* Scroll snap for mobile KPI row */
@@ -612,4 +850,309 @@
         height: 200px !important;
     }
 }
+
+/* ==========================================================================
+   VIBRANT COLOR CARDS FOR DASHBOARD WIDGETS (LIGHT MODE ONLY)
+   ========================================================================== */
+
+.colorful-card {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: none !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+.colorful-card:hover {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-4px) scale(1.01) !important;
+}
+
+/* Light Mode Vivid Gradients */
+.card-emerald { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; }
+.card-indigo { background: linear-gradient(135deg, #6366f1 0%, #312e81 100%) !important; }
+.card-purple { background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%) !important; }
+.card-teal { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important; }
+.card-violet { background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%) !important; }
+.card-amber { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%) !important; }
+.card-blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
+.card-slate { background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important; }
+
+/* Typographic and color overrides for light mode inside colorful cards */
+.colorful-card h3,
+.colorful-card h3 span:not(.no-override),
+.colorful-card p:not(.no-override),
+.colorful-card p span:not(.no-override),
+.colorful-card td,
+.colorful-card th,
+.colorful-card label {
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.colorful-card h3,
+.colorful-card h3 strong,
+.colorful-card .font-bold,
+.colorful-card .font-extrabold,
+.colorful-card .font-black {
+    color: #ffffff !important;
+}
+
+.colorful-card .text-slate-400,
+.colorful-card .text-slate-500,
+.colorful-card .text-slate-600 {
+    color: rgba(255, 255, 255, 0.72) !important;
+}
+
+/* Slices, legends, lists and panels inside colorful cards */
+.colorful-card .bg-slate-100 {
+    background-color: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.colorful-card .bg-slate-50\/50 {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.colorful-card .hover\:bg-slate-100\/50:hover {
+    background-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Tab selector buttons */
+.colorful-card button.text-slate-500 {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+.colorful-card button.text-slate-500:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+
+/* Table styling */
+.colorful-card table {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+.colorful-card tr {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: transparent !important;
+}
+.colorful-card tr:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.colorful-card th {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: transparent !important;
+}
+
+/* Rank badges in tables */
+.colorful-card span.inline-flex.h-5.w-5 {
+    background-color: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Activity timeline */
+.colorful-card .activity-line {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.colorful-card .activity-dot {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Alert subcards inside Alertas Críticas */
+.colorful-card .space-y-2\.5 > div {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+.colorful-card .space-y-2\.5 > div:hover {
+    background-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Squircle and Icon containers */
+.colorful-card .bg-emerald-500,
+.colorful-card .bg-indigo-500,
+.colorful-card .bg-purple-500,
+.colorful-card .bg-teal-500,
+.colorful-card .bg-violet-500,
+.colorful-card .bg-amber-500,
+.colorful-card .bg-blue-500,
+.colorful-card .bg-rose-500 {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Empty states borders inside colorful card */
+.colorful-card .border-dashed {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Selected active button styles (white backplate, dark text) */
+.colorful-card button.bg-white {
+    background-color: #ffffff !important;
+}
+.colorful-card button.bg-white.text-slate-900 {
+    color: #1e293b !important;
+}
+.colorful-card button.bg-slate-900.text-white {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+}
+
+/* ==========================================================================
+   DARK MODE RESET (RESTORES PERFECT GLASSMORPHISM ORIGINAL STATE)
+   ========================================================================== */
+
+.dark .colorful-card {
+    background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.45), rgba(8, 12, 24, 0.65)) !important;
+    border: 1px solid rgba(51, 65, 85, 0.4) !important;
+    box-shadow: none !important;
+}
+
+.dark .colorful-card:hover {
+    box-shadow: none !important;
+    border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+/* Revert colors and styling inside dark mode */
+.dark .colorful-card h3,
+.dark .colorful-card h3 span,
+.dark .colorful-card p,
+.dark .colorful-card p span,
+.dark .colorful-card td,
+.dark .colorful-card th,
+.dark .colorful-card label,
+.dark .colorful-card span {
+    color: inherit !important;
+}
+
+.dark .colorful-card h3,
+.dark .colorful-card h3 strong,
+.dark .colorful-card .font-bold,
+.dark .colorful-card .font-extrabold,
+.dark .colorful-card .font-black {
+    color: inherit !important;
+}
+
+.dark .colorful-card .text-slate-400 {
+    color: #94a3b8 !important;
+}
+.dark .colorful-card .text-slate-500 {
+    color: #64748b !important;
+}
+
+.dark .colorful-card .bg-slate-100 {
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(51, 65, 85, 0.2) !important;
+}
+
+.dark .colorful-card .bg-slate-50\/50 {
+    background-color: rgba(15, 23, 42, 0.3) !important;
+    border-color: rgba(51, 65, 85, 0.2) !important;
+}
+
+.dark .colorful-card button.text-slate-500 {
+    color: #94a3b8 !important;
+}
+
+.dark .colorful-card table {
+    border-color: inherit !important;
+}
+.dark .colorful-card tr {
+    border-color: rgba(51, 65, 85, 0.4) !important;
+    background-color: rgba(15, 23, 42, 0.4) !important;
+}
+.dark .colorful-card tr:hover {
+    background-color: rgba(15, 23, 42, 0.6) !important;
+}
+.dark .colorful-card th {
+    border-color: rgba(51, 65, 85, 0.6) !important;
+    background-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+.dark .colorful-card .activity-line {
+    border-color: rgba(51, 65, 85, 0.8) !important;
+}
+.dark .colorful-card .activity-dot {
+    border-color: rgba(15, 23, 42, 1) !important;
+    background-color: inherit !important;
+    box-shadow: none !important;
+}
+
+.dark .colorful-card .space-y-2\.5 > div {
+    background-color: inherit !important;
+    border-color: inherit !important;
+}
+
+.dark .colorful-card .bg-emerald-500,
+.dark .colorful-card .bg-indigo-500,
+.dark .colorful-card .bg-purple-500,
+.dark .colorful-card .bg-teal-500,
+.dark .colorful-card .bg-violet-500,
+.dark .colorful-card .bg-amber-500,
+.dark .colorful-card .bg-blue-500,
+.dark .colorful-card .bg-rose-500 {
+    background-color: inherit !important;
+    color: inherit !important;
+    border: inherit !important;
+}
+
+.dark .colorful-card .border-dashed {
+    border-color: rgba(51, 65, 85, 0.3) !important;
+    background-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+.dark .colorful-card button.bg-white {
+    background-color: rgba(30, 41, 59, 1) !important;
+}
+.dark .colorful-card button.bg-white.text-slate-900 {
+    color: #ffffff !important;
+}
+.dark .colorful-card button.bg-slate-900.text-white {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Left borders as subtle indicator in Dark Mode */
+.dark .card-emerald { border-left: 4px solid rgba(16, 185, 129, 0.65) !important; }
+.dark .card-indigo { border-left: 4px solid rgba(99, 102, 241, 0.65) !important; }
+.dark .card-purple { border-left: 4px solid rgba(168, 85, 247, 0.65) !important; }
+.dark .card-teal { border-left: 4px solid rgba(20, 184, 166, 0.65) !important; }
+.dark .card-violet { border-left: 4px solid rgba(139, 92, 246, 0.65) !important; }
+.dark .card-amber { border-left: 4px solid rgba(245, 158, 11, 0.65) !important; }
+.dark .card-blue { border-left: 4px solid rgba(59, 130, 246, 0.65) !important; }
+.dark .card-slate { border-left: 4px solid rgba(100, 116, 139, 0.65) !important; }
+
+/* Sub-element overrides for alerts and indicators inside colorful cards (Light Mode) */
+.colorful-card .space-y-2\.5 span.shrink-0 {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.colorful-card .space-y-2\.5 svg {
+    color: #ffffff !important;
+}
+.colorful-card .space-y-2\.5 div.flex.h-8.w-8 {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}
+
+/* Sub-element overrides inside dark mode (resets) */
+.dark .colorful-card .space-y-2\.5 span.shrink-0 {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+}
+.dark .colorful-card .space-y-2\.5 svg {
+    color: inherit !important;
+}
+.dark .colorful-card .space-y-2\.5 div.flex.h-8.w-8 {
+    background-color: inherit !important;
+    border-color: inherit !important;
+    color: inherit !important;
+}
+
+
 

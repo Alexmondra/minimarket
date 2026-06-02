@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\SucursalContext;
 use BackedEnum;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -22,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 class MovimientoResource extends Resource
@@ -48,12 +50,18 @@ class MovimientoResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Detalle del Movimiento de Inventario')
+                Section::make('Resumen del movimiento')
+                    ->description('Lectura rapida para entender que entro, que salio y por que.')
+                    ->icon('heroicon-m-arrows-right-left')
+                    ->compact()
                     ->schema([
-                        Grid::make(3)
+                        Grid::make([
+                            'default' => 1,
+                            'md' => 3,
+                        ])
                             ->schema([
                                 TextEntry::make('tipo')
-                                    ->label('Tipo de Movimiento')
+                                    ->label('Direccion')
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
                                         'entrada' => 'success',
@@ -61,62 +69,63 @@ class MovimientoResource extends Resource
                                         default => 'gray',
                                     })
                                     ->icon(fn (string $state): string => match ($state) {
-                                        'entrada' => 'heroicon-m-arrow-trending-up',
-                                        'salida' => 'heroicon-m-arrow-trending-down',
+                                        'entrada' => 'heroicon-m-arrow-left-circle',
+                                        'salida' => 'heroicon-m-arrow-right-circle',
                                         default => 'heroicon-m-arrows-right-left',
                                     })
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
                                         'entrada' => 'Entrada',
                                         'salida' => 'Salida',
                                         default => ucfirst($state),
-                                    }),
-                                TextEntry::make('producto_nombre')
-                                    ->label('Producto')
-                                    ->weight('bold')
-                                    ->placeholder('N/A'),
-                                TextEntry::make('productoPresentacion.tipo_presentacion')
-                                    ->label('Presentación')
-                                    ->placeholder('N/A'),
+                                    })
+                                    ->size('lg'),
                                 TextEntry::make('cantidad')
-                                    ->label('Cantidad')
+                                    ->label('Cantidad movida')
+                                    ->badge()
                                     ->weight('bold')
                                     ->color(fn ($state, $record): string => $record->tipo === 'salida' ? 'danger' : 'success')
+                                    ->icon(fn ($state, $record): string => $record->tipo === 'salida' ? 'heroicon-m-arrow-up-right' : 'heroicon-m-arrow-down-left')
                                     ->formatStateUsing(fn ($state, $record) => ($record->tipo === 'salida' ? '-' : '+') . ' ' . abs($state) . ($record->productoPresentacion?->unidadMedida?->abreviatura ? ' ' . $record->productoPresentacion->unidadMedida->abreviatura : '')),
                                 TextEntry::make('motivo')
                                     ->label('Motivo')
                                     ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'compra' => 'success',
-                                        'venta' => 'info',
-                                        'ajuste' => 'warning',
-                                        'merma' => 'danger',
-                                        'anulacion' => 'gray',
-                                        default => 'gray',
-                                    })
-                                    ->icon(fn (string $state): string => match ($state) {
-                                        'compra' => 'heroicon-m-shopping-cart',
-                                        'venta' => 'heroicon-m-currency-dollar',
-                                        'ajuste' => 'heroicon-m-adjustments-horizontal',
-                                        'merma' => 'heroicon-m-trash',
-                                        'anulacion' => 'heroicon-m-arrow-path',
-                                        default => 'heroicon-m-clock',
-                                    })
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        'compra' => 'Compra',
-                                        'venta' => 'Venta',
-                                        'ajuste' => 'Ajuste',
-                                        'merma' => 'Merma',
-                                        'anulacion' => 'Anulación',
-                                        default => ucfirst($state),
-                                    }),
+                                    ->color(fn (?string $state): string => self::movementReasonColor($state))
+                                    ->icon(fn (?string $state): string => self::movementReasonIcon($state))
+                                    ->formatStateUsing(fn (?string $state): string => self::movementReasonLabel($state)),
+                            ]),
+                    ]),
+                Section::make('Producto y trazabilidad')
+                    ->icon('heroicon-m-cube')
+                    ->compact()
+                    ->schema([
+                        Grid::make([
+                            'default' => 1,
+                            'md' => 2,
+                            'xl' => 3,
+                        ])
+                            ->schema([
+                                TextEntry::make('producto_nombre')
+                                    ->label('Producto')
+                                    ->weight('bold')
+                                    ->icon('heroicon-m-cube')
+                                    ->iconColor('primary')
+                                    ->placeholder('N/A'),
+                                TextEntry::make('productoPresentacion.tipo_presentacion')
+                                    ->label('Presentación')
+                                    ->badge()
+                                    ->color('info')
+                                    ->placeholder('N/A'),
                                 TextEntry::make('referencia')
                                     ->label('Referencia')
                                     ->placeholder('Ninguna')
                                     ->weight('semibold')
-                                    ->color('primary'),
+                                    ->color('primary')
+                                    ->badge(),
                                 TextEntry::make('sucursal.nombre_sucursal')
                                     ->label('Sucursal')
                                     ->icon('heroicon-m-building-storefront')
+                                    ->badge()
+                                    ->color('info')
                                     ->placeholder('N/A'),
                                 TextEntry::make('user.name')
                                     ->label('Usuario')
@@ -129,6 +138,7 @@ class MovimientoResource extends Resource
                                 TextEntry::make('created_at')
                                     ->label('Fecha y Hora')
                                     ->dateTime('d/m/Y H:i:s')
+                                    ->since()
                                     ->placeholder('N/A'),
                             ]),
                     ])
@@ -138,30 +148,20 @@ class MovimientoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->searchPlaceholder('Buscar producto, referencia, motivo o sucursal...')
             ->columns([
-                TextColumn::make('created_at')
-                    ->label('Fecha')
-                    ->dateTime('d/m/Y H:i:s')
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('sucursal.nombre_sucursal')
-                    ->label('Sucursal')
-                    ->icon('heroicon-m-building-storefront')
-                    ->sortable()
-                    ->toggleable(),
-
                 TextColumn::make('tipo')
-                    ->label('Tipo')
+                    ->label('Mov.')
                     ->badge()
+                    ->grow(false)
                     ->color(fn (string $state): string => match ($state) {
                         'entrada' => 'success',
                         'salida' => 'danger',
                         default => 'gray',
                     })
                     ->icon(fn (string $state): string => match ($state) {
-                        'entrada' => 'heroicon-m-arrow-trending-up',
-                        'salida' => 'heroicon-m-arrow-trending-down',
+                        'entrada' => 'heroicon-m-arrow-down-left',
+                        'salida' => 'heroicon-m-arrow-up-right',
                         default => 'heroicon-m-arrows-right-left',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -169,14 +169,43 @@ class MovimientoResource extends Resource
                         'salida' => 'Salida',
                         default => ucfirst($state),
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
 
                 TextColumn::make('producto_nombre')
                     ->label('Producto')
                     ->weight('bold')
-                    ->searchable()
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $q) use ($search) {
+                            $q->where('producto_nombre', 'like', "%{$search}%")
+                                ->orWhere('referencia', 'like', "%{$search}%")
+                                ->orWhere('motivo', 'like', "%{$search}%")
+                                ->orWhereHas('sucursal', fn (Builder $sub) => $sub->where('nombre_sucursal', 'like', "%{$search}%"));
+                        });
+                    })
                     ->sortable()
-                    ->description(fn ($record) => $record->productoPresentacion?->tipo_presentacion . ($record->productoPresentacion?->unidadMedida?->abreviatura ? " ({$record->productoPresentacion->unidadMedida->abreviatura})" : "")),
+                    ->description(function ($record): string {
+                        $partes = [];
+
+                        if (filled($record->tipo)) {
+                            $partes[] = $record->tipo === 'entrada' ? 'ENTRADA' : 'SALIDA';
+                        }
+
+                        if (filled($record->motivo)) {
+                            $partes[] = strtoupper(self::movementReasonLabel($record->motivo));
+                        }
+
+                        if (filled($record->productoPresentacion?->tipo_presentacion)) {
+                            $partes[] = $record->productoPresentacion->tipo_presentacion . ($record->productoPresentacion?->unidadMedida?->abreviatura ? " ({$record->productoPresentacion->unidadMedida->abreviatura})" : "");
+                        }
+
+                        if (filled($record->sucursal?->nombre_sucursal)) {
+                            $partes[] = $record->sucursal->nombre_sucursal;
+                        }
+
+                        return implode(' • ', $partes);
+                    })
+                    ->wrap(),
 
                 TextColumn::make('cantidad')
                     ->label('Cantidad')
@@ -184,58 +213,26 @@ class MovimientoResource extends Resource
                     ->alignRight()
                     ->weight('bold')
                     ->color(fn (int $state, $record): string => $record->tipo === 'salida' ? 'danger' : 'success')
+                    ->icon(fn (int $state, $record): string => $record->tipo === 'salida' ? 'heroicon-m-arrow-up-right' : 'heroicon-m-arrow-down-left')
                     ->formatStateUsing(fn (int $state, $record): string => ($record->tipo === 'salida' ? '-' : '+') . ' ' . abs($state))
+                    ->description(fn ($state, $record): string => 'Stock final: ' . number_format((float) ($record->stock_final ?? 0)))
                     ->sortable(),
 
                 TextColumn::make('motivo')
                     ->label('Motivo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'compra' => 'success',
-                        'venta' => 'info',
-                        'ajuste' => 'warning',
-                        'merma' => 'danger',
-                        'anulacion' => 'gray',
-                        default => 'gray',
-                    })
-                    ->icon(fn (string $state): string => match ($state) {
-                        'compra' => 'heroicon-m-shopping-cart',
-                        'venta' => 'heroicon-m-currency-dollar',
-                        'ajuste' => 'heroicon-m-adjustments-horizontal',
-                        'merma' => 'heroicon-m-trash',
-                        'anulacion' => 'heroicon-m-arrow-path',
-                        default => 'heroicon-m-clock',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'compra' => 'Compra',
-                        'venta' => 'Venta',
-                        'ajuste' => 'Ajuste',
-                        'merma' => 'Merma',
-                        'anulacion' => 'Anulación',
-                        default => ucfirst($state),
-                    })
-                    ->sortable(),
-
-                TextColumn::make('referencia')
-                    ->label('Referencia')
-                    ->weight('medium')
-                    ->color('primary')
-                    ->searchable()
-                    ->toggleable(),
-
-                TextColumn::make('user.name')
-                    ->label('Usuario')
-                    ->icon('heroicon-m-user')
+                    ->color(fn (?string $state): string => self::movementReasonColor($state))
+                    ->icon(fn (?string $state): string => self::movementReasonIcon($state))
+                    ->formatStateUsing(fn (?string $state): string => self::movementReasonLabel($state))
                     ->sortable()
-                    ->toggleable(),
+                    ->visibleFrom('lg'),
 
-                TextColumn::make('stock_final')
-                    ->label('Stock Final')
-                    ->numeric()
-                    ->alignRight()
-                    ->weight('bold')
+                TextColumn::make('created_at')
+                    ->label('Fecha')
+                    ->dateTime('d/m/Y H:i')
+                    ->description(fn ($record): string => $record->created_at?->diffForHumans() ?? '')
                     ->sortable()
-                    ->toggleable(),
+                    ->visibleFrom('xl'),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
@@ -243,16 +240,24 @@ class MovimientoResource extends Resource
                     ->label('Ver')
                     ->icon('heroicon-m-eye')
                     ->button()
-                    ->color('info'),
+                    ->size('sm')
+                    ->color('info')
+                    ->modalHeading(fn (MovimientoInventario $record): string => $record->producto_nombre ?: 'Detalle de movimiento')
+                    ->modalDescription(fn (MovimientoInventario $record): string => collect([
+                        $record->tipo === 'entrada' ? 'Ingreso de inventario' : 'Salida de inventario',
+                        self::movementReasonLabel($record->motivo),
+                        $record->sucursal?->nombre_sucursal,
+                    ])->filter()->implode(' • '))
+                    ->modalWidth('4xl'),
             ])
             ->recordAction(ViewAction::class)
             ->filters([
                 Filter::make('created_at')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('desde')
+                        DatePicker::make('desde')
                             ->label('Desde')
                             ->native(false),
-                        \Filament\Forms\Components\DatePicker::make('hasta')
+                        DatePicker::make('hasta')
                             ->label('Hasta')
                             ->native(false),
                     ])
@@ -310,8 +315,60 @@ class MovimientoResource extends Resource
                 SelectFilter::make('sucursal_id')
                     ->label('Sucursal')
                     ->options(fn (): array => Sucursal::query()->pluck('nombre_sucursal', 'id')->toArray()),
-            ], layout: FiltersLayout::AboveContentCollapsible)
+            ], layout: FiltersLayout::Dropdown)
             ->filtersFormColumns(4);
+    }
+
+    protected static function movementReasonColor(?string $state): string
+    {
+        $value = Str::lower((string) $state);
+
+        return match (true) {
+            str_contains($value, 'vencido') => 'danger',
+            str_contains($value, 'roto'), str_contains($value, 'dañado'), str_contains($value, 'danado') => 'warning',
+            str_contains($value, 'robo'), str_contains($value, 'perdida') => 'danger',
+            str_contains($value, 'merma') => 'danger',
+            $value === 'compra' => 'success',
+            $value === 'venta' => 'info',
+            $value === 'ajuste' => 'warning',
+            $value === 'anulacion' => 'gray',
+            default => 'gray',
+        };
+    }
+
+    protected static function movementReasonIcon(?string $state): string
+    {
+        $value = Str::lower((string) $state);
+
+        return match (true) {
+            str_contains($value, 'vencido') => 'heroicon-m-no-symbol',
+            str_contains($value, 'roto'), str_contains($value, 'dañado'), str_contains($value, 'danado') => 'heroicon-m-wrench-screwdriver',
+            str_contains($value, 'robo'), str_contains($value, 'perdida') => 'heroicon-m-shield-exclamation',
+            str_contains($value, 'merma') => 'heroicon-m-trash',
+            $value === 'compra' => 'heroicon-m-shopping-cart',
+            $value === 'venta' => 'heroicon-m-currency-dollar',
+            $value === 'ajuste' => 'heroicon-m-adjustments-horizontal',
+            $value === 'anulacion' => 'heroicon-m-arrow-path',
+            default => 'heroicon-m-clock',
+        };
+    }
+
+    protected static function movementReasonLabel(?string $state): string
+    {
+        $value = Str::lower((string) $state);
+
+        return match (true) {
+            str_contains($value, 'vencido') => 'Vencido',
+            str_contains($value, 'roto'), str_contains($value, 'dañado'), str_contains($value, 'danado') => 'Dañado',
+            str_contains($value, 'robo'), str_contains($value, 'perdida') => 'Pérdida',
+            $value === 'compra' => 'Compra',
+            $value === 'venta' => 'Venta',
+            $value === 'ajuste' => 'Ajuste',
+            $value === 'anulacion' => 'Anulación',
+            str_contains($value, 'merma') => 'Merma',
+            blank($state) => 'Sin motivo',
+            default => Str::headline((string) $state),
+        };
     }
 
     public static function getPages(): array

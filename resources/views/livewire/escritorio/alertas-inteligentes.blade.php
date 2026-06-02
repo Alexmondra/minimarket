@@ -1,36 +1,38 @@
-<div class="glass-card p-5">
-    <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-        <svg class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
-        Alertas Inteligentes
+<div class="glass-card colorful-card card-amber p-6">
+    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/15">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
+        </span>
+        Alertas Críticas
     </h3>
 
     @if(empty($alertas))
-        <div class="flex flex-col items-center justify-center py-8 text-center">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 mb-3">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+        <div class="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-slate-200/50 dark:border-slate-800/30 rounded-2xl p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/15 mb-3">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
             </div>
-            <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Todo en orden</p>
-            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">No hay alertas pendientes.</p>
+            <p class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Todo en orden</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">No hay alertas de stock ni vencimientos pendientes.</p>
         </div>
     @else
-        <div class="space-y-3">
+        <div class="space-y-2.5">
             @foreach($alertas as $alerta)
                 @php
                     $colorMap = [
-                        'rose' => 'border-rose-200/80 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-950/20',
-                        'amber' => 'border-amber-200/80 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20',
-                        'orange' => 'border-orange-200/80 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-950/20',
-                        'emerald' => 'border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20',
+                        'rose' => 'border-rose-200/40 dark:border-rose-950/40 bg-rose-500/4 dark:bg-rose-500/3',
+                        'amber' => 'border-amber-200/40 dark:border-amber-950/40 bg-amber-500/4 dark:bg-amber-500/3',
+                        'orange' => 'border-orange-200/40 dark:border-orange-950/40 bg-orange-500/4 dark:bg-orange-500/3',
+                        'emerald' => 'border-emerald-200/40 dark:border-emerald-950/40 bg-emerald-500/4 dark:bg-emerald-500/3',
                     ];
                     $iconColorMap = [
-                        'rose' => 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
-                        'amber' => 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-                        'orange' => 'text-orange-600 dark:text-orange-400 bg-orange-500/10',
-                        'emerald' => 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+                        'rose' => 'text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/15',
+                        'amber' => 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/15',
+                        'orange' => 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/15',
+                        'emerald' => 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/15',
                     ];
                 @endphp
-                <div class="flex items-start gap-3 p-3.5 rounded-xl border {{ $colorMap[$alerta['color']] }} transition-all duration-300 hover:shadow-sm">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $iconColorMap[$alerta['color']] }}">
+                <div class="flex items-start gap-3 p-3.5 rounded-xl border {{ $colorMap[$alerta['color']] }} hover:shadow-xs transition-all duration-300">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border {{ $iconColorMap[$alerta['color']] }}">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             @if($alerta['icon'] === 'heroicon-o-x-circle')
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
@@ -49,7 +51,7 @@
                         <div class="flex items-center justify-between gap-2">
                             <p class="text-xs font-black text-slate-800 dark:text-slate-200">{{ $alerta['title'] }}</p>
                             <span @class([
-                                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black',
+                                'shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-black font-mono',
                                 'bg-rose-500/10 text-rose-600 dark:text-rose-400' => $alerta['color'] === 'rose',
                                 'bg-amber-500/10 text-amber-600 dark:text-amber-400' => $alerta['color'] === 'amber',
                                 'bg-orange-500/10 text-orange-600 dark:text-orange-400' => $alerta['color'] === 'orange',
@@ -58,7 +60,7 @@
                                 {{ $alerta['count'] }}
                             </span>
                         </div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ $alerta['desc'] }}</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{{ $alerta['desc'] }}</p>
                     </div>
                 </div>
             @endforeach
@@ -67,3 +69,4 @@
 
     <div wire:poll.120s="loadAlertas"></div>
 </div>
+

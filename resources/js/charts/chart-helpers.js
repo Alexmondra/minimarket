@@ -9,8 +9,9 @@ export function getTextColor() {
 }
 
 export function getGridColor() {
-    return isDarkMode() ? 'rgba(51,65,85,0.3)' : 'rgba(226,232,240,0.7)';
+    return isDarkMode() ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.04)';
 }
+
 
 export function getFontFamily() {
     return getComputedStyle(document.documentElement).getPropertyValue('--font-family') || 'Inter, sans-serif';

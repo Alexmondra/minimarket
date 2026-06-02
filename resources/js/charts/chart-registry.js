@@ -54,6 +54,9 @@ const donutCenterPlugin = {
         if (!dataset) return;
         const total = dataset.data.reduce((a, b) => a + b, 0);
 
+        const isColorful = ctx.canvas && ctx.canvas.closest('.colorful-card');
+        const isChartDark = isDarkMode() || isColorful;
+
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -62,12 +65,12 @@ const donutCenterPlugin = {
 
         // Label
         ctx.font = `600 10px ${getFontFamily()}`;
-        ctx.fillStyle = getTextColor();
+        ctx.fillStyle = isColorful ? 'rgba(255, 255, 255, 0.8)' : getTextColor();
         ctx.fillText('Total', centerX, centerY - 8);
 
         // Value
         ctx.font = `800 14px ${getFontFamily()}`;
-        ctx.fillStyle = isDarkMode() ? '#f1f5f9' : '#0f172a';
+        ctx.fillStyle = isChartDark ? '#f1f5f9' : '#0f172a';
         ctx.fillText('S/ ' + Number(total).toLocaleString('es-PE', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -83,9 +86,10 @@ const donutCenterPlugin = {
 
 function enrichChartConfig(id, config, ctx) {
     if (!ctx) return config;
-    const dark = isDarkMode();
-    const txtColor = getTextColor();
-    const gridColor = getGridColor();
+    const isColorful = ctx.canvas && ctx.canvas.closest('.colorful-card');
+    const dark = isDarkMode() || isColorful;
+    const txtColor = isColorful ? 'rgba(255, 255, 255, 0.85)' : (isDarkMode() ? '#94a3b8' : '#64748b');
+    const gridColor = isColorful ? 'rgba(255, 255, 255, 0.12)' : (isDarkMode() ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.04)');
     const fontFam = getFontFamily();
     const allValues = collectAllValues(config);
     const isCurrency = !id.includes('top_productos');
@@ -176,7 +180,7 @@ function enrichChartConfig(id, config, ctx) {
 
         if (config.data?.datasets?.[0]) {
             const ds = config.data.datasets[0];
-            ds.borderColor = '#10b981';
+            ds.borderColor = isColorful ? '#ffffff' : '#10b981';
             ds.borderWidth = 3;
             ds.tension = 0.45;
             ds.fill = true;
@@ -184,17 +188,23 @@ function enrichChartConfig(id, config, ctx) {
             ds.pointHitRadius = 20;
             ds.pointHoverRadius = 7;
             ds.pointHoverBorderWidth = 3;
-            ds.pointHoverBorderColor = '#fff';
-            ds.pointHoverBackgroundColor = '#10b981';
-            ds.pointBackgroundColor = '#10b981';
-            ds.pointBorderColor = '#fff';
+            ds.pointHoverBorderColor = isColorful ? '#047857' : '#fff';
+            ds.pointHoverBackgroundColor = isColorful ? '#ffffff' : '#10b981';
+            ds.pointBackgroundColor = isColorful ? '#ffffff' : '#10b981';
+            ds.pointBorderColor = isColorful ? '#047857' : '#fff';
             ds.pointBorderWidth = 2;
             ds.spanGaps = false; // break line for future days (null)
 
             const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-            grad.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
-            grad.addColorStop(0.5, 'rgba(16, 185, 129, 0.08)');
-            grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            if (isColorful) {
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.08)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            } else {
+                grad.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+                grad.addColorStop(0.5, 'rgba(16, 185, 129, 0.08)');
+                grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            }
             ds.backgroundColor = grad;
         }
 
@@ -227,12 +237,19 @@ function enrichChartConfig(id, config, ctx) {
             ds.borderSkipped = false;
 
             const grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-            grad.addColorStop(0, 'rgba(99, 102, 241, 0.92)');
-            grad.addColorStop(1, 'rgba(99, 102, 241, 0.18)');
-            ds.backgroundColor = grad;
-
-            ds.hoverBackgroundColor = 'rgba(99, 102, 241, 1)';
-            ds.hoverBorderColor = 'rgba(255,255,255,0.3)';
+            if (isColorful) {
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.92)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0.25)');
+                ds.backgroundColor = grad;
+                ds.hoverBackgroundColor = 'rgba(255, 255, 255, 1)';
+                ds.hoverBorderColor = 'rgba(255, 255, 255, 0.5)';
+            } else {
+                grad.addColorStop(0, 'rgba(99, 102, 241, 0.92)');
+                grad.addColorStop(1, 'rgba(99, 102, 241, 0.18)');
+                ds.backgroundColor = grad;
+                ds.hoverBackgroundColor = 'rgba(99, 102, 241, 1)';
+                ds.hoverBorderColor = 'rgba(255,255,255,0.3)';
+            }
             ds.hoverBorderWidth = 2;
         }
 
@@ -261,10 +278,15 @@ function enrichChartConfig(id, config, ctx) {
             const ds = config.data.datasets[0];
             ds.spacing = 6;
             ds.borderRadius = 8;
-            ds.borderWidth = dark ? 2 : 1.5;
-            ds.borderColor = dark ? '#0f172a' : '#fff';
+            ds.borderWidth = isColorful ? 2 : (dark ? 2 : 1.5);
+            ds.borderColor = isColorful ? '#6d28d9' : (dark ? '#0f172a' : '#fff');
             ds.hoverBorderWidth = 3;
-            ds.hoverBorderColor = dark ? '#1e293b' : '#f8fafc';
+            ds.hoverBorderColor = isColorful ? '#5b21b6' : (dark ? '#1e293b' : '#f8fafc');
+
+            if (isColorful && Array.isArray(ds.backgroundColor)) {
+                const pastelColors = ['#ffffff', '#f472b6', '#a78bfa', '#cbd5e1', '#fbcfe8'];
+                ds.backgroundColor = ds.backgroundColor.map((col, idx) => pastelColors[idx % pastelColors.length]);
+            }
         }
 
         config.options.plugins.tooltip.callbacks = {
@@ -302,7 +324,7 @@ function enrichChartConfig(id, config, ctx) {
             // [0] Inversión — Blue, dashed, subtle area
             if (config.data.datasets[0]) {
                 const d = config.data.datasets[0];
-                d.borderColor = '#3b82f6';
+                d.borderColor = isColorful ? '#ffffff' : '#3b82f6';
                 d.borderWidth = 2.5;
                 d.borderDash = [6, 3];
                 d.tension = 0.4;
@@ -311,14 +333,14 @@ function enrichChartConfig(id, config, ctx) {
                 d.pointHitRadius = 15;
                 d.pointHoverRadius = 5;
                 d.pointHoverBorderWidth = 2;
-                d.pointHoverBorderColor = '#fff';
-                d.pointHoverBackgroundColor = '#3b82f6';
-                d.pointBackgroundColor = '#3b82f6';
-                d.pointBorderColor = '#fff';
+                d.pointHoverBorderColor = isColorful ? '#0d9488' : '#fff';
+                d.pointHoverBackgroundColor = isColorful ? '#ffffff' : '#3b82f6';
+                d.pointBackgroundColor = isColorful ? '#ffffff' : '#3b82f6';
+                d.pointBorderColor = isColorful ? '#0d9488' : '#fff';
                 d.pointBorderWidth = 1.5;
 
                 const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-                g.addColorStop(0, 'rgba(59, 130, 246, 0.10)');
+                g.addColorStop(0, isColorful ? 'rgba(255, 255, 255, 0.15)' : 'rgba(59, 130, 246, 0.10)');
                 g.addColorStop(1, 'rgba(59, 130, 246, 0)');
                 d.backgroundColor = g;
             }
@@ -326,7 +348,7 @@ function enrichChartConfig(id, config, ctx) {
             // [1] Ventas — Indigo, solid, prominent
             if (config.data.datasets[1]) {
                 const d = config.data.datasets[1];
-                d.borderColor = '#6366f1';
+                d.borderColor = isColorful ? '#e0f2fe' : '#6366f1';
                 d.borderWidth = 2.5;
                 d.tension = 0.4;
                 d.fill = true;
@@ -334,14 +356,14 @@ function enrichChartConfig(id, config, ctx) {
                 d.pointHitRadius = 15;
                 d.pointHoverRadius = 6;
                 d.pointHoverBorderWidth = 2.5;
-                d.pointHoverBorderColor = '#fff';
-                d.pointHoverBackgroundColor = '#6366f1';
-                d.pointBackgroundColor = '#6366f1';
-                d.pointBorderColor = '#fff';
+                d.pointHoverBorderColor = isColorful ? '#0d9488' : '#fff';
+                d.pointHoverBackgroundColor = isColorful ? '#e0f2fe' : '#6366f1';
+                d.pointBackgroundColor = isColorful ? '#e0f2fe' : '#6366f1';
+                d.pointBorderColor = isColorful ? '#0d9488' : '#fff';
                 d.pointBorderWidth = 2;
 
                 const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-                g.addColorStop(0, 'rgba(99, 102, 241, 0.16)');
+                g.addColorStop(0, isColorful ? 'rgba(224, 242, 254, 0.20)' : 'rgba(99, 102, 241, 0.16)');
                 g.addColorStop(1, 'rgba(99, 102, 241, 0)');
                 d.backgroundColor = g;
             }
@@ -349,7 +371,7 @@ function enrichChartConfig(id, config, ctx) {
             // [2] Ganancia Real — Teal, thickest, most prominent
             if (config.data.datasets[2]) {
                 const d = config.data.datasets[2];
-                d.borderColor = '#14b8a6';
+                d.borderColor = isColorful ? '#38bdf8' : '#14b8a6';
                 d.borderWidth = 3.5;
                 d.tension = 0.4;
                 d.fill = true;
@@ -357,14 +379,14 @@ function enrichChartConfig(id, config, ctx) {
                 d.pointHitRadius = 20;
                 d.pointHoverRadius = 7;
                 d.pointHoverBorderWidth = 3;
-                d.pointHoverBorderColor = '#fff';
-                d.pointHoverBackgroundColor = '#14b8a6';
-                d.pointBackgroundColor = '#14b8a6';
-                d.pointBorderColor = '#fff';
+                d.pointHoverBorderColor = isColorful ? '#0d9488' : '#fff';
+                d.pointHoverBackgroundColor = isColorful ? '#38bdf8' : '#14b8a6';
+                d.pointBackgroundColor = isColorful ? '#38bdf8' : '#14b8a6';
+                d.pointBorderColor = isColorful ? '#0d9488' : '#fff';
                 d.pointBorderWidth = 2.5;
 
                 const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight || 250);
-                g.addColorStop(0, 'rgba(20, 184, 166, 0.26)');
+                g.addColorStop(0, isColorful ? 'rgba(56, 189, 248, 0.28)' : 'rgba(20, 184, 166, 0.26)');
                 g.addColorStop(1, 'rgba(20, 184, 166, 0)');
                 d.backgroundColor = g;
             }
@@ -408,13 +430,20 @@ function enrichChartConfig(id, config, ctx) {
             ds.borderSkipped = false;
 
             const grad = ctx.createLinearGradient(0, 0, ctx.canvas.clientWidth || 350, 0);
-            grad.addColorStop(0, 'rgba(139, 92, 246, 0.92)');
-            grad.addColorStop(0.5, 'rgba(168, 85, 247, 0.7)');
-            grad.addColorStop(1, 'rgba(236, 72, 153, 0.45)');
-            ds.backgroundColor = grad;
-
-            ds.hoverBackgroundColor = 'rgba(139, 92, 246, 1)';
-            ds.hoverBorderColor = 'rgba(255,255,255,0.25)';
+            if (isColorful) {
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0.35)');
+                ds.backgroundColor = grad;
+                ds.hoverBackgroundColor = 'rgba(255, 255, 255, 1)';
+                ds.hoverBorderColor = 'rgba(255, 255, 255, 0.5)';
+            } else {
+                grad.addColorStop(0, 'rgba(139, 92, 246, 0.92)');
+                grad.addColorStop(0.5, 'rgba(168, 85, 247, 0.7)');
+                grad.addColorStop(1, 'rgba(236, 72, 153, 0.45)');
+                ds.backgroundColor = grad;
+                ds.hoverBackgroundColor = 'rgba(139, 92, 246, 1)';
+                ds.hoverBorderColor = 'rgba(255,255,255,0.25)';
+            }
             ds.hoverBorderWidth = 1.5;
         }
 
@@ -453,13 +482,17 @@ export function destroyAll() {
 
 export function updateChartThemes() {
     const dark = isDarkMode();
-    const txtColor = getTextColor();
-    const gridColor = getGridColor();
     const fontFam = getFontFamily();
 
     Object.keys(chartInstances).forEach(id => {
         const chart = chartInstances[id];
         if (!chart) return;
+
+        const isColorful = chart.canvas && chart.canvas.closest('.colorful-card');
+        const isChartDark = dark || isColorful;
+
+        const txtColor = isColorful ? 'rgba(255, 255, 255, 0.85)' : (dark ? '#94a3b8' : '#64748b');
+        const gridColor = isColorful ? 'rgba(255, 255, 255, 0.12)' : (dark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.04)');
 
         if (chart.options.scales) {
             Object.keys(chart.options.scales).forEach(scaleId => {
@@ -481,20 +514,20 @@ export function updateChartThemes() {
                 };
             }
             if (chart.options.plugins.tooltip) {
-                chart.options.plugins.tooltip.backgroundColor = dark
+                chart.options.plugins.tooltip.backgroundColor = isChartDark
                     ? 'rgba(15, 23, 42, 0.96)'
                     : 'rgba(255, 255, 255, 0.96)';
-                chart.options.plugins.tooltip.titleColor = dark ? '#f1f5f9' : '#0f172a';
-                chart.options.plugins.tooltip.bodyColor = dark ? '#cbd5e1' : '#475569';
-                chart.options.plugins.tooltip.borderColor = dark
+                chart.options.plugins.tooltip.titleColor = isChartDark ? '#f1f5f9' : '#0f172a';
+                chart.options.plugins.tooltip.bodyColor = isChartDark ? '#cbd5e1' : '#475569';
+                chart.options.plugins.tooltip.borderColor = isChartDark
                     ? 'rgba(51, 65, 85, 0.5)'
                     : 'rgba(226, 232, 240, 0.8)';
             }
         }
 
         if (id.includes('metodos_pago') && chart.data.datasets?.[0]) {
-            chart.data.datasets[0].borderColor = dark ? '#0f172a' : '#fff';
-            chart.data.datasets[0].borderWidth = dark ? 2 : 1.5;
+            chart.data.datasets[0].borderColor = isColorful ? '#6d28d9' : (dark ? '#0f172a' : '#fff');
+            chart.data.datasets[0].borderWidth = isColorful ? 2 : (dark ? 2 : 1.5);
         }
 
         chart.update();

@@ -2,6 +2,8 @@
     {{-- Load Chart.js + chart registry for dashboard widgets --}}
     @vite(['resources/js/app.js'])
 
+
+
     {{-- Row 1: KPI Cards --}}
     <livewire:escritorio.kpi-cards lazy />
 
@@ -19,7 +21,7 @@
     </div>
 
     {{-- Row 4: Alerts + Activity --}}
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 mt-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <livewire:escritorio.alertas-inteligentes lazy />
         <livewire:escritorio.actividad-reciente lazy />
     </div>
@@ -29,3 +31,4 @@
         <livewire:escritorio.top-productos lazy />
     </div>
 </x-filament-panels::page>
+

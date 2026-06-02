@@ -8,6 +8,7 @@ use App\Support\SucursalContext;
 use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -20,6 +21,7 @@ class ListLotes extends ListRecords
     public function table(Table $table): Table
     {
         return $table
+            ->searchPlaceholder('Buscar lote, producto o sucursal...')
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')
@@ -32,26 +34,34 @@ class ListLotes extends ListRecords
                     ->weight('bold')
                     ->copyable()
                     ->icon('heroicon-m-clipboard-document')
-                    ->description(fn (Lote $record): ?string => $record->ubicacion ? "Ubicación: {$record->ubicacion}" : null),
-                TextColumn::make('sucursal.nombre_sucursal')
-                    ->label('Sucursal')
-                    ->icon('heroicon-m-building-storefront')
-                    ->sortable(),
+                    ->description(fn (Lote $record): string => collect([
+                        $record->sucursal?->nombre_sucursal,
+                        $record->ubicacion ? "Ubic: {$record->ubicacion}" : null,
+                    ])->filter()->implode(' • '))
+                    ->wrap(),
                 TextColumn::make('producto_nombre')
-                    ->label('Producto / Presentaciones')
+                    ->label('Producto')
                     ->searchable()
                     ->sortable()
                     ->weight('medium')
-                    ->description(fn (Lote $record): string => 
-                        $record->lotePresentaciones->map(fn ($lp) => 
-                            ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . ": " . $lp->stock . " und"
-                        )->join(' | ')
-                    ),
+                    ->description(fn (Lote $record): string =>
+                        $record->lotePresentaciones
+                            ->map(fn ($lp) => ($lp->productoPresentacion?->tipo_presentacion ?: 'Presentación') . ': ' . $lp->stock . ' und')
+                            ->take(3)
+                            ->join(' • ')
+                    )
+                    ->wrap(),
                 TextColumn::make('stock_total')
-                    ->label('Stock total')
+                    ->label('Stock')
                     ->numeric()
                     ->alignRight()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->color(fn (Lote $record): string => match (self::lotVisualState($record)) {
+                        'stock_bajo' => 'warning',
+                        'sin_stock' => 'gray',
+                        default => 'success',
+                    })
+                    ->description(fn (Lote $record): string => 'S/ ' . number_format((float) ($record->precio_compra ?? 0), 2)),
                 TextColumn::make('fecha_vencimiento')
                     ->label('Vencimiento')
                     ->date('d/m/Y')
@@ -69,28 +79,12 @@ class ListLotes extends ListRecords
                                 ? 'danger'
                                 : (now()->startOfDay()->diffInDays($record->fecha_vencimiento->startOfDay(), false) <= 30 ? 'warning' : 'gray'))
                             : 'gray'
-                    ),
-                TextColumn::make('precio_compra')
-                    ->label('Precio Compra')
-                    ->money('PEN')
-                    ->sortable()
-                    ->alignRight(),
+                    )
+                    ->visibleFrom('md'),
                 TextColumn::make('estado_lote')
                     ->label('Estado')
                     ->badge()
-                    ->state(fn (Lote $record): string => 
-                        $record->stock_total <= 0 
-                            ? 'sin_stock' 
-                            : ($record->estado_lote === 'por_confirmar' 
-                                ? 'por_confirmar' 
-                                : ($record->fecha_vencimiento && $record->fecha_vencimiento->isPast()
-                                    ? 'vencido' 
-                                    : ($record->lotePresentaciones->contains(fn ($lp) => $lp->stock > 0 && $lp->productoSucursal && $lp->stock <= $lp->productoSucursal->stock_minimo)
-                                        ? 'stock_bajo'
-                                        : ($record->fecha_vencimiento && now()->startOfDay()->diffInDays($record->fecha_vencimiento->startOfDay(), false) <= 30 
-                                            ? 'por_vencer' 
-                                            : 'activo'))))
-                    )
+                    ->state(fn (Lote $record): string => self::lotVisualState($record))
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'activo' => 'Activo',
                         'por_vencer' => 'Por Vencer',
@@ -104,8 +98,8 @@ class ListLotes extends ListRecords
                         'activo' => 'success',
                         'por_vencer' => 'warning',
                         'vencido' => 'danger',
-                        'por_confirmar' => 'warning',
-                        'stock_bajo' => 'danger',
+                        'por_confirmar' => 'danger',
+                        'stock_bajo' => 'warning',
                         'sin_stock' => 'gray',
                         default => 'gray',
                     })
@@ -117,12 +111,14 @@ class ListLotes extends ListRecords
                         'stock_bajo' => 'heroicon-m-arrow-trending-down',
                         'sin_stock' => 'heroicon-m-minus-circle',
                         default => 'heroicon-m-question-mark-circle',
-                    }),
+                    })
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->description(fn (Lote $record): string => $record->created_at?->diffForHumans() ?? '')
+                    ->visibleFrom('xl'),
             ])
             ->modifyQueryUsing(fn ($query) =>
                 $query->with(['lotePresentaciones.productoPresentacion.unidadMedida'])
@@ -131,9 +127,13 @@ class ListLotes extends ListRecords
             )
             ->defaultSort('created_at', 'desc')
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
-                (($record->estado_lote === 'por_confirmar' || $record->estado_lote === 'vencido' || ($record->fecha_vencimiento && $record->fecha_vencimiento->isPast())) && $record->stock_total > 0)
-                    ? 'bg-warning-50/20 dark:bg-warning-950/10 border-l-4 border-l-warning-500 text-warning-800 dark:text-warning-300'
-                    : null
+                match (self::lotVisualState($record)) {
+                    'por_confirmar' => 'alert-pulse bg-rose-50/80 dark:bg-rose-950/20 ring-2 ring-rose-300/80 dark:ring-rose-700/60 border-l-4 border-l-rose-500 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.18)]',
+                    'stock_bajo' => 'alert-pulse bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-300/80 dark:ring-amber-700/60 border-l-4 border-l-amber-500 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.18)]',
+                    'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
+                    'por_vencer' => 'bg-orange-50/60 dark:bg-orange-950/10 border-l-4 border-l-orange-400',
+                    default => null,
+                }
             )
             ->filters([
                 SelectFilter::make('producto_nombre')
@@ -188,31 +188,43 @@ class ListLotes extends ListRecords
                             ->when($data['desde'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_vencimiento', '>=', $date))
                             ->when($data['hasta'] ?? null, fn (Builder $q, $date) => $q->whereDate('fecha_vencimiento', '<=', $date));
                     }),
-            ])
+            ], layout: FiltersLayout::Dropdown)
+            ->filtersFormColumns(4)
             ->actions([
                 \Filament\Actions\Action::make('registrarMerma')
                     ->label(fn (\App\Models\Lote $record): string =>
-                        $record->estado_lote === 'por_confirmar'
+                        self::lotVisualState($record) === 'por_confirmar'
                             ? 'Confirmar Merma'
                             : 'Registrar Merma')
                     ->icon(fn (\App\Models\Lote $record): string =>
-                        $record->estado_lote === 'por_confirmar'
+                        self::lotVisualState($record) === 'por_confirmar'
                             ? 'heroicon-m-check'
                             : 'heroicon-m-trash')
                     ->color(fn (\App\Models\Lote $record): string =>
-                        $record->estado_lote === 'por_confirmar'
-                            ? 'warning'
-                            : 'danger')
+                        match (self::lotVisualState($record)) {
+                            'por_confirmar', 'vencido' => 'danger',
+                            'stock_bajo', 'por_vencer' => 'warning',
+                            default => 'danger',
+                        })
+                    ->button()
+                    ->size('sm')
+                    ->extraAttributes(fn (\App\Models\Lote $record): array => [
+                        'class' => match (self::lotVisualState($record)) {
+                            'por_confirmar' => 'alert-pulse ring-2 ring-rose-300/70 dark:ring-rose-700/60 shadow-lg shadow-rose-500/20',
+                            'stock_bajo' => 'alert-pulse ring-2 ring-amber-300/70 dark:ring-amber-700/60 shadow-lg shadow-amber-500/20',
+                            default => '',
+                        },
+                    ])
                     ->modalHeading(fn (\App\Models\Lote $record): string =>
-                        $record->estado_lote === 'por_confirmar'
+                        self::lotVisualState($record) === 'por_confirmar'
                             ? 'Confirmar Merma de Lote Vencido'
                             : 'Registrar Merma / Pérdida')
                     ->modalSubmitActionLabel(fn (\App\Models\Lote $record): string =>
-                        $record->estado_lote === 'por_confirmar'
+                        self::lotVisualState($record) === 'por_confirmar'
                             ? 'Confirmar'
                             : 'Registrar')
                     ->form(function (\App\Models\Lote $record): array {
-                        if ($record->estado_lote === 'por_confirmar') {
+                        if (self::lotVisualState($record) === 'por_confirmar') {
                             $lps = $record->lotePresentaciones()
                                 ->where('stock', '>', 0)
                                 ->with('productoPresentacion')
@@ -286,7 +298,7 @@ class ListLotes extends ListRecords
                         ];
                     })
                     ->action(function (\App\Models\Lote $record, array $data): void {
-                        if ($record->estado_lote === 'por_confirmar') {
+                        if (self::lotVisualState($record) === 'por_confirmar') {
                             \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
                                 $lps = $record->lotePresentaciones()
                                     ->where('stock', '>', 0)
@@ -434,5 +446,29 @@ class ListLotes extends ListRecords
                     ->label('Acciones'),
             ]);
     }
+
+    protected static function lotVisualState(Lote $record): string
+    {
+        if ($record->stock_total <= 0) {
+            return 'sin_stock';
+        }
+
+        if ($record->estado_lote === 'por_confirmar') {
+            return 'por_confirmar';
+        }
+
+        if ($record->fecha_vencimiento && $record->fecha_vencimiento->isPast()) {
+            return 'vencido';
+        }
+
+        if ($record->lotePresentaciones->contains(fn ($lp) => $lp->stock > 0 && $lp->productoSucursal && $lp->stock <= $lp->productoSucursal->stock_minimo)) {
+            return 'stock_bajo';
+        }
+
+        if ($record->fecha_vencimiento && now()->startOfDay()->diffInDays($record->fecha_vencimiento->startOfDay(), false) <= 30) {
+            return 'por_vencer';
+        }
+
+        return 'activo';
+    }
 }
-?>
