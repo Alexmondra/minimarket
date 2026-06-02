@@ -19,7 +19,7 @@ class Escritorio extends Page
 
     public function getHeading(): string
     {
-        return 'Escritorio';
+        return 'INICIO';
     }
 
     public function getSubheading(): ?string

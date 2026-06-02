@@ -1,224 +1,285 @@
 ---
-
 name: mini-ux
-description: Reusable skill for designing, styling, and upgrading modern UI/UX experiences in the Laravel Minimarket ecosystem using Filament, Livewire, Blade, Tailwind CSS, and responsive design principles.
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Skill: mini-ux
-
-This skill provides advanced UI/UX design guidance for the Minimarket Laravel project.
-
-It specializes in:
-
-* Laravel Blade layouts
-* Livewire interactive components
-* Filament admin customization
-* Tailwind CSS v4 styling
-* Responsive POS/dashboard interfaces
-* Modern animations and micro-interactions
-* Premium visual hierarchy and spacing systems
+description: Senior Product Designer especializado en sistemas POS, ERP y Retail.
 
 ---
 
-# Core Design Principles
-
-## 1. Modern Visual Language
-
-Use clean and premium aesthetics inspired by:
-
-* Stripe
-* Linear
-* Notion
-* Shopify
-* Vercel
-* Apple dashboards
-
-Avoid generic Bootstrap-like interfaces.
-
-Prefer:
-
-* Soft shadows
-* Large rounded corners
-* Glassmorphism
-* Gradient accents
-* Elegant spacing
-* Minimal borders
-* Subtle animations
-
 ---
+## Misión
+Diseñar interfaces premium para sistemas de minimarket, farmacia, almacén y POS desarrollados con:
 
-# Styling Rules
-
-## Tailwind CSS
-
-Use:
-
+* Laravel 12+
+* Livewire 3
+* Filament v4
 * Tailwind CSS v4
-* Utility-first approach
-* CSS variables when necessary
-* Reusable utility patterns
-
-Prefer color palettes such as:
-
-* emerald
-* teal
-* amber
-* zinc
-* slate
-* neutral
-
-Avoid overusing:
-
-* pure blue
-* harsh reds
-* saturated colors
-
----
-
-# Layout Standards
-
-## Responsive First
-
-All interfaces must work properly on:
-
-* mobile
-* tablets
-* laptops
-* cashier touch screens
-
-Use:
-
-* CSS grid
-* flexbox
-* responsive breakpoints
-* sticky actions
-* adaptive spacing
-
----
-
-# Filament Admin UX
-
-Customize:
-
-* resource tables
-* forms
-* widgets
-* dashboards
-* modal dialogs
-* stats cards
-* navigation groups
-
-Goals:
-
-* cleaner hierarchy
-* faster scanning
-* reduced visual noise
-* modern enterprise appearance
-
----
-
-# Public UI Enhancements
-
-Improve:
-
-* landing page
-* catalog
-* product cards
-* checkout flow
-* search UX
-* category navigation
-
-Use:
-
-* hover animations
-* skeleton loaders
-* transitions
-* blurred backgrounds
-* sticky filters
-* elegant empty states
-
----
-
-# POS / Checkout Experience
-
-Optimize for cashier speed.
-
-Focus on:
-
-* large clickable targets
-* fast keyboard navigation
-* readable totals
-* sticky payment panels
-* responsive product grids
-* ticket/receipt clarity
-
-Avoid clutter.
-
-Every important cashier action must be reachable in 1–2 clicks.
-
----
-
-# Interaction Design
-
-Use micro-interactions carefully:
-
-* hover lift
-* smooth transitions
-* scale animations
-* loading shimmer
-* animated counters
-* modal transitions
-
-Animation duration should feel fast and premium.
-
----
-
-# Code Quality
-
-Always:
-
-* keep components reusable
-* avoid duplicated styles
-* separate logic from presentation
-* maintain clean Blade structure
-* use semantic naming
-
-Prefer reusable Blade/Livewire partials.
-
----
-
-# Build Verification
-
-After major UI updates:
-
-* verify Vite compilation
-* verify Tailwind class generation
-* ensure dark mode compatibility
-* check responsive behavior
-* avoid layout overflow issues
-
----
-
-# Preferred Stack
-
-* Laravel
-* Livewire
-* Filament
-* Blade
 * Alpine.js
-* Tailwind CSS
 * Vite
 
+La prioridad NO es solamente que funcione.
+
+La prioridad es que el usuario disfrute usar el sistema.
+
+Cada pantalla debe transmitir:
+
+* claridad
+* rapidez
+* confianza
+* modernidad
+* profesionalismo
+
 ---
 
-# UX Objective
+# Filosofía Visual
 
-The application should feel:
+Inspirarse en:
 
-* modern
-* fast
-* elegant
-* premium
-* intuitive
-* visually attractive
-* optimized for real business usage
+* Stripe Dashboard
+* Shopify Admin
+* Linear
+* Notion
+* Vercel
+* Raycast
+* Arc Browser
+
+NO inspirarse en:
+
+* Bootstrap clásico
+* AdminLTE
+* Plantillas antiguas
+* Sistemas empresariales de los años 2000
+
+---
+
+# Regla Principal
+
+Nunca diseñar únicamente para modo oscuro.
+
+Toda interfaz debe verse excelente en:
+
+* Dark Mode
+* Light Mode
+
+Si una vista luce increíble en oscuro pero mediocre en claro, el diseño se considera incompleto.
+
+---
+
+# Light Mode Premium
+
+Evitar:
+
+* fondos completamente blancos
+* tablas planas
+* botones grises sin vida
+
+Preferir:
+
+* slate-50
+* zinc-50
+* neutral-50
+* gradientes muy suaves
+* sombras ligeras
+* tarjetas elevadas
+
+Ejemplo:
+
+Paneles:
+
+* bg-white
+* ring-1 ring-slate-200
+* shadow-sm
+
+---
+
+# Dark Mode Premium
+
+Evitar:
+
+* negro puro
+* contrastes extremos
+
+Preferir:
+
+* slate-950
+* zinc-950
+* superficies escalonadas
+
+Ejemplo:
+
+* bg-[#0f172a]
+* bg-[#111827]
+* bg-[#1e293b]
+
+---
+
+# Diseño para Minimarket
+
+El usuario normalmente es:
+
+* cajero
+* administrador
+* dueño
+* almacenero
+
+Por lo tanto:
+
+## Botones
+
+Nunca usar botones pequeños.
+
+Altura mínima:
+
+h-10
+
+Preferido:
+
+h-11
+h-12
+
+Los botones importantes deben tener:
+
+* icono
+* color
+* hover
+* sombra suave
+
+---
+
+## Tablas
+
+Evitar tablas aburridas.
+
+Agregar:
+
+* filas hover
+* badges de estado
+* iconos
+* columnas visuales
+
+Ejemplo:
+
+Producto
+
+📦 Coca Cola 3L
+
+en lugar de:
+
+Coca Cola 3L
+
+---
+
+## Estadísticas
+
+Las métricas deben sentirse importantes.
+
+Usar:
+
+* icono grande
+* tendencia
+* porcentaje
+* mini gráfico
+* color contextual
+
+Ejemplo:
+
+Ventas del Día
+
+S/ 2,450
+
+↑ 12%
+
+---
+
+## Formularios
+
+No generar formularios largos y aburridos.
+
+Agrupar por:
+
+* Información General
+* Inventario
+* Precios
+* Impuestos
+* Proveedores
+
+Usar:
+
+Sections
+Fieldsets
+Tabs
+Wizards
+
+---
+
+## Dashboard
+
+Cada dashboard debe incluir:
+
+* ventas del día
+* ventas semanales
+* utilidad
+* productos agotados
+* productos por vencer
+* últimos movimientos
+* ranking de productos
+
+Evitar espacios vacíos.
+
+---
+
+# Animaciones
+
+Permitidas:
+
+* hover:scale-[1.02]
+* transition-all
+* duration-200
+* fade-in
+* shimmer loading
+
+No usar animaciones exageradas.
+
+---
+
+# Responsive
+
+Debe funcionar correctamente en:
+
+* móvil
+* tablet
+* laptop
+* monitor 24"
+* POS táctil
+
+---
+
+# POS UX
+
+Objetivo:
+
+Que un cajero complete una venta sin pensar.
+
+Reglas:
+
+* botones grandes
+* totales enormes
+* teclado rápido
+* búsqueda inmediata
+* panel de cobro fijo
+* acciones visibles
+
+---
+
+# Calidad Visual Obligatoria
+
+Antes de terminar cualquier vista verificar:
+
+* modo claro atractivo
+* modo oscuro atractivo
+* responsive
+* jerarquía visual clara
+* espaciado consistente
+* botones visibles
+* colores coherentes
+* apariencia premium
+
+Si el resultado parece un CRUD tradicional de Filament, el trabajo NO está terminado.
