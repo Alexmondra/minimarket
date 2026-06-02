@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Escritorio;
 use App\Http\Middleware\EnsureSucursalContext;
+use App\Support\SucursalContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,6 +18,8 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -32,6 +35,10 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
                 'gray' => Color::Slate,
             ])
+            ->brandName(fn (): string => $this->getPanelBranding()['companyName'])
+            ->brandLogo(fn (): HtmlString => new HtmlString(view('filament.components.company-brand', $this->getPanelBranding())->render()))
+            ->darkModeBrandLogo(fn (): HtmlString => new HtmlString(view('filament.components.company-brand', $this->getPanelBranding())->render()))
+            ->brandLogoHeight('3.25rem')
             ->navigationGroups([
                 'Catálogo Global',
                 'Compras',
@@ -66,6 +73,14 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): string => view('filament.components.login-back-button')->render(),
             )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn (): string => view('filament.components.sidebar-size-switcher')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => view('filament.components.loading-overlay', $this->getPanelBranding())->render(),
+            )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 //
@@ -85,5 +100,55 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
                 EnsureSucursalContext::class,
             ]);
+    }
+
+    protected function getPanelBranding(): array
+    {
+        $user = auth()->user();
+        $empresa = $user?->empresa;
+        $sucursalContext = app(SucursalContext::class);
+        $activeSucursal = $sucursalContext->activeSucursal($user);
+        $companyName = $empresa?->razon_social ?: config('app.name', 'Mini Market');
+
+        return [
+            'companyName' => $companyName,
+            'companyShortName' => Str::limit($companyName, 34),
+            'companyLogoUrl' => $this->resolveStorageUrl($empresa?->logo),
+            'companyInitials' => $this->makeInitials($companyName),
+            'sucursalName' => $activeSucursal?->nombre_sucursal,
+            'isGlobalView' => ! $activeSucursal && $sucursalContext->canUseAllMode($user),
+        ];
+    }
+
+    protected function resolveStorageUrl(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        $normalizedPath = ltrim($path, '/');
+
+        if (Str::startsWith($normalizedPath, 'storage/')) {
+            return asset($normalizedPath);
+        }
+
+        return asset('storage/' . $normalizedPath);
+    }
+
+    protected function makeInitials(string $name): string
+    {
+        $initials = Str::of($name)
+            ->squish()
+            ->explode(' ')
+            ->filter()
+            ->take(2)
+            ->map(fn (string $segment): string => Str::upper(Str::substr($segment, 0, 1)))
+            ->implode('');
+
+        return $initials !== '' ? $initials : 'MM';
     }
 }

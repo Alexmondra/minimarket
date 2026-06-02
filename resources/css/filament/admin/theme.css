@@ -188,6 +188,225 @@
     @apply rounded-xl bg-slate-100 text-slate-600 transition-all duration-200 hover:bg-primary-50 hover:text-primary-700 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-primary-500/15 dark:hover:text-primary-300;
 }
 
+/* --- COMPANY BRAND BLOCK --- */
+.company-brand {
+    @apply flex items-center gap-3 min-w-0;
+}
+
+.company-brand__mark {
+    @apply flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_14px_28px_-18px_rgba(14,165,233,0.45)] ring-1 ring-sky-200/60;
+}
+
+.dark .company-brand__mark {
+    @apply border-sky-800/70 bg-slate-900/80 ring-sky-900/80 shadow-none;
+}
+
+.company-brand__logo {
+    @apply h-full w-full object-cover;
+}
+
+.company-brand__initials {
+    @apply text-sm font-black uppercase tracking-[0.2em] text-sky-800 dark:text-cyan-200;
+}
+
+.company-brand__copy {
+    @apply flex min-w-0 flex-col;
+}
+
+.company-brand__name {
+    @apply truncate text-[0.95rem] font-black tracking-[-0.02em] text-sky-950 dark:text-white;
+}
+
+.company-brand__meta {
+    @apply truncate text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-sky-800/70 dark:text-cyan-200/70;
+}
+
+.fi-topbar .company-brand__mark {
+    @apply size-10 rounded-xl;
+}
+
+.fi-topbar .company-brand__name {
+    @apply text-[0.88rem];
+}
+
+.fi-topbar .company-brand__meta {
+    @apply text-[0.64rem];
+}
+
+/* --- SIDEBAR SIZE SWITCHER --- */
+.sidebar-size-switcher {
+    @apply mt-5 rounded-[1.4rem] border border-white/70 bg-white/52 p-3 shadow-[0_20px_35px_-28px_rgba(14,165,233,0.5)];
+}
+
+.dark .sidebar-size-switcher {
+    @apply border-sky-900/65 bg-slate-950/28 shadow-none;
+}
+
+.sidebar-size-switcher__header {
+    @apply mb-3;
+}
+
+.sidebar-size-switcher__eyebrow {
+    @apply text-[0.68rem] font-bold uppercase tracking-[0.24em] text-sky-800/75 dark:text-cyan-200/75;
+}
+
+.sidebar-size-switcher__hint {
+    @apply mt-1 text-[0.75rem] leading-5 text-sky-950/70 dark:text-slate-300;
+}
+
+.sidebar-size-switcher__controls {
+    @apply grid grid-cols-3 gap-2;
+}
+
+.sidebar-size-switcher__btn {
+    @apply inline-flex h-10 items-center justify-center rounded-xl border border-transparent bg-white/72 px-2 text-[0.74rem] font-bold text-sky-900/78 transition-all duration-200 hover:-translate-y-0.5 hover:border-white hover:bg-white hover:text-sky-950 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:border-sky-800/80 dark:hover:bg-slate-900;
+}
+
+.sidebar-size-switcher__btn.is-active {
+    @apply border-white bg-gradient-to-br from-sky-500 to-cyan-400 text-white shadow-[0_16px_28px_-18px_rgba(14,165,233,0.7)] dark:border-cyan-300/30;
+}
+
+html[data-sidebar-size='compact'] {
+    --sidebar-width: 16.75rem;
+    --collapsed-sidebar-width: 4.75rem;
+}
+
+html[data-sidebar-size='comfortable'] {
+    --sidebar-width: 18.5rem;
+    --collapsed-sidebar-width: 5rem;
+}
+
+html[data-sidebar-size='spacious'] {
+    --sidebar-width: 21.5rem;
+    --collapsed-sidebar-width: 5.35rem;
+}
+
+/* --- GLOBAL LOADING OVERLAY --- */
+.app-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background:
+        radial-gradient(circle at top, rgba(125, 211, 252, 0.28), transparent 34%),
+        linear-gradient(135deg, rgba(240, 249, 255, 0.92), rgba(224, 242, 254, 0.88));
+    backdrop-filter: blur(14px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+}
+
+.dark .app-loading-overlay {
+    background:
+        radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 32%),
+        linear-gradient(135deg, rgba(2, 6, 23, 0.9), rgba(8, 47, 73, 0.82));
+}
+
+.app-loading-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.app-loading-overlay__panel {
+    @apply w-full max-w-md rounded-[2rem] border border-white/75 bg-white/82 p-6 shadow-[0_35px_90px_-42px_rgba(14,165,233,0.55)] ring-1 ring-sky-100/70;
+}
+
+.dark .app-loading-overlay__panel {
+    @apply border-sky-900/70 bg-slate-950/80 ring-sky-900/60 shadow-none;
+}
+
+.app-loading-overlay__brand {
+    @apply flex items-center gap-4;
+}
+
+.app-loading-overlay__mark {
+    @apply flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/80 bg-white shadow-[0_18px_32px_-18px_rgba(14,165,233,0.4)];
+}
+
+.dark .app-loading-overlay__mark {
+    @apply border-sky-800/80 bg-slate-900 shadow-none;
+}
+
+.app-loading-overlay__logo {
+    @apply h-full w-full object-cover;
+}
+
+.app-loading-overlay__initials {
+    @apply text-lg font-black uppercase tracking-[0.24em] text-sky-800 dark:text-cyan-200;
+}
+
+.app-loading-overlay__copy {
+    @apply min-w-0;
+}
+
+.app-loading-overlay__name {
+    @apply truncate text-xl font-black tracking-[-0.03em] text-sky-950 dark:text-white;
+}
+
+.app-loading-overlay__subtitle {
+    @apply mt-1 truncate text-sm font-medium text-sky-900/72 dark:text-slate-300;
+}
+
+.app-loading-overlay__pulse {
+    @apply mt-6 space-y-3;
+}
+
+.app-loading-overlay__pulse-bar {
+    display: block;
+    height: 0.7rem;
+    width: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, rgba(186, 230, 253, 0.7), rgba(56, 189, 248, 0.95), rgba(186, 230, 253, 0.7));
+    background-size: 200% 100%;
+    animation: panel-loading-wave 1.35s ease-in-out infinite;
+}
+
+.dark .app-loading-overlay__pulse-bar {
+    background: linear-gradient(90deg, rgba(14, 116, 144, 0.35), rgba(34, 211, 238, 0.78), rgba(14, 116, 144, 0.35));
+}
+
+.app-loading-overlay__pulse-bar:nth-child(2) {
+    animation-delay: 0.12s;
+    width: 88%;
+}
+
+.app-loading-overlay__pulse-bar:nth-child(3) {
+    animation-delay: 0.24s;
+    width: 72%;
+}
+
+.app-loading-overlay__caption {
+    @apply mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-800/72 dark:text-cyan-200/72;
+}
+
+html.app-busy,
+html.app-busy body {
+    cursor: progress;
+}
+
+@keyframes panel-loading-wave {
+    0% {
+        background-position: 200% 0;
+        opacity: 0.72;
+        transform: scaleX(0.98);
+    }
+
+    50% {
+        background-position: 100% 0;
+        opacity: 1;
+        transform: scaleX(1);
+    }
+
+    100% {
+        background-position: 0 0;
+        opacity: 0.82;
+        transform: scaleX(0.98);
+    }
+}
+
 /* --- BESPOKE EMPRESA SETTINGS CARD STYLING --- */
 
 /* Dashboard Header Card (Top-level Status) */
@@ -1199,4 +1418,3 @@
     border-color: inherit !important;
     color: inherit !important;
 }
-
