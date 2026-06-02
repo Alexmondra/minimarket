@@ -14,27 +14,44 @@
     background-color: #090b11 !important; /* Deep dark blue-gray background in Dark Mode */
 }
 
-/* --- GLASSMORPHIC SIDEBAR MAIN CONTAINER --- */
+/* --- PREMIUM SIDEBAR SHELL --- */
 .fi-sidebar.fi-main-sidebar {
-    @apply bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl border-r border-slate-200/40 dark:border-slate-800/40 shadow-2xl ring-1 ring-slate-950/5 dark:ring-white/5 transition-all duration-300;
+    background:
+        linear-gradient(180deg, rgba(233, 245, 255, 0.98) 0%, rgba(216, 238, 255, 0.97) 24%, rgba(203, 232, 255, 0.96) 100%),
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.22), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.18), transparent 42%);
+    @apply backdrop-blur-xl border-r border-sky-200/70 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.34)] ring-1 ring-sky-950/5 transition-all duration-300;
     z-index: 40 !important;
 }
 
+.dark .fi-sidebar.fi-main-sidebar {
+    background:
+        linear-gradient(180deg, rgba(8, 47, 73, 0.95) 0%, rgba(12, 74, 110, 0.92) 24%, rgba(15, 23, 42, 0.98) 100%),
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.12), transparent 42%);
+    @apply border-sky-900/70 shadow-[0_24px_55px_-30px_rgba(2,6,23,0.9)] ring-white/5;
+}
+
 .fi-body:not(.fi-body-has-top-navigation) .fi-sidebar.fi-main-sidebar {
-    @apply lg:border-e lg:border-slate-200/50 dark:lg:border-slate-800/50;
+    @apply lg:border-e lg:border-sky-200/80 dark:lg:border-sky-900/70;
 }
 
 .fi-sidebar-header {
-    @apply px-5 border-b border-slate-200/30 dark:border-slate-800/30 py-4;
+    @apply px-5 py-5 border-b border-sky-200/70 dark:border-sky-900/70;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.06) 100%);
+}
+
+.dark .fi-sidebar-header {
+    background: linear-gradient(180deg, rgba(14, 116, 144, 0.18) 0%, rgba(15, 23, 42, 0) 100%);
 }
 
 /* --- SIDEBAR NAV LAYOUT & CUSTOM SCROLLBAR --- */
 .fi-sidebar-nav {
-    @apply gap-y-6 px-4 py-6 scrollbar-thin;
+    @apply gap-y-5 px-3 py-5 scrollbar-thin;
 }
 
 .fi-sidebar-nav::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
 }
 
 .fi-sidebar-nav::-webkit-scrollbar-track {
@@ -42,33 +59,42 @@
 }
 
 .fi-sidebar-nav::-webkit-scrollbar-thumb {
-    @apply bg-slate-300/40 dark:bg-slate-800/40 rounded-full hover:bg-slate-400 dark:hover:bg-slate-700 transition-colors;
+    @apply rounded-full bg-sky-300/70 hover:bg-sky-400/90 transition-colors dark:bg-sky-800/70 dark:hover:bg-sky-700/90;
 }
 
 .fi-sidebar-nav-groups {
-    @apply mx-0 gap-y-6;
+    @apply mx-0 gap-y-4;
 }
 
 .fi-sidebar-group {
-    @apply rounded-2xl;
+    @apply rounded-[1.35rem] border border-white/65 bg-white/58 p-2 shadow-[0_16px_32px_-24px_rgba(3,105,161,0.34)];
+}
+
+.dark .fi-sidebar-group {
+    @apply border-sky-900/60 bg-slate-950/24 shadow-none;
 }
 
 .fi-sidebar-group-btn {
-    @apply mb-2 rounded-xl px-3 py-2 transition-colors;
+    @apply mb-2 rounded-xl px-2.5 py-1.5 transition-all duration-200;
 }
 
 /* --- PREMIUM GROUP HEADERS --- */
 .fi-sidebar-group-label {
-    @apply text-[0.68rem] font-bold uppercase tracking-wider text-slate-400/80 dark:text-slate-500/80 flex items-center gap-2;
+    @apply flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-sky-800/70 dark:text-sky-200/70;
+}
+
+.fi-sidebar-group-label::before {
+    content: '';
+    @apply h-2 w-2 rounded-full bg-cyan-500 dark:bg-cyan-400;
 }
 
 .fi-sidebar-group-label::after {
     content: '';
-    @apply h-px flex-1 bg-slate-200/40 dark:bg-slate-800/40 ml-2;
+    @apply hidden;
 }
 
 .fi-sidebar-group-collapse-btn {
-    @apply rounded-lg opacity-60 transition-all hover:opacity-100 hover:bg-slate-100 dark:hover:bg-white/5 p-1;
+    @apply rounded-lg p-1 text-sky-700/55 opacity-80 transition-all hover:bg-white/60 hover:text-sky-900 hover:opacity-100 dark:text-sky-200/55 dark:hover:bg-white/8 dark:hover:text-sky-100;
 }
 
 .fi-sidebar-group-items {
@@ -77,56 +103,76 @@
 
 /* --- SIDEBAR ITEM & HOVER/ACTIVE STATES --- */
 .fi-sidebar-item-btn {
-    @apply min-h-[2.75rem] rounded-xl px-3 py-2.5 transition-all duration-300 ease-out border border-transparent;
+    @apply relative min-h-[2.9rem] rounded-2xl px-3.5 py-2.5 border border-transparent transition-all duration-200 ease-out;
 }
 
-/* Non-active item hover styling */
 .fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn {
-    @apply hover:bg-white/80 hover:translate-x-1 hover:shadow-md hover:shadow-slate-100/50 dark:hover:bg-white/5 dark:hover:shadow-none hover:border-slate-200/30 dark:hover:border-white/5 focus-visible:bg-slate-100/80 dark:focus-visible:bg-white/5;
+    @apply hover:border-white/80 hover:bg-white/82 hover:shadow-[0_16px_26px_-22px_rgba(2,132,199,0.45)] dark:hover:border-sky-800/80 dark:hover:bg-sky-950/40 dark:hover:shadow-none focus-visible:border-white/80 focus-visible:bg-white/82 dark:focus-visible:border-sky-800/80 dark:focus-visible:bg-sky-950/40;
 }
 
-/* Active item styling: Premium Gradient with indicator line */
-.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
-    @apply bg-gradient-to-r from-primary-500/10 via-primary-500/5 to-transparent dark:from-primary-500/15 dark:via-primary-500/5 border-l-4 border-l-primary-500 dark:border-l-primary-400 shadow-md shadow-primary-500/5 dark:shadow-none rounded-l-none pl-2.5 transition-all duration-300;
+.fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn::before {
+    content: '';
+    @apply absolute inset-y-2 left-1 w-1 rounded-full bg-transparent transition-colors duration-200;
 }
 
-/* Icon Animations */
-.fi-sidebar-item-btn > .fi-icon {
-    @apply transition-transform duration-300 ease-out text-slate-400 dark:text-slate-500;
+.fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn:hover::before,
+.fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn:focus-visible::before {
+    @apply bg-sky-300 dark:bg-sky-700;
 }
 
-.fi-sidebar-item-btn:hover > .fi-icon {
-    @apply scale-110 text-slate-700 dark:text-slate-300;
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 52%, rgba(224, 242, 254, 0.98) 100%);
+    @apply border-white/85 shadow-[0_18px_30px_-22px_rgba(14,165,233,0.42)] ring-1 ring-sky-400/20;
 }
 
-.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
-.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn > .fi-icon {
-    @apply text-primary-600 dark:text-primary-400 scale-105;
+.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
+.dark .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
+    background: linear-gradient(135deg, rgba(12, 74, 110, 0.5) 0%, rgba(14, 116, 144, 0.24) 42%, rgba(15, 23, 42, 0.86) 100%);
+    @apply border-sky-700/50 ring-cyan-400/20 shadow-none;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn::before,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn::before {
+    content: '';
+    @apply absolute inset-y-2 left-1 w-1 rounded-full bg-primary-500 dark:bg-primary-400;
+}
+
+/* Icon treatment */
+.fi-sidebar-item-icon {
+    @apply text-sky-900/70 transition-all duration-200 dark:text-sky-100/80;
+}
+
+.fi-sidebar-item-btn:hover .fi-sidebar-item-icon {
+    @apply text-sky-950 dark:text-cyan-100;
+    transform: translateY(-1px);
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    @apply text-sky-700 dark:text-cyan-300;
 }
 
 /* Text & Typography */
 .fi-sidebar-item-label {
-    @apply text-[0.88rem] font-medium text-slate-600 dark:text-slate-300 transition-colors duration-200;
+    @apply text-[0.92rem] font-medium tracking-[-0.01em] text-sky-950/82 transition-colors duration-200 dark:text-slate-100;
 }
 
 .fi-sidebar-item-btn:hover .fi-sidebar-item-label {
-    @apply text-slate-900 dark:text-white;
+    @apply text-sky-950 dark:text-white;
 }
 
-.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
-    @apply text-primary-700 dark:text-primary-300 font-bold;
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    @apply font-semibold text-sky-950 dark:text-white;
 }
 
 .fi-sidebar-item-grouped-border {
-    @apply size-5;
+    @apply hidden;
 }
 
 .fi-sidebar-item-grouped-border-part {
-    @apply size-1.5 rounded-full bg-slate-300 dark:bg-slate-700 transition-colors duration-300;
-}
-
-.fi-sidebar-item.fi-active .fi-sidebar-item-grouped-border-part {
-    @apply bg-primary-500 dark:bg-primary-400;
+    @apply hidden;
 }
 
 /* --- GLASSMORPHIC TOPBAR --- */
@@ -1153,6 +1199,4 @@
     border-color: inherit !important;
     color: inherit !important;
 }
-
-
 
