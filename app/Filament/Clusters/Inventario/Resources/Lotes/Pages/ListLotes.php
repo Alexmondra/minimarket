@@ -202,7 +202,7 @@ class ListLotes extends ListRecords
                 \Filament\Actions\Action::make('registrarMerma')
                     ->label(fn (\App\Models\Lote $record): string =>
                         self::lotVisualState($record) === 'por_confirmar'
-                            ? 'Confirmar Vencido'
+                            ? '⚠️ Confirmar'
                             : 'Registrar Merma')
                     ->icon(fn (\App\Models\Lote $record): string =>
                         self::lotVisualState($record) === 'por_confirmar'
