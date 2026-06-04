@@ -1103,18 +1103,20 @@ html.app-busy body {
 /* Alert card pulses */
 .alert-pulse {
     animation: alert-pulse 3s ease-in-out infinite;
+    position: relative;
 }
 @keyframes alert-pulse {
-    0%, 100% { box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.15), 0 0 20px 0 rgba(239, 68, 68, 0.08); }
-    50% { box-shadow: inset 0 0 0 3px rgba(239, 68, 68, 0.35), 0 0 30px 3px rgba(239, 68, 68, 0.20); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), inset 0 0 0 0 rgba(239, 68, 68, 0.05); }
+    50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08), 0 0 25px 3px rgba(239, 68, 68, 0.15), inset 0 0 0 2px rgba(239, 68, 68, 0.15); }
 }
 
 .alert-pulse-amber {
     animation: alert-pulse-amber 3.5s ease-in-out infinite;
+    position: relative;
 }
 @keyframes alert-pulse-amber {
-    0%, 100% { box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.12), 0 0 20px 0 rgba(245, 158, 11, 0.06); }
-    50% { box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.30), 0 0 30px 3px rgba(245, 158, 11, 0.18); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), inset 0 0 0 0 rgba(245, 158, 11, 0.04); }
+    50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.06), 0 0 25px 3px rgba(245, 158, 11, 0.12), inset 0 0 0 2px rgba(245, 158, 11, 0.12); }
 }
 
 /* Scroll snap for mobile KPI row */

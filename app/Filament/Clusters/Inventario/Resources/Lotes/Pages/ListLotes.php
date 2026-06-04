@@ -38,7 +38,8 @@ class ListLotes extends ListRecords
                         $record->sucursal?->nombre_sucursal,
                         $record->ubicacion ? "Ubic: {$record->ubicacion}" : null,
                     ])->filter()->implode(' • '))
-                    ->wrap(),
+                    ->wrap()
+                    ->extraAttributes(['class' => 'min-w-[120px]']),
                 TextColumn::make('producto_nombre')
                     ->label('Producto')
                     ->searchable()
@@ -50,7 +51,8 @@ class ListLotes extends ListRecords
                             ->take(3)
                             ->join(' • ')
                     )
-                    ->wrap(),
+                    ->wrap()
+                    ->limit(30),
                 TextColumn::make('stock_total')
                     ->label('Stock')
                     ->numeric()
@@ -61,7 +63,8 @@ class ListLotes extends ListRecords
                         'sin_stock' => 'gray',
                         default => 'success',
                     })
-                    ->description(fn (Lote $record): string => 'S/ ' . number_format((float) ($record->precio_compra ?? 0), 2)),
+                    ->description(fn (Lote $record): string => 'S/ ' . number_format((float) ($record->precio_compra ?? 0), 2))
+                    ->extraAttributes(['class' => 'min-w-[80px]']),
                 TextColumn::make('fecha_vencimiento')
                     ->label('Vencimiento')
                     ->date('d/m/Y')
@@ -199,7 +202,7 @@ class ListLotes extends ListRecords
                 \Filament\Actions\Action::make('registrarMerma')
                     ->label(fn (\App\Models\Lote $record): string =>
                         self::lotVisualState($record) === 'por_confirmar'
-                            ? 'Confirmar Merma'
+                            ? 'Confirmar Vencido'
                             : 'Registrar Merma')
                     ->icon(fn (\App\Models\Lote $record): string =>
                         self::lotVisualState($record) === 'por_confirmar'
