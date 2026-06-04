@@ -1105,16 +1105,16 @@ html.app-busy body {
     animation: alert-pulse 3s ease-in-out infinite;
 }
 @keyframes alert-pulse {
-    0%, 100% { outline: 2px solid rgba(239, 68, 68, 0.10); outline-offset: -2px; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.15); }
-    50% { outline: 3px solid rgba(239, 68, 68, 0.35); outline-offset: -2px; box-shadow: 0 0 25px 2px rgba(239, 68, 68, 0.20); }
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.15), 0 0 20px 0 rgba(239, 68, 68, 0.08); }
+    50% { box-shadow: inset 0 0 0 3px rgba(239, 68, 68, 0.35), 0 0 30px 3px rgba(239, 68, 68, 0.20); }
 }
 
 .alert-pulse-amber {
     animation: alert-pulse-amber 3.5s ease-in-out infinite;
 }
 @keyframes alert-pulse-amber {
-    0%, 100% { outline: 2px solid rgba(245, 158, 11, 0.10); outline-offset: -2px; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.12); }
-    50% { outline: 3px solid rgba(245, 158, 11, 0.30); outline-offset: -2px; box-shadow: 0 0 25px 2px rgba(245, 158, 11, 0.18); }
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.12), 0 0 20px 0 rgba(245, 158, 11, 0.06); }
+    50% { box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.30), 0 0 30px 3px rgba(245, 158, 11, 0.18); }
 }
 
 /* Scroll snap for mobile KPI row */

@@ -125,12 +125,11 @@ class ListLotes extends ListRecords
                     ->whereHas('lotePresentaciones', fn ($q) => $q->where('stock', '>', 0))
                     ->orderByRaw("CASE
                         WHEN estado_lote = 'por_confirmar' THEN 0
-                        WHEN " . now()->startOfDay()->diffInDays(now()->startOfDay()) . " = 0 AND estado_lote = 'stock_bajo' THEN 1
+                        WHEN estado_lote = 'stock_bajo' THEN 1
                         WHEN estado_lote = 'por_vencer' OR (fecha_vencimiento IS NOT NULL AND fecha_vencimiento > NOW() AND fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY)) THEN 2
                         ELSE 3
                     END ASC")
             )
-            ->defaultSort('created_at', 'desc')
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
                 match (self::lotVisualState($record)) {
                     'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 border-l-4 border-l-rose-500',
@@ -140,6 +139,7 @@ class ListLotes extends ListRecords
                     default => null,
                 }
             )
+            ->striped()
             ->filters([
                 SelectFilter::make('producto_nombre')
                     ->label('Producto')
