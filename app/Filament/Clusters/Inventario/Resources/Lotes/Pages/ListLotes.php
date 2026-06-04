@@ -152,10 +152,10 @@ class ListLotes extends ListRecords
             ->defaultSort('created_at', 'desc')
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
                 match (self::lotVisualState($record)) {
-                    'por_confirmar' => 'alert-pulse bg-rose-50/80 dark:bg-rose-950/20 ring-2 ring-rose-300/80 dark:ring-rose-700/60 border-l-4 border-l-rose-500 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.18)]',
-                    'stock_bajo' => 'alert-pulse bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-300/80 dark:ring-amber-700/60 border-l-4 border-l-amber-500 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.18)]',
+                    'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 ring-2 ring-rose-400/80 dark:ring-rose-600/80 border-l-4 border-l-rose-500 shadow-lg shadow-rose-500/20 dark:shadow-rose-950/30',
+                    'stock_bajo' => 'alert-pulse bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-400/60 dark:ring-amber-600/60 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10',
                     'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
-                    'por_vencer' => 'bg-orange-50/60 dark:bg-orange-950/10 border-l-4 border-l-orange-400',
+                    'por_vencer' => 'bg-amber-50/40 dark:bg-amber-950/5 border-l-4 border-l-amber-400',
                     default => null,
                 }
             )
@@ -234,8 +234,8 @@ class ListLotes extends ListRecords
                     ->size('sm')
                     ->extraAttributes(fn (\App\Models\Lote $record): array => [
                         'class' => match (self::lotVisualState($record)) {
-                            'por_confirmar' => 'alert-pulse ring-2 ring-rose-300/70 dark:ring-rose-700/60 shadow-lg shadow-rose-500/20',
-                            'stock_bajo' => 'alert-pulse ring-2 ring-amber-300/70 dark:ring-amber-700/60 shadow-lg shadow-amber-500/20',
+                            'por_confirmar' => 'alert-pulse ring-2 ring-rose-400/60 dark:ring-rose-600/60 shadow-lg shadow-rose-500/20',
+                            'stock_bajo' => 'alert-pulse ring-2 ring-amber-400/40 dark:ring-amber-600/40 shadow-md shadow-amber-500/10',
                             default => '',
                         },
                     ])
