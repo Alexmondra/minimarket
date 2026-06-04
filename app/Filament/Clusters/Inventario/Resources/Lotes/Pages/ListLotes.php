@@ -22,8 +22,7 @@ class ListLotes extends ListRecords
 
     public function getStatsProperty(): array
     {
-        $empresaId = auth()->user()->empresa_id;
-        $query = Lote::where('empresa_id', $empresaId);
+        $query = app(SucursalContext::class)->applyToQuery(Lote::query());
 
         return [
             'total' => (clone $query)->whereHas('lotePresentaciones', fn ($q) => $q->where('stock', '>', 0))->count(),
