@@ -10,6 +10,8 @@ class CreateProveedor extends CreateRecord
 {
     protected static string $resource = ProveedorResource::class;
 
+    protected string $view = 'filament.clusters.compras.resources.proveedores.pages.create-proveedor';
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['empresa_id'] = auth()->user()->empresa_id;
