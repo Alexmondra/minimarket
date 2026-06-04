@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Compras\Resources\Proveedores\Tables;
 
-use App\Support\SucursalContext;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -25,7 +24,10 @@ class ProveedoresTable
             ->columns([
                 TextColumn::make('nombre')
                     ->searchable()
-                    ->label('Nombre'),
+                    ->label('Nombre')
+                    ->formatStateUsing(fn ($state) => '🚛 ' . $state)
+                    ->weight('bold')
+                    ->size('sm'),
                 TextColumn::make('compras_count')
                     ->label('Compras')
                     ->badge()
@@ -33,25 +35,42 @@ class ProveedoresTable
                     ->sortable(),
                 TextColumn::make('tipo_documento')
                     ->label('Tipo doc.')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'RUC' => 'warning',
+                        'DNI' => 'info',
+                        'CE' => 'purple',
+                        default => 'gray',
+                    }),
                 TextColumn::make('numero_documento')
                     ->searchable()
-                    ->label('N° documento'),
+                    ->label('N° documento')
+                    ->monospace()
+                    ->size('sm'),
                 TextColumn::make('razon_social')
                     ->searchable()
                     ->label('Razón social')
                     ->toggleable(isToggledHiddenByDefault: true),
-                
                 TextColumn::make('telefono')
-                    ->searchable(),
+                    ->searchable()
+                    ->icon('heroicon-o-phone')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('email')
                     ->searchable()
+                    ->icon('heroicon-o-envelope')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('contacto_principal')
                     ->label('Contacto')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('rubro')
                     ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('estado')
+                    ->label('Estado')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
