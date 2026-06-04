@@ -110,7 +110,7 @@
 }
 
 .fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn {
-    @apply hover:border-white/80 hover:bg-white/82 hover:shadow-[0_16px_26px_-22px_rgba(2,132,199,0.45)] dark:hover:border-sky-800/80 dark:hover:bg-sky-950/40 dark:hover:shadow-none focus-visible:border-white/80 focus-visible:bg-white/82 dark:focus-visible:border-sky-800/80 dark:focus-visible:bg-sky-950/40;
+    @apply hover:border-sky-200/90 hover:bg-sky-100/80 hover:shadow-[0_16px_26px_-22px_rgba(2,132,199,0.50)] dark:hover:border-sky-800/80 dark:hover:bg-sky-950/40 dark:hover:shadow-none focus-visible:border-sky-200/90 focus-visible:bg-sky-100/80 dark:focus-visible:border-sky-800/80 dark:focus-visible:bg-sky-950/40;
 }
 
 .fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn::before {
@@ -180,7 +180,8 @@
 
 /* --- GLASSMORPHIC TOPBAR --- */
 .fi-topbar {
-    @apply bg-white/70 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/50 shadow-[0_8px_20px_-12px_rgba(0,0,0,0.08)] transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(254, 249, 235, 0.80) 100%) !important;
+    @apply dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/50 shadow-[0_8px_20px_-12px_rgba(0,0,0,0.08)] transition-all duration-300;
     z-index: 50 !important;
 }
 
@@ -680,6 +681,14 @@ html.app-busy body {
     border-bottom: 0 !important;
 }
 
+/* Table Row Striping */
+.fi-ta-row:nth-child(even) {
+    background-color: rgba(248, 250, 252, 0.80) !important;
+}
+.dark .fi-ta-row:nth-child(even) {
+    background-color: rgba(15, 23, 42, 0.55) !important;
+}
+
 /* Table Cells text size and spacing */
 .fi-ta-cell {
     @apply py-3 px-4 text-xs text-slate-700 dark:text-slate-300;
@@ -688,6 +697,14 @@ html.app-busy body {
 /* Custom styling for badges inside the table to look like shadcn badges */
 .fi-ta-cell .fi-badge {
     @apply rounded-md font-semibold tracking-wide text-[10px] uppercase px-2 py-0.5 shadow-none border;
+}
+
+/* Table action buttons (edit/delete) more visible on hover */
+.fi-ta-ctn .fi-icon-btn {
+    @apply rounded-lg transition-all duration-200;
+}
+.fi-ta-ctn .fi-icon-btn:hover {
+    @apply bg-primary-100 text-primary-700 shadow-sm dark:bg-primary-500/15 dark:text-primary-300;
 }
 
 /* --- LOGIN PAGE GLASSMORPHIC REDESIGN --- */
@@ -1152,14 +1169,38 @@ html.app-busy body {
 }
 
 /* Light Mode Vivid Gradients */
-.card-emerald { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; }
-.card-indigo { background: linear-gradient(135deg, #6366f1 0%, #312e81 100%) !important; }
-.card-purple { background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%) !important; }
-.card-teal { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important; }
-.card-violet { background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%) !important; }
-.card-amber { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%) !important; }
-.card-blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
-.card-slate { background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important; }
+.card-emerald {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+    border-left: 5px solid rgba(16, 185, 129, 0.65) !important;
+}
+.card-indigo {
+    background: linear-gradient(135deg, #6366f1 0%, #312e81 100%) !important;
+    border-left: 5px solid rgba(99, 102, 241, 0.65) !important;
+}
+.card-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%) !important;
+    border-left: 5px solid rgba(168, 85, 247, 0.65) !important;
+}
+.card-teal {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+    border-left: 5px solid rgba(20, 184, 166, 0.65) !important;
+}
+.card-violet {
+    background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%) !important;
+    border-left: 5px solid rgba(139, 92, 246, 0.65) !important;
+}
+.card-amber {
+    background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%) !important;
+    border-left: 5px solid rgba(245, 158, 11, 0.65) !important;
+}
+.card-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    border-left: 5px solid rgba(59, 130, 246, 0.65) !important;
+}
+.card-slate {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+    border-left: 5px solid rgba(100, 116, 139, 0.65) !important;
+}
 
 /* Typographic and color overrides for light mode inside colorful cards */
 .colorful-card h3,
