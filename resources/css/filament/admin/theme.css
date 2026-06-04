@@ -17,10 +17,10 @@
 /* --- PREMIUM SIDEBAR SHELL --- */
 .fi-sidebar.fi-main-sidebar {
     background:
-        linear-gradient(180deg, rgba(233, 245, 255, 0.98) 0%, rgba(216, 238, 255, 0.97) 24%, rgba(203, 232, 255, 0.96) 100%),
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.22), transparent 34%),
-        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.18), transparent 42%);
-    @apply backdrop-blur-xl border-r border-sky-200/70 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.34)] ring-1 ring-sky-950/5 transition-all duration-300;
+        linear-gradient(180deg, rgba(186, 230, 253, 0.92) 0%, rgba(147, 197, 253, 0.88) 30%, rgba(165, 180, 252, 0.85) 70%, rgba(199, 210, 254, 0.90) 100%),
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.30), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.20), transparent 45%);
+    @apply backdrop-blur-xl border-r border-sky-300/60 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.38)] ring-1 ring-sky-950/8 transition-all duration-300;
     z-index: 40 !important;
 }
 
@@ -38,7 +38,7 @@
 
 .fi-sidebar-header {
     @apply px-5 py-5 border-b border-sky-200/70 dark:border-sky-900/70;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.06) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.30) 0%, rgba(186, 230, 253, 0.12) 100%);
 }
 
 .dark .fi-sidebar-header {
@@ -67,7 +67,7 @@
 }
 
 .fi-sidebar-group {
-    @apply rounded-[1.35rem] border border-white/65 bg-white/58 p-2 shadow-[0_16px_32px_-24px_rgba(3,105,161,0.34)];
+    @apply rounded-[1.35rem] border border-sky-200/80 bg-sky-50/60 p-2 shadow-[0_20px_40px_-28px_rgba(3,105,161,0.40)];
 }
 
 .dark .fi-sidebar-group {
@@ -94,7 +94,7 @@
 }
 
 .fi-sidebar-group-collapse-btn {
-    @apply rounded-lg p-1 text-sky-700/55 opacity-80 transition-all hover:bg-white/60 hover:text-sky-900 hover:opacity-100 dark:text-sky-200/55 dark:hover:bg-white/8 dark:hover:text-sky-100;
+    @apply rounded-lg p-1 text-sky-600/70 opacity-80 transition-all hover:bg-sky-100/70 hover:text-sky-800 hover:opacity-100 dark:text-sky-200/55 dark:hover:bg-white/8 dark:hover:text-sky-100;
 }
 
 .fi-sidebar-group-items {
@@ -122,8 +122,8 @@
 
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
 .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 52%, rgba(224, 242, 254, 0.98) 100%);
-    @apply border-white/85 shadow-[0_18px_30px_-22px_rgba(14,165,233,0.42)] ring-1 ring-sky-400/20;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(186, 230, 253, 0.90) 40%, rgba(147, 197, 253, 0.85) 100%);
+    @apply border-sky-300/60 shadow-[0_18px_30px_-22px_rgba(14,165,233,0.50)] ring-1 ring-sky-400/30;
 }
 
 .dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
@@ -194,7 +194,7 @@
 }
 
 .company-brand__mark {
-    @apply flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_14px_28px_-18px_rgba(14,165,233,0.45)] ring-1 ring-sky-200/60;
+    @apply flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-sky-200/70 bg-white/80 shadow-[0_14px_28px_-18px_rgba(14,165,233,0.45)] ring-1 ring-sky-300/60;
 }
 
 .dark .company-brand__mark {
