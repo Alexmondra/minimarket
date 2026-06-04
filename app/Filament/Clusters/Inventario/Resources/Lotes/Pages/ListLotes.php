@@ -123,13 +123,18 @@ class ListLotes extends ListRecords
             ->modifyQueryUsing(fn ($query) =>
                 $query->with(['lotePresentaciones.productoPresentacion.unidadMedida'])
                     ->whereHas('lotePresentaciones', fn ($q) => $q->where('stock', '>', 0))
-                    ->orderByRaw("CASE WHEN fecha_vencimiento <= ? AND estado_lote != 'agotado' THEN 0 ELSE 1 END ASC", [now()->toDateString()])
+                    ->orderByRaw("CASE
+                        WHEN estado_lote = 'por_confirmar' THEN 0
+                        WHEN " . now()->startOfDay()->diffInDays(now()->startOfDay()) . " = 0 AND estado_lote = 'stock_bajo' THEN 1
+                        WHEN estado_lote = 'por_vencer' OR (fecha_vencimiento IS NOT NULL AND fecha_vencimiento > NOW() AND fecha_vencimiento <= DATE_ADD(NOW(), INTERVAL 30 DAY)) THEN 2
+                        ELSE 3
+                    END ASC")
             )
             ->defaultSort('created_at', 'desc')
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
                 match (self::lotVisualState($record)) {
                     'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 ring-2 ring-rose-400/80 dark:ring-rose-600/80 border-l-4 border-l-rose-500 shadow-lg shadow-rose-500/20 dark:shadow-rose-950/30',
-                    'stock_bajo' => 'alert-pulse bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-400/60 dark:ring-amber-600/60 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10',
+                    'stock_bajo' => 'alert-pulse-amber bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-400/60 dark:ring-amber-600/60 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10',
                     'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
                     'por_vencer' => 'bg-amber-50/40 dark:bg-amber-950/5 border-l-4 border-l-amber-400',
                     default => null,
@@ -211,7 +216,7 @@ class ListLotes extends ListRecords
                     ->extraAttributes(fn (\App\Models\Lote $record): array => [
                         'class' => match (self::lotVisualState($record)) {
                             'por_confirmar' => 'alert-pulse ring-2 ring-rose-400/60 dark:ring-rose-600/60 shadow-lg shadow-rose-500/20',
-                            'stock_bajo' => 'alert-pulse ring-2 ring-amber-400/40 dark:ring-amber-600/40 shadow-md shadow-amber-500/10',
+                            'stock_bajo' => 'alert-pulse-amber ring-2 ring-amber-400/40 dark:ring-amber-600/40 shadow-md shadow-amber-500/10',
                             default => '',
                         },
                     ])

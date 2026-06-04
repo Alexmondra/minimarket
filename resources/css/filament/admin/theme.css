@@ -1109,6 +1109,14 @@ html.app-busy body {
     50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
+.alert-pulse-amber {
+    animation: alert-pulse-amber 2s ease-in-out infinite;
+}
+@keyframes alert-pulse-amber {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25); }
+    50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
 /* Scroll snap for mobile KPI row */
 .kpi-scroll {
     scroll-snap-type: x mandatory;
