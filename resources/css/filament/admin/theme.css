@@ -1140,6 +1140,17 @@ html.app-busy body {
     @apply ring-2 ring-primary-500/20 border-primary-400 shadow-md shadow-primary-500/8 dark:ring-primary-400/15 dark:border-primary-400;
 }
 
+/* --- PREMIUM FORM SECTIONS (CREATE/EDIT PAGES) --- */
+.fi-fo-section {
+    @apply rounded-2xl border border-slate-200/60 dark:border-slate-800/30 bg-white/70 dark:bg-slate-900/30 shadow-sm transition-all duration-300 !overflow-visible;
+}
+.fi-fo-section .fi-section-header-heading {
+    @apply text-base font-extrabold tracking-tight text-slate-800 dark:text-white;
+}
+.fi-fo-section .fi-section-header-description {
+    @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
 /* Alpine.js cloak */
 [x-cloak] { display: none !important; }
 
