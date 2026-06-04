@@ -2,8 +2,8 @@
     <div class="proveedores-root space-y-6 animate-fade-in">
 
         {{-- Banner Informativo --}}
-        <div class="relative overflow-hidden p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/70 shadow-sm dark:from-amber-950/20 dark:to-orange-950/20 dark:border-amber-800/80">
-            <div class="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/5 dark:to-orange-500/5 pointer-events-none"></div>
+        <div class="relative overflow-hidden p-4 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-300/70 shadow-sm dark:from-amber-950/20 dark:to-amber-950/20 dark:border-amber-800/80">
+            <div class="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-amber-600/5 dark:from-amber-500/5 dark:to-amber-500/5 pointer-events-none"></div>
             <div class="flex items-start gap-3.5 relative">
                 <div class="flex items-center justify-center p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shrink-0 ring-1 ring-amber-300/50 dark:ring-amber-700/50">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <div class="kpi-card kpi-orange">
+            <div class="kpi-card kpi-amber">
                 <div class="flex justify-between items-start">
                     <div class="space-y-2">
                         <span class="text-xs font-bold uppercase tracking-wider" style="color: rgba(255,255,255,0.75)">Inactivos</span>
@@ -75,7 +75,7 @@
         {{-- Botón Nuevo Proveedor --}}
         <div class="flex justify-end pt-2">
             <a href="{{ route('filament.admin.resources.proveedores.create') }}"
-               class="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-95 transition-all shadow-lg shadow-amber-500/25 rounded-2xl">
+               class="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 active:scale-95 transition-all shadow-lg shadow-amber-500/25 rounded-2xl">
                 <span class="text-base">🚛</span>
                 <span>Nuevo Proveedor</span>
             </a>
@@ -83,7 +83,7 @@
 
         {{-- Tabla Premium --}}
         <div class="relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-amber-50/50 dark:from-slate-900/50 dark:to-amber-950/10 shadow-sm transition-all duration-300">
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 dark:from-amber-600 dark:via-orange-600 dark:to-amber-600"></div>
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 dark:from-amber-600 dark:via-amber-600 dark:to-amber-600"></div>
 
             <div class="p-5 border-b border-amber-100 dark:border-slate-800/40 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-amber-50/40 dark:bg-slate-950/20">
                 <div class="relative flex-1 max-w-md">
@@ -150,7 +150,7 @@
                             <tr class="transition-all duration-150 {{ $isTrashed ? 'bg-rose-50/30 dark:bg-rose-950/10 border-l-4 border-l-rose-500' : 'hover:bg-amber-50/50 dark:hover:bg-amber-950/10 border-l-4 border-l-transparent hover:border-l-amber-400' }}">
                                 <td class="py-4 px-6">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-800/60">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-900/40 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-800/60">
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                                             </svg>
@@ -249,7 +249,7 @@
                                             </button>
                                         @else
                                             <a href="{{ route('filament.admin.resources.proveedores.edit', $proveedor->id) }}"
-                                               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl shadow-md shadow-amber-500/20 active:scale-95 transition-all">
+                                               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 rounded-xl shadow-md shadow-amber-500/20 active:scale-95 transition-all">
                                                 ✏️ Editar
                                             </a>
                                             <button type="button"
@@ -289,7 +289,7 @@
                                             </button>
                                         @else
                                             <a href="{{ route('filament.admin.resources.proveedores.create') }}"
-                                               class="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl shadow-md transition">
+                                               class="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 rounded-xl shadow-md transition">
                                                 <span class="text-sm">🚛</span>
                                                 <span>Nuevo Proveedor</span>
                                             </a>

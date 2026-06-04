@@ -2,7 +2,7 @@
     <div class="space-y-6 animate-fade-in" x-data="{ activeTab: 'general' }">
 
         {{-- Premium Header --}}
-        <div class="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-xl shadow-amber-500/25 dark:from-amber-700 dark:to-orange-800">
+        <div class="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 shadow-xl shadow-amber-500/25 dark:from-amber-700 dark:to-amber-800">
             <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
             <div class="relative flex items-center gap-4">
                 <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 text-white ring-1 ring-white/30 backdrop-blur-sm">
@@ -36,7 +36,7 @@
             {{-- TAB: GENERAL --}}
             <div x-show="activeTab === 'general'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 <div class="relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-amber-50/30 dark:from-slate-900/50 dark:to-amber-950/10 shadow-sm">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500"></div>
                     <div class="p-6">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-600/30">
@@ -84,7 +84,7 @@
             {{-- TAB: FISCAL --}}
             <div x-show="activeTab === 'fiscal'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 <div class="relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-amber-50/30 dark:from-slate-900/50 dark:to-amber-950/10 shadow-sm">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500"></div>
                     <div class="p-6">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-600/30">
@@ -122,7 +122,7 @@
             {{-- TAB: CONTACTO --}}
             <div x-show="activeTab === 'contacto'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 <div class="relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-amber-50/30 dark:from-slate-900/50 dark:to-amber-950/10 shadow-sm">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500"></div>
                     <div class="p-6">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-600/30">
@@ -190,7 +190,7 @@
                 </a>
 
                 <button type="submit"
-                    class="inline-flex items-center gap-2.5 px-7 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 rounded-xl shadow-lg shadow-amber-500/25 active:scale-95 transition-all">
+                    class="inline-flex items-center gap-2.5 px-7 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 rounded-xl shadow-lg shadow-amber-500/25 active:scale-95 transition-all">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                     </svg>
