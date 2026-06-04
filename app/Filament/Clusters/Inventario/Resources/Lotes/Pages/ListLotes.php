@@ -198,6 +198,7 @@ class ListLotes extends ListRecords
                     }),
             ], layout: FiltersLayout::Dropdown)
             ->filtersFormColumns(4)
+            ->actionsColumnLabel('')
             ->actions([
                 \Filament\Actions\Action::make('registrarMerma')
                     ->label(fn (\App\Models\Lote $record): string =>
