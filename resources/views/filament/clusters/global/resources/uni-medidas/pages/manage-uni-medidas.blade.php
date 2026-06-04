@@ -101,8 +101,8 @@
                                             Activo
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                            <span class="w-1.2 h-1.2 rounded-full bg-amber-500"></span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             Inactivo
                                         </span>
                                     @endif
@@ -246,7 +246,7 @@
                                                 Activo
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                                 Inactivo
                                             </span>

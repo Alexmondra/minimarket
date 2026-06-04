@@ -19,7 +19,8 @@
     background:
         linear-gradient(180deg, rgba(186, 230, 253, 0.92) 0%, rgba(147, 197, 253, 0.88) 30%, rgba(165, 180, 252, 0.85) 70%, rgba(199, 210, 254, 0.90) 100%),
         radial-gradient(circle at top left, rgba(14, 165, 233, 0.30), transparent 40%),
-        radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.20), transparent 45%);
+        radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.20), transparent 45%),
+        radial-gradient(ellipse at 30% 50%, rgba(245, 158, 11, 0.06), transparent 50%);
     @apply backdrop-blur-xl border-r border-sky-300/60 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.38)] ring-1 ring-sky-950/8 transition-all duration-300;
     z-index: 40 !important;
 }
