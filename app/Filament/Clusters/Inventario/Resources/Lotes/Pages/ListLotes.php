@@ -133,8 +133,8 @@ class ListLotes extends ListRecords
             ->defaultSort('created_at', 'desc')
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
                 match (self::lotVisualState($record)) {
-                    'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 ring-2 ring-rose-400/80 dark:ring-rose-600/80 border-l-4 border-l-rose-500 shadow-lg shadow-rose-500/20 dark:shadow-rose-950/30',
-                    'stock_bajo' => 'alert-pulse-amber bg-amber-50/80 dark:bg-amber-950/20 ring-2 ring-amber-400/60 dark:ring-amber-600/60 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10',
+                    'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 border-l-4 border-l-rose-500',
+                    'stock_bajo' => 'alert-pulse-amber bg-amber-50/80 dark:bg-amber-950/20 border-l-4 border-l-amber-500',
                     'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
                     'por_vencer' => 'bg-amber-50/40 dark:bg-amber-950/5 border-l-4 border-l-amber-400',
                     default => null,
@@ -215,8 +215,8 @@ class ListLotes extends ListRecords
                     ->size('sm')
                     ->extraAttributes(fn (\App\Models\Lote $record): array => [
                         'class' => match (self::lotVisualState($record)) {
-                            'por_confirmar' => 'alert-pulse ring-2 ring-rose-400/60 dark:ring-rose-600/60 shadow-lg shadow-rose-500/20',
-                            'stock_bajo' => 'alert-pulse-amber ring-2 ring-amber-400/40 dark:ring-amber-600/40 shadow-md shadow-amber-500/10',
+                            'por_confirmar' => 'alert-pulse',
+                            'stock_bajo' => 'alert-pulse-amber',
                             default => '',
                         },
                     ])
