@@ -1,10 +1,10 @@
 <div>
     @if($showModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto">
+            <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto">
                 {{-- Header --}}
-                <div class="flex justify-between items-center px-5 py-3 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">Crear Nuevo Lote</h3>
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/40">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Crear Nuevo Lote</h3>
                     <button wire:click="cerrar" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
                 </div>
 
@@ -105,7 +105,7 @@
                 </div>
 
                 {{-- Footer --}}
-                <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800/40 bg-slate-50/30 dark:bg-slate-950/10 rounded-b-2xl">
                     <button type="button" wire:click="cerrar"
                             class="px-4 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         Cancelar

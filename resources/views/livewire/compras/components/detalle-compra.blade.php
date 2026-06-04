@@ -1,14 +1,14 @@
 <div class="space-y-5">
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 class="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wide">Agregar lote recibido</h3>
+    <div class="relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-900/50 dark:to-slate-950/10 shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800/40">
+            <h3 class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">Agregar lote recibido</h3>
         </div>
 
         <div class="p-4 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="relative">
 
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                         Producto
                     </label>
 
@@ -67,16 +67,16 @@
                                             "
                                             class="group dropdown-item w-full text-left rounded-lg px-3 py-2 text-xs
                                                 transition-all duration-150
-                                                hover:bg-blue-500 hover:text-white
-                                                focus:bg-blue-600 focus:text-white
-                                                focus:outline-none focus:ring-2 focus:ring-blue-300 focus:shadow-lg focus:shadow-blue-500/30 focus:scale-[1.01]"
+                                                hover:bg-primary-50 hover:text-primary-900
+                                                focus:bg-primary-50 focus:text-primary-900
+                                                focus:outline-none focus:ring-2 focus:ring-primary-300 focus:scale-[1.01]"
                                         >
                                             <div class="flex flex-col">
-                                                <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white group-focus:text-white group-focus:font-semibold">
+                                                <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-700 dark:group-hover:text-primary-300">
                                                     {{ $resultado['label'] }}
                                                 </span>
                                                 @if($resultado['codigo'])
-                                                    <span class="text-[11px] text-gray-400 group-hover:text-blue-100 group-focus:text-blue-100">
+                                                    <span class="text-[11px] text-gray-400 group-hover:text-primary-400">
                                                         {{ $resultado['codigo'] }}
                                                     </span>
                                                 @endif
@@ -99,8 +99,8 @@
                     </div>
 
                     @if(strlen($searchProducto) >= 2 && count($productosResultados) === 0)
-                        <div class="mt-1.5 flex items-center justify-between p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-xs">
-                            <span class="text-amber-800 dark:text-amber-300 font-medium">Producto no encontrado</span>
+                        <div class="mt-1.5 flex items-center justify-between p-2.5 rounded-md bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-900 text-xs">
+                            <span class="text-primary-700 dark:text-primary-300 font-bold">Producto no encontrado</span>
                             <button
                                 type="button"
                                 wire:click="abrirCrearPresentacionModal()"
@@ -136,15 +136,15 @@
                 </div>
 
                 <div class="relative">
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Código de lote</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Código de lote</label>
                     <input type="text"
                            wire:model.live.debounce.250ms="codigoLote"
                            placeholder="Ej: LOTE-2026-001"
-                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                           class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:ring-primary-500/10 dark:focus:border-primary-400">
                     @error('codigoLote') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
 
                     @if($showLotesDropdown && !empty($lotesResultados))
-                        <div class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                        <div class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
                             @foreach($lotesResultados as $lote)
                                 <button type="button"
                                         wire:click="verLoteExistente({{ $lote['id'] }})"
@@ -158,14 +158,14 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Fecha fabricación</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Fecha fabricación</label>
                     <input type="date"
                            wire:model="fechaFabricacion"
                            class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Fecha vencimiento</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Fecha vencimiento</label>
                     <input type="date"
                            wire:model="fechaVencimiento"
                            class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
@@ -173,32 +173,32 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Ubicación</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Ubicación</label>
                     <input type="text"
                            wire:model="ubicacion"
                            placeholder="Ej: Estante A1"
-                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                           class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:ring-primary-500/10 dark:focus:border-primary-400">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Total pagado por el lote</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Total pagado por el lote</label>
                     <input type="number"
                            step="0.01"
                            min="0"
                            wire:model="precioCompraTotal"
                            placeholder="0.00"
                            readonly
-                           class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 placeholder-gray-400 cursor-not-allowed">
+                           class="w-full px-3 py-2 rounded-xl border text-sm shadow-sm border-slate-200 bg-slate-50 dark:bg-slate-900/40 dark:border-slate-700/80 text-slate-400 dark:text-slate-500 cursor-not-allowed">
                     <p class="mt-1 text-[10px] text-gray-400 dark:text-gray-500">Se calcula automáticamente sumando el total pagado de las presentaciones.</p>
                     @error('precioCompraTotal') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Observaciones</label>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Observaciones</label>
                     <textarea wire:model="observaciones"
                               rows="2"
                               placeholder="Opcional"
-                              class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"></textarea>
+                              class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:ring-primary-500/10 dark:focus:border-primary-400"></textarea>
                 </div>
             </div>
 
@@ -227,15 +227,15 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700/40 text-gray-500 uppercase tracking-wide">
-                                    <th class="px-3 py-2 text-left font-medium">Presentación</th>
-                                    <th class="px-3 py-2 text-right font-medium">Cantidad recibida</th>
-                                    <th class="px-3 py-2 text-right font-medium">Total pagado pres.</th>
-                                    <th class="px-3 py-2 text-right font-medium">Precio oferta</th>
-                                    <th class="px-3 py-2 text-right font-medium">Venta</th>
+                                <tr class="bg-slate-100/50 dark:bg-slate-950/20 text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    <th class="px-3 py-3 text-left text-[10px] font-bold">Presentación</th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold">Cantidad recibida</th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold">Total pagado pres.</th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold">Precio oferta</th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold">Venta</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40">
                                 @foreach($presentacionesDisponibles as $index => $presentacion)
                                     <tr>
                                         <td class="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
@@ -412,13 +412,13 @@
                 @if($editingLoteId)
                     <button type="button"
                             wire:click="cancelarEdicion"
-                            class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-md transition-colors">
+                            class="inline-flex items-center justify-center px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all">
                         Cancelar edición
                     </button>
                     <button type="button"
                             wire:click="agregarLote"
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
+                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold rounded-xl shadow-sm shadow-primary-500/10 transition-all disabled:opacity-50">
                         <span wire:loading.remove.delay.200ms wire:target="agregarLote">Actualizar lote en la compra</span>
                         <span wire:loading.delay.200ms wire:target="agregarLote">Actualizando...</span>
                     </button>
@@ -426,7 +426,7 @@
                     <button type="button"
                             wire:click="agregarLote"
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
+                            class="inline-flex items-center justify-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold rounded-xl shadow-sm shadow-primary-500/10 transition-all disabled:opacity-50">
                         <span wire:loading.remove.delay.200ms wire:target="agregarLote">Agregar lote a la compra</span>
                         <span wire:loading.delay.200ms wire:target="agregarLote">Agregando...</span>
                     </button>
@@ -435,29 +435,29 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 class="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wide">Lotes agregados</h3>
+    <div class="relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-900/50 dark:to-slate-950/10 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800/40">
+            <h3 class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">Lotes agregados</h3>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-xs">
                 <thead>
                     <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-500 uppercase tracking-wide">
-                        <th class="px-3 py-2 text-left font-medium">Lote</th>
-                        <th class="px-3 py-2 text-left font-medium">Producto</th>
-                        <th class="px-3 py-2 text-left font-medium">Presentaciones</th>
-                        <th class="px-3 py-2 text-right font-medium">Stock</th>
-                        <th class="px-3 py-2 text-right font-medium">Total pagado</th>
-                        <th class="px-3 py-2 text-center font-medium">Acción</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-bold">Lote</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-bold">Producto</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-bold">Presentaciones</th>
+                        <th class="px-3 py-3 text-right text-[10px] font-bold">Stock</th>
+                        <th class="px-3 py-3 text-right text-[10px] font-bold">Total pagado</th>
+                        <th class="px-3 py-3 text-center text-[10px] font-bold">Acción</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40">
                     @php
                         $visibleDetalles = collect($detalles)->filter(fn($d) => $d['id'] !== $editingDetalleId);
                     @endphp
                     @forelse($visibleDetalles as $detalle)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-all duration-150">
                             <td class="px-3 py-3 align-top">
                                 <div class="font-semibold text-gray-900 dark:text-gray-100">{{ $detalle['lote']['codigo_lote'] ?? '—' }}</div>
                                 <div class="text-gray-400">{{ $detalle['lote']['fecha_vencimiento'] ? \Carbon\Carbon::parse($detalle['lote']['fecha_vencimiento'])->format('d/m/Y') : 'Sin vencimiento' }}</div>
@@ -547,7 +547,7 @@
                                    @keydown.arrow-down.prevent="const first = $el.closest('.relative').querySelector('.dropdown-item'); if (first) first.focus();"
                                    @keydown.enter.prevent="const results = $el.closest('.relative').querySelectorAll('.dropdown-item'); if (results.length === 1) { results[0].click(); } else if (results.length > 0) { results[0].focus(); }"
                                    placeholder="Buscar producto..."
-                                   class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                                   class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:ring-primary-500/10 dark:focus:border-primary-400">
                             @if($modalShowProductoDropdown && count($modalProductosResultados) > 0)
                                 <div class="dropdown-container absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                     @foreach($modalProductosResultados as $producto)
@@ -560,7 +560,7 @@
                                                 class="group dropdown-item w-full text-left px-3 py-2 text-xs border-b border-gray-100 dark:border-gray-600 last:border-0 hover:bg-blue-600 focus:bg-blue-600 dark:hover:bg-blue-500 dark:focus:bg-blue-500 focus:outline-none transition-colors">
                                             <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white group-focus:text-white">{{ $producto['nombre'] }}</span>
                                             @if($producto['codigo'])
-                                                <span class="text-gray-400 ml-2 group-hover:text-blue-100 group-focus:text-blue-100">{{ $producto['codigo'] }}</span>
+                                                <span class="text-gray-400 ml-2 group-hover:text-primary-400">{{ $producto['codigo'] }}</span>
                                             @endif
                                         </button>
                                     @endforeach
@@ -627,7 +627,7 @@
                                         @foreach($modalPresentacionesResultados as $pRes)
                                             <button type="button"
                                                     wire:click="seleccionarPresentacionDesdeModal({{ $pRes['id'] }})"
-                                                    class="group w-full text-left rounded px-3 py-2 text-xs hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-150 focus:outline-none flex items-center justify-between">
+                                                    class="group w-full text-left rounded px-3 py-2 text-xs hover:bg-primary-50 hover:text-primary-900 dark:hover:bg-blue-600 transition-all duration-150 focus:outline-none flex items-center justify-between">
                                                 <span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-white">{{ $pRes['tipo_presentacion'] }}</span>
                                                 <span class="text-[11px] text-gray-500 dark:text-gray-400 group-hover:text-blue-100">({{ $pRes['cantidad'] }} {{ $pRes['unidad_medida_abreviatura'] }})</span>
                                             </button>
@@ -787,7 +787,7 @@
     @if($showHistorial)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[60vh] overflow-y-auto">
-                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-800/40">
                     <h3 class="text-xs font-medium text-gray-900 dark:text-white">Historial de compras</h3>
                     <button wire:click="cerrarHistorial" class="text-gray-400 hover:text-gray-600">&times;</button>
                 </div>
