@@ -116,12 +116,7 @@ class ListLotes extends ListRecords
                         default => 'heroicon-m-question-mark-circle',
                     })
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->description(fn (Lote $record): string => $record->created_at?->diffForHumans() ?? '')
-                    ->visibleFrom('xl'),
+              
             ])
             ->modifyQueryUsing(fn ($query) =>
                 $query->with(['lotePresentaciones.productoPresentacion.unidadMedida'])
