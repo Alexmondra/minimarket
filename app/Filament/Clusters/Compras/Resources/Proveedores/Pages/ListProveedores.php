@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Compras\Resources\Proveedores\Pages;
 
 use App\Filament\Clusters\Compras\Resources\Proveedores\ProveedorResource;
 use App\Models\Proveedor;
+use App\Support\SucursalContext;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,13 +42,37 @@ class ListProveedores extends Page
         $this->resetPage();
     }
 
+    protected function applySucursalScope(Builder $query): Builder
+    {
+        $sucursalContext = app(SucursalContext::class);
+        $activeId = $sucursalContext->activeSucursalId();
+
+        $query->where(function (Builder $q) use ($sucursalContext, $activeId) {
+            $sucursalContext->applyNullableToQuery($q);
+
+            if ($activeId) {
+                $q->orWhereIn('id', function ($subquery) use ($activeId) {
+                    $subquery->select('proveedor_id')
+                        ->from('compras')
+                        ->where('sucursal_id', $activeId)
+                        ->whereNull('deleted_at');
+                });
+            }
+        });
+
+        return $query;
+    }
+
     public function getStatsProperty(): array
     {
         $empresaId = auth()->user()->empresa_id;
 
-        $total = Proveedor::where('empresa_id', $empresaId)->withTrashed()->count();
-        $activos = Proveedor::where('empresa_id', $empresaId)->where('estado', true)->count();
-        $inactivos = Proveedor::where('empresa_id', $empresaId)->where('estado', false)->count();
+        $baseQuery = Proveedor::where('empresa_id', $empresaId);
+        $baseQuery = $this->applySucursalScope($baseQuery);
+
+        $total = (clone $baseQuery)->withTrashed()->count();
+        $activos = (clone $baseQuery)->where('estado', true)->count();
+        $inactivos = (clone $baseQuery)->where('estado', false)->count();
 
         return [
             'total' => $total,
@@ -61,8 +86,9 @@ class ListProveedores extends Page
         $empresaId = auth()->user()->empresa_id;
         $query = Proveedor::where('empresa_id', $empresaId);
 
+        $query = $this->applySucursalScope($query);
+
         if ($this->estado === 'active') {
-            // show only active (not trashed)
         } elseif ($this->estado === 'trashed') {
             $query->onlyTrashed();
         } else {
@@ -81,7 +107,15 @@ class ListProveedores extends Page
             });
         }
 
-        $query->withCount('compras');
+        $query->withCount(['compras' => function ($q) {
+            $sucursalContext = app(SucursalContext::class);
+            $activeId = $sucursalContext->activeSucursalId();
+            if ($activeId) {
+                $q->where('sucursal_id', $activeId);
+            } else {
+                $sucursalContext->applyToQuery($q);
+            }
+        }]);
 
         return $query->orderBy($this->sortField, $this->sortDirection)
             ->paginate(12);

@@ -25,9 +25,7 @@ class ProveedoresTable
                 TextColumn::make('nombre')
                     ->searchable()
                     ->label('Nombre')
-                    ->formatStateUsing(fn ($state) => '🚛 ' . $state)
-                    ->weight('bold')
-                    ->size('sm'),
+                    ->icon('heroicon-o-truck'),
                 TextColumn::make('compras_count')
                     ->label('Compras')
                     ->badge()
@@ -44,9 +42,7 @@ class ProveedoresTable
                     }),
                 TextColumn::make('numero_documento')
                     ->searchable()
-                    ->label('N° documento')
-                    ->monospace()
-                    ->size('sm'),
+                    ->label('N° documento'),
                 TextColumn::make('razon_social')
                     ->searchable()
                     ->label('Razón social')
