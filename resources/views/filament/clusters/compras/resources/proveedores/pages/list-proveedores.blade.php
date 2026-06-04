@@ -2,16 +2,16 @@
     <div class="proveedores-root space-y-6 animate-fade-in">
 
         {{-- Banner Informativo --}}
-        <div class="relative overflow-hidden p-4 rounded-xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-300/70 shadow-sm dark:from-sky-950/20 dark:to-indigo-950/20 dark:border-sky-800/80">
-            <div class="absolute inset-0 bg-gradient-to-r from-sky-500/5 to-indigo-500/5 dark:from-sky-500/5 dark:to-indigo-500/5 pointer-events-none"></div>
+        <div class="relative overflow-hidden p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/70 shadow-sm dark:from-amber-950/20 dark:to-orange-950/20 dark:border-amber-800/80">
+            <div class="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/5 dark:to-orange-500/5 pointer-events-none"></div>
             <div class="flex items-start gap-3.5 relative">
-                <div class="flex items-center justify-center p-2.5 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 shrink-0 ring-1 ring-sky-300/50 dark:ring-sky-700/50">
+                <div class="flex items-center justify-center p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shrink-0 ring-1 ring-amber-300/50 dark:ring-amber-700/50">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                     </svg>
                 </div>
                 <div class="space-y-1">
-                    <h4 class="text-xs font-bold tracking-wide text-sky-700 dark:text-sky-400 uppercase">
+                    <h4 class="text-xs font-bold tracking-wide text-amber-700 dark:text-amber-400 uppercase">
                         Gestión de Proveedores
                     </h4>
                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -23,7 +23,7 @@
 
         {{-- KPI Cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="kpi-card kpi-indigo">
+            <div class="kpi-card kpi-amber">
                 <div class="flex justify-between items-start">
                     <div class="space-y-2">
                         <span class="text-xs font-bold uppercase tracking-wider" style="color: rgba(255,255,255,0.75)">Total Proveedores</span>
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <div class="kpi-card kpi-amber">
+            <div class="kpi-card kpi-orange">
                 <div class="flex justify-between items-start">
                     <div class="space-y-2">
                         <span class="text-xs font-bold uppercase tracking-wider" style="color: rgba(255,255,255,0.75)">Inactivos</span>
@@ -75,19 +75,19 @@
         {{-- Botón Nuevo Proveedor --}}
         <div class="flex justify-end pt-2">
             <a href="{{ route('filament.admin.resources.proveedores.create') }}"
-               class="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 active:scale-95 transition-all shadow-lg shadow-sky-500/25 rounded-2xl">
+               class="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-95 transition-all shadow-lg shadow-amber-500/25 rounded-2xl">
                 <span class="text-base">🚛</span>
                 <span>Nuevo Proveedor</span>
             </a>
         </div>
 
         {{-- Tabla Premium --}}
-        <div class="relative overflow-hidden rounded-2xl border border-sky-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-sky-50/50 dark:from-slate-900/50 dark:to-sky-950/10 shadow-sm transition-all duration-300">
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-indigo-400 to-sky-400 dark:from-sky-600 dark:via-indigo-600 dark:to-sky-600"></div>
+        <div class="relative overflow-hidden rounded-2xl border border-amber-200/70 dark:border-slate-800/40 bg-gradient-to-br from-white to-amber-50/50 dark:from-slate-900/50 dark:to-amber-950/10 shadow-sm transition-all duration-300">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 dark:from-amber-600 dark:via-orange-600 dark:to-amber-600"></div>
 
-            <div class="p-5 border-b border-sky-100 dark:border-slate-800/40 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-sky-50/40 dark:bg-slate-950/20">
+            <div class="p-5 border-b border-amber-100 dark:border-slate-800/40 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-amber-50/40 dark:bg-slate-950/20">
                 <div class="relative flex-1 max-w-md">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-sky-400">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-400">
                         <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
                         </svg>
@@ -95,14 +95,14 @@
                     <input type="text"
                            wire:model.live="search"
                            placeholder="Buscar proveedores por nombre, RUC, teléfono..."
-                           class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border-sky-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm transition">
+                           class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border-amber-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 shadow-sm transition">
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1.5 p-1 bg-sky-100/60 dark:bg-slate-900/80 rounded-xl border border-sky-200/60 dark:border-slate-800/60">
+                    <div class="flex items-center gap-1.5 p-1 bg-amber-100/60 dark:bg-slate-900/80 rounded-xl border border-amber-200/60 dark:border-slate-800/60">
                         <button type="button"
                                 wire:click="$set('estado', 'active')"
-                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all {{ $estado === 'active' ? 'bg-white dark:bg-slate-800 text-sky-800 dark:text-white shadow-sm ring-1 ring-sky-300/50' : 'text-sky-600 hover:text-sky-800 dark:text-slate-400 dark:hover:text-slate-300' }}">
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all {{ $estado === 'active' ? 'bg-white dark:bg-slate-800 text-amber-800 dark:text-white shadow-sm ring-1 ring-amber-300/50' : 'text-amber-600 hover:text-amber-800 dark:text-slate-400 dark:hover:text-slate-300' }}">
                             ● Activos
                         </button>
                         <button type="button"
@@ -117,9 +117,9 @@
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse text-left text-sm">
                     <thead>
-                        <tr class="bg-sky-100/60 dark:bg-slate-950/30">
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60">
-                                <button type="button" wire:click="sortBy('nombre')" class="inline-flex items-center gap-1 hover:text-sky-900 dark:hover:text-sky-300">
+                        <tr class="bg-amber-100/60 dark:bg-slate-950/30">
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60">
+                                <button type="button" wire:click="sortBy('nombre')" class="inline-flex items-center gap-1 hover:text-amber-900 dark:hover:text-amber-300">
                                     <span>🚛 Proveedor</span>
                                     @if ($sortField === 'nombre')
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -128,8 +128,8 @@
                                     @endif
                                 </button>
                             </th>
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60">
-                                <button type="button" wire:click="sortBy('tipo_documento')" class="inline-flex items-center gap-1 hover:text-sky-900 dark:hover:text-sky-300">
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60">
+                                <button type="button" wire:click="sortBy('tipo_documento')" class="inline-flex items-center gap-1 hover:text-amber-900 dark:hover:text-amber-300">
                                     <span>📄 Documento</span>
                                     @if ($sortField === 'tipo_documento')
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -138,19 +138,19 @@
                                     @endif
                                 </button>
                             </th>
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60">📞 Contacto</th>
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60 text-center">🛒 Compras</th>
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60 text-center">Estado</th>
-                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-sky-700 dark:text-sky-400 border-b border-sky-200/70 dark:border-slate-800/60 text-right">Acciones</th>
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60">📞 Contacto</th>
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60 text-center">🛒 Compras</th>
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60 text-center">Estado</th>
+                            <th class="py-4 px-6 font-bold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-400 border-b border-amber-200/70 dark:border-slate-800/60 text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-sky-100/60 dark:divide-slate-800/40">
                         @forelse ($this->proveedores as $proveedor)
                             @php $isTrashed = $proveedor->trashed(); @endphp
-                            <tr class="transition-all duration-150 {{ $isTrashed ? 'bg-rose-50/30 dark:bg-rose-950/10 border-l-4 border-l-rose-500' : 'hover:bg-sky-50/50 dark:hover:bg-sky-950/10 border-l-4 border-l-transparent hover:border-l-sky-400' }}">
+                            <tr class="transition-all duration-150 {{ $isTrashed ? 'bg-rose-50/30 dark:bg-rose-950/10 border-l-4 border-l-rose-500' : 'hover:bg-amber-50/50 dark:hover:bg-amber-950/10 border-l-4 border-l-transparent hover:border-l-amber-400' }}">
                                 <td class="py-4 px-6">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-100 to-indigo-100 dark:from-sky-900/40 dark:to-indigo-900/40 text-sky-600 dark:text-sky-400 ring-1 ring-sky-300/50 dark:ring-sky-800/60">
+                                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/50 dark:ring-amber-800/60">
                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                                             </svg>
@@ -203,7 +203,7 @@
                                 </td>
 
                                 <td class="py-4 px-6 text-center">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-700 border border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30 shadow-sm">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30 shadow-sm">
                                         🛒 {{ $proveedor->compras_count ?? 0 }}
                                     </span>
                                 </td>
@@ -232,7 +232,7 @@
                                 <td class="py-4 px-6 text-right">
                                     <div class="flex items-center justify-end gap-2 flex-wrap">
                                         <a href="{{ route('filament.admin.resources.compras.index', ['proveedor_id' => $proveedor->id]) }}"
-                                           class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/10 hover:bg-sky-200 dark:hover:bg-sky-500/20 rounded-xl transition-all ring-1 ring-sky-300/50 dark:ring-sky-700/50 shadow-sm">
+                                           class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/10 hover:bg-amber-200 dark:hover:bg-amber-500/20 rounded-xl transition-all ring-1 ring-amber-300/50 dark:ring-amber-700/50 shadow-sm">
                                             🛒 Compras
                                         </a>
 
@@ -249,7 +249,7 @@
                                             </button>
                                         @else
                                             <a href="{{ route('filament.admin.resources.proveedores.edit', $proveedor->id) }}"
-                                               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 rounded-xl shadow-md shadow-sky-500/20 active:scale-95 transition-all">
+                                               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl shadow-md shadow-amber-500/20 active:scale-95 transition-all">
                                                 ✏️ Editar
                                             </a>
                                             <button type="button"
@@ -265,7 +265,7 @@
                             <tr>
                                 <td colspan="6" class="py-16 px-6 text-center">
                                     <div class="max-w-md mx-auto space-y-4">
-                                        <div class="inline-flex p-4 bg-sky-50 dark:bg-slate-900/60 rounded-2xl border border-sky-200/50 dark:border-slate-800/40 text-sky-400 shadow-sm">
+                                        <div class="inline-flex p-4 bg-amber-50 dark:bg-slate-900/60 rounded-2xl border border-amber-200/50 dark:border-slate-800/40 text-amber-400 shadow-sm">
                                             <span class="text-4xl">🔍</span>
                                         </div>
                                         <div class="space-y-1">
@@ -283,13 +283,13 @@
                                         @if (filled(trim($search)))
                                             <button type="button"
                                                     wire:click="$set('search', '')"
-                                                    class="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-bold text-sky-700 bg-sky-100 hover:bg-sky-200 border border-sky-300 rounded-xl shadow-sm transition dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-300">
+                                                    class="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl shadow-sm transition dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-300">
                                                 <span>🔄</span>
                                                 <span>Limpiar búsqueda</span>
                                             </button>
                                         @else
                                             <a href="{{ route('filament.admin.resources.proveedores.create') }}"
-                                               class="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 rounded-xl shadow-md transition">
+                                               class="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-xl shadow-md transition">
                                                 <span class="text-sm">🚛</span>
                                                 <span>Nuevo Proveedor</span>
                                             </a>
@@ -303,7 +303,7 @@
             </div>
 
             @if ($this->proveedores->hasPages())
-                <div class="px-6 py-4 border-t border-sky-100 dark:border-slate-800/40 bg-sky-50/30 dark:bg-slate-950/5">
+                <div class="px-6 py-4 border-t border-amber-100 dark:border-slate-800/40 bg-amber-50/30 dark:bg-slate-950/5">
                     {{ $this->proveedores->links() }}
                 </div>
             @endif
@@ -328,7 +328,7 @@
                  @click="open = false">
             </div>
 
-            <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-sky-200 dark:border-slate-800 p-6 max-w-md w-full animate-fade-in"
+            <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-amber-200 dark:border-slate-800 p-6 max-w-md w-full animate-fade-in"
                  x-show="open"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0 scale-95"
