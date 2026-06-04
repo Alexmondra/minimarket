@@ -519,7 +519,7 @@
                                     <!-- Botón Editar Precio Lote -->
                                     <button type="button" 
                                             wire:click="openEditPrice({{ $record->id }})"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-white bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 active:scale-95 transition-all rounded-xl shadow-md shadow-indigo-500/15">
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 transition-all rounded-xl shadow-lg shadow-amber-500/30 ring-1 ring-amber-400/30">
                                         <span>💲 Precio</span>
                                     </button>
                                 </div>
