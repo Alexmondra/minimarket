@@ -107,7 +107,7 @@
 }
 
 .fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn {
-    @apply hover:border-white/80 hover:bg-white/82 hover:shadow-[0_16px_26px_-22px_rgba(2,132,199,0.45)] dark:hover:border-sky-800/80 dark:hover:bg-sky-950/40 dark:hover:shadow-none focus-visible:border-white/80 focus-visible:bg-white/82 dark:focus-visible:border-sky-800/80 dark:focus-visible:bg-sky-950/40;
+    @apply hover:border-sky-200/80 hover:bg-sky-100/80 hover:shadow-[0_16px_26px_-22px_rgba(2,132,199,0.50)] dark:hover:border-sky-800/80 dark:hover:bg-sky-950/40 dark:hover:shadow-none focus-visible:border-sky-200/80 focus-visible:bg-sky-100/80 dark:focus-visible:border-sky-800/80 dark:focus-visible:bg-sky-950/40;
 }
 
 .fi-sidebar-item.fi-sidebar-item-has-url:not(.fi-active) > .fi-sidebar-item-btn::before {
@@ -663,9 +663,10 @@ html.app-busy body {
 
 /* Table Rows */
 .fi-ta-row {
-    @apply hover:bg-slate-50/40 dark:hover:bg-slate-900/60 transition-all duration-200;
-    background-color: white !important;
-    border-bottom: 1px solid rgba(241, 245, 249, 0.4) !important;
+    @apply hover:bg-slate-100/30 dark:hover:bg-slate-900/60 transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.60) !important;
+    backdrop-filter: blur(4px) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
 }
 .dark .fi-ta-row {
     background-color: rgba(15, 23, 42, 0.4) !important;
@@ -674,6 +675,13 @@ html.app-busy body {
 
 .fi-ta-row:last-child {
     border-bottom: 0 !important;
+}
+
+.fi-ta-row:nth-child(even) {
+    background-color: rgba(248, 250, 252, 0.80) !important;
+}
+.dark .fi-ta-row:nth-child(even) {
+    background-color: rgba(15, 23, 42, 0.55) !important;
 }
 
 /* Table Cells text size and spacing */
@@ -823,14 +831,14 @@ html.app-busy body {
 
 /* Glass card base */
 .glass-card {
-    @apply relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/40 backdrop-blur-md shadow-sm transition-all duration-300;
-    background: #ffffff !important;
+    @apply relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/40 backdrop-blur-sm shadow-sm transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.90) 0%, rgba(248, 250, 252, 0.85) 100%) !important;
 }
 .dark .glass-card {
     background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.45), rgba(8, 12, 24, 0.65)) !important;
 }
 .glass-card:hover {
-    @apply shadow-md -translate-y-0.5 border-slate-300/80 dark:border-slate-700/60 shadow-slate-100/50 dark:shadow-none;
+    @apply shadow-md -translate-y-0.5 border-slate-300/80 dark:border-slate-700/60 shadow-slate-200/50 dark:shadow-none;
 }
 
 /* KPI Card */
@@ -858,6 +866,7 @@ html.app-busy body {
 .kpi-card:hover {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
     transform: translateY(-4px) scale(1.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 .kpi-card:hover::before {
     opacity: 1;
@@ -1419,6 +1428,14 @@ html.app-busy body {
     background-color: inherit !important;
     border-color: inherit !important;
     color: inherit !important;
+}
+
+/* --- PREMIUM FORM INPUTS --- */
+.fi-fo-field-wrp .fi-input-wrp {
+    @apply rounded-xl border-slate-200 bg-white/60 shadow-sm transition-all duration-300 dark:bg-slate-900/40 dark:border-slate-700/80;
+}
+.fi-fo-field-wrp .fi-input-wrp:focus-within {
+    @apply ring-2 ring-primary-500/20 border-primary-400 shadow-md shadow-primary-500/8 dark:ring-primary-400/15 dark:border-primary-400;
 }
 
 /* --- PREMIUM FORM SECTIONS (CREATE/EDIT PAGES) --- */
