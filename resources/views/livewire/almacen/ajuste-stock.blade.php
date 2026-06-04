@@ -7,9 +7,9 @@
          style="display: none;">
         
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
-             @click="$wire.cerrarModal()"
-             x-show="open">
+         <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+              @click="open = false; $wire.cerrarModal()"
+              x-show="open">
         </div>
 
         <!-- Contenido Modal -->
@@ -35,6 +35,7 @@
                     <span>{{ $tipoAjuste === 'entrada' ? 'Ajustar Entrada (Ingreso)' : 'Ajustar Salida (Merma)' }}</span>
                 </h3>
                 <button type="button" 
+                        x-on:click="open = false"
                         wire:click="cerrarModal"
                         class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -82,15 +83,25 @@
                          }"
                          x-init="$watch('openDropdown', val => { if (!val) activeIndex = -1; })">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Buscar Producto y Presentación *</label>
-                        <input type="text"
-                               wire:model.live.debounce.300ms="searchProducto"
-                               placeholder="Ej: Coca 500ml, bolsa 1kg, lata..."
-                               @keydown.arrow-down.prevent="if (openDropdown) { activeIndex = (activeIndex + 1) % total; } else { openDropdown = true; }"
-                               @keydown.arrow-up.prevent="if (openDropdown) { activeIndex = (activeIndex - 1 + total) % total; }"
-                               @keydown.enter.prevent="if (openDropdown && activeIndex >= 0) { selectActive(); } else { $wire.guardar(); }"
-                               @keydown.escape.prevent="if (openDropdown) { openDropdown = false; activeIndex = -1; } else { $wire.cerrarModal(); }"
-                               @input="activeIndex = -1"
-                               class="w-full px-4 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                        <div class="flex items-center gap-1.5">
+                            <input type="text"
+                                   wire:model.live.debounce.300ms="searchProducto"
+                                   placeholder="Ej: Coca 500ml, bolsa 1kg, lata..."
+                                   @keydown.arrow-down.prevent="if (openDropdown) { activeIndex = (activeIndex + 1) % total; } else { openDropdown = true; }"
+                                   @keydown.arrow-up.prevent="if (openDropdown) { activeIndex = (activeIndex - 1 + total) % total; }"
+                                   @keydown.enter.prevent="if (openDropdown && activeIndex >= 0) { selectActive(); } else { $wire.guardar(); }"
+                                   @keydown.escape.prevent="if (openDropdown) { openDropdown = false; activeIndex = -1; } else { open = false; $wire.cerrarModal(); }"
+                                   @input="activeIndex = -1"
+                                   class="flex-1 w-full px-4 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                            <button type="button"
+                                    wire:click="abrirCrearProductoModal()"
+                                    class="inline-flex items-center justify-center p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors h-[34px] w-[34px] flex-shrink-0"
+                                    title="Registrar nuevo producto o presentación">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </button>
+                        </div>
                         @error('productoId') <span class="text-xs text-rose-500 font-medium block mt-1">{{ $message }}</span> @enderror
                         @error('presentacionId') <span class="text-xs text-rose-500 font-medium block mt-1">{{ $message }}</span> @enderror
 
@@ -112,6 +123,31 @@
                                 @endforeach
                             </div>
                         @endif
+
+                        @if (strlen($searchProducto) >= 2 && count($productosResultados) === 0)
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs">
+                                <span class="text-amber-700 dark:text-amber-300 font-bold">Producto no encontrado</span>
+                                <button type="button"
+                                        wire:click="abrirCrearProductoModal()"
+                                        class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    Registrar
+                                </button>
+                            </div>
+                        @endif
+
+                        @if ($productoId)
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 dark:text-slate-400">Producto seleccionado</span>
+                                <button type="button"
+                                        wire:click="abrirCrearProductoModal()"
+                                        class="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                                    + Agregar presentación
+                                </button>
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Alerta de Stock Cero Inmediato (solo para salida) --}}
@@ -128,7 +164,7 @@
                             <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cantidad *</label>
                             <input type="number"
                                    wire:model.live="cantidad"
-                                   min="1"
+                                   min="1" max="999999999"
                                    class="w-full px-4 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
                             @error('cantidad') <span class="text-xs text-rose-500 font-medium block mt-1">{{ $message }}</span> @enderror
                         </div>
@@ -197,7 +233,7 @@
                                 <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cantidad *</label>
                                 <input type="number"
                                        wire:model.live="cantidad"
-                                       min="1"
+                                       min="1" max="999999999"
                                        class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
                                 @error('cantidad') <span class="text-xs text-rose-500 font-medium block mt-1">{{ $message }}</span> @enderror
                             </div>
@@ -257,6 +293,7 @@
                     <!-- Footer Acciones Paso 1 -->
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-[#1d2745]/30">
                         <button type="button" 
+                                x-on:click="open = false"
                                 wire:click="cerrarModal"
                                 class="px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
                             Cancelar
@@ -397,4 +434,249 @@
 
         </div>
     </div>
+
+    {{-- Modal de creación de producto/presentación (on-the-fly) --}}
+    @if ($showCrearProductoModal)
+        <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+            <div class="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+                <div class="flex justify-between items-center px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Crear producto / presentación</h3>
+                    <button type="button" wire:click="cerrarCrearProductoModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-lg leading-none">&times;</button>
+                </div>
+
+                <div class="p-5 space-y-5">
+                    <div class="inline-flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden text-xs font-bold">
+                        <button type="button"
+                                wire:click="$set('modoProductoPresentacion', 'existente')"
+                                class="px-4 py-2 {{ $modoProductoPresentacion === 'existente' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300' }}">
+                            Asignar a producto
+                        </button>
+                        <button type="button"
+                                wire:click="$set('modoProductoPresentacion', 'nuevo')"
+                                class="px-4 py-2 border-l border-slate-200 dark:border-slate-700 {{ $modoProductoPresentacion === 'nuevo' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300' }}">
+                            Crear producto
+                        </button>
+                    </div>
+
+                    @if ($modoProductoPresentacion === 'existente')
+                        <div class="relative">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Producto existente</label>
+                            <input type="text"
+                                   wire:model.live.debounce.300ms="modalSearchProducto"
+                                   placeholder="Buscar producto..."
+                                   class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                            @if ($modalShowProductoDropdown && count($modalProductosResultados) > 0)
+                                <div class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                    @foreach ($modalProductosResultados as $producto)
+                                        <button type="button"
+                                                wire:click="seleccionarProductoParaPresentacion({{ $producto['id'] }}, '{{ $producto['nombre'] }}')"
+                                                class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors">
+                                            <span>{{ $producto['nombre'] }}</span>
+                                            @if ($producto['codigo'])
+                                                <span class="text-slate-400 ml-2">({{ $producto['codigo'] }})</span>
+                                            @endif
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @error('modalProductoId') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nombre del producto *</label>
+                                <input type="text"
+                                       wire:model="modalNuevoProductoNombre"
+                                       class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                @error('modalNuevoProductoNombre') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Código interno</label>
+                                <input type="text"
+                                       wire:model="modalCodigoInterno"
+                                       placeholder="Opcional"
+                                       class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                            </div>
+                            <div class="flex items-end gap-2 pb-2.5">
+                                <input type="checkbox" wire:model="modalAfectoIgv" id="modalAfectoIgv"
+                                       class="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500">
+                                <label for="modalAfectoIgv" class="text-xs text-slate-700 dark:text-slate-300">Afecto a IGV</label>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Categoría</label>
+                                <select wire:model="modalCategoriaId"
+                                        class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                    <option value="">Sin categoría</option>
+                                    @foreach ($this->categorias as $categoria)
+                                        <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Marca</label>
+                                <select wire:model="modalMarcaId"
+                                        class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                    <option value="">Sin marca</option>
+                                    @foreach ($this->marcas as $marca)
+                                        <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Datos de presentación</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="relative">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Tipo de presentación *</label>
+                                <input type="text"
+                                       wire:model.live.debounce.150ms="modalTipoPresentacion"
+                                       placeholder="Ej: Blíster, Caja, Frasco"
+                                       class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+
+                                @if ($showModalPresentacionDropdown && count($modalPresentacionesResultados) > 0)
+                                    <div class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                        @foreach ($modalPresentacionesResultados as $pRes)
+                                            <button type="button"
+                                                    wire:click="seleccionarPresentacionDesdeModal({{ $pRes['id'] }})"
+                                                    class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors">
+                                                <span>{{ $pRes['tipo_presentacion'] }}</span>
+                                                <span class="text-slate-400 ml-2">({{ $pRes['cantidad'] }} {{ $pRes['unidad_medida_abreviatura'] }})</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @error('modalTipoPresentacion') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Código de barra principal</label>
+                                <input type="text"
+                                       wire:model="modalCodigoBarra"
+                                       class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                @error('modalCodigoBarra') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Códigos de barra adicionales</label>
+                                <div class="flex items-center gap-1.5">
+                                    <input type="text"
+                                           wire:model="modalNuevoCodigoBarra"
+                                           placeholder="Escanear o escribir código adicional..."
+                                           @keydown.enter.prevent="$wire.agregarCodigoBarraDesdeModal()"
+                                           class="flex-1 px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                    <button type="button"
+                                            wire:click="agregarCodigoBarraDesdeModal"
+                                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-colors h-[34px] w-[34px] flex-shrink-0"
+                                            title="Agregar código adicional">+</button>
+                                </div>
+                                @error('modalNuevoCodigoBarra') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+
+                                @if (count($modalBarras) > 0)
+                                    <div class="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900/60">
+                                        @foreach ($modalBarras as $iBarra => $code)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                                {{ $code }}
+                                                <button type="button" wire:click="removerCodigoBarraDesdeModal({{ $iBarra }})" class="text-indigo-500 hover:text-indigo-700 font-bold focus:outline-none ml-1">&times;</button>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Unidad de medida *</label>
+                                <select wire:model="modalUnidadMedidaId"
+                                        class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                    <option value="">Seleccionar</option>
+                                    @foreach ($this->unidadesMedida as $unidad)
+                                        <option value="{{ $unidad->id }}">{{ $unidad->nombre }} ({{ $unidad->abreviatura }})</option>
+                                    @endforeach
+                                </select>
+                                @error('modalUnidadMedidaId') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Cantidad por empaque</label>
+                                <input type="number" min="1"
+                                       wire:model.live="modalCantidadPorEmpaque"
+                                       class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                            </div>
+                            @if ($modalCantidadPorEmpaque > 1)
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Presentación base</label>
+                                    @if ($modoProductoPresentacion === 'existente' && $modalProductoId)
+                                        @php $basePresentaciones = $this->basePresentaciones; @endphp
+                                        @if ($basePresentaciones->isNotEmpty())
+                                            <select wire:model="modalPresentacionBaseId"
+                                                    class="w-full px-3 py-2.5 text-xs rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
+                                                <option value="">Seleccionar presentación base</option>
+                                                @foreach ($basePresentaciones as $basePres)
+                                                    <option value="{{ $basePres->id }}">
+                                                        {{ $basePres->tipo_presentacion }} ({{ $basePres->cantidad }} {{ $basePres->unidadMedida?->abreviatura }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('modalPresentacionBaseId') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                                        @else
+                                            <div class="w-full px-3 py-2.5 text-xs rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400">
+                                                No hay otras presentaciones para este producto.
+                                            </div>
+                                        @endif
+                                    @else
+                                        <div class="w-full px-3 py-2.5 text-xs rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400">
+                                            No disponible para producto nuevo.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                            <div class="md:col-span-2 flex items-center gap-2">
+                                <input type="checkbox" wire:model="modalEsPesable" id="modalEsPesable"
+                                       class="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500">
+                                <label for="modalEsPesable" class="text-xs text-slate-700 dark:text-slate-300">Es pesable</label>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Imagen de la presentación (Opcional)</label>
+                                <div class="flex items-center gap-3 p-3 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/60">
+                                    @if ($modalImagen)
+                                        <div class="relative w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                            <img src="{{ $modalImagen->temporaryUrl() }}" class="object-cover w-full h-full">
+                                            <button type="button" wire:click="$set('modalImagen', null)" class="absolute top-0 right-0 bg-red-600 hover:bg-red-700 text-white rounded-bl text-[10px] leading-none p-1">&times;</button>
+                                        </div>
+                                    @else
+                                        <div class="w-16 h-16 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    @endif
+                                    <div class="flex-1 min-w-0">
+                                        <input type="file" wire:model="modalImagen" id="modalImagenCrear" accept="image/*" class="hidden">
+                                        <label for="modalImagenCrear" class="inline-flex items-center px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none cursor-pointer transition-colors">
+                                            {{ $modalImagen ? 'Cambiar imagen' : 'Seleccionar imagen' }}
+                                        </label>
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">PNG, JPG, GIF hasta 2MB</p>
+                                        @error('modalImagen') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 px-5 py-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button"
+                            wire:click="cerrarCrearProductoModal"
+                            class="px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                        Cancelar
+                    </button>
+                    <button type="button"
+                            wire:click="crearProductoYPresentacion"
+                            wire:loading.attr="disabled"
+                            class="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl disabled:opacity-50">
+                        <span wire:loading.remove.delay.200ms wire:target="crearProductoYPresentacion">Crear y seleccionar</span>
+                        <span wire:loading.delay.200ms wire:target="crearProductoYPresentacion">Guardando...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

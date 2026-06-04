@@ -285,6 +285,7 @@ class ListStockSucursal extends Page
             ->join('lote_presentacion', 'producto_sucursal.lote_presentacion_id', '=', 'lote_presentacion.id')
             ->join('lotes', 'lote_presentacion.lote_id', '=', 'lotes.id')
             ->where('lote_presentacion.producto_presentacion_id', $presentacionId)
+            ->where('lote_presentacion.stock', '>', 0)
             ->with(['lotePresentacion.lote', 'sucursal']);
 
         if ($sucursalId) {

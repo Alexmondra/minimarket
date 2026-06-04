@@ -421,13 +421,13 @@
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" 
                             wire:click="openGeneralPrice"
-                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition rounded-xl shadow-sm">
-                        <span>⚡ Asignar Precio General</span>
+                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] font-extrabold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 active:scale-95 transition-all rounded-xl shadow-md shadow-primary-500/15">
+                        <span>⚡ Precio General</span>
                     </button>
                     <button type="button" 
                             wire:click="openStockMinimo"
-                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 transition rounded-xl border dark:border-slate-700">
-                        <span>⚠️ Configurar Stock Mínimo</span>
+                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] font-extrabold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 active:scale-95 transition-all rounded-xl shadow-md shadow-emerald-500/15">
+                        <span>⚠️ Stock Mínimo</span>
                     </button>
                 </div>
 
@@ -519,8 +519,8 @@
                                     <!-- Botón Editar Precio Lote -->
                                     <button type="button" 
                                             wire:click="openEditPrice({{ $record->id }})"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition shadow-sm">
-                                        <span>💲 Controlar Precio</span>
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-white bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 active:scale-95 transition-all rounded-xl shadow-md shadow-indigo-500/15">
+                                        <span>💲 Precio</span>
                                     </button>
                                 </div>
                             </div>
@@ -536,7 +536,7 @@
             <div class="flex items-center justify-end gap-3 p-4 bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-[#1d2745]/30">
                 <button type="button" 
                         @click="open = false"
-                        class="px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl border dark:border-slate-700 transition">
+                        class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all">
                     Cerrar
                 </button>
             </div>
@@ -593,12 +593,12 @@
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-[#1d2745]/30">
                     <button type="button" 
                             @click="openMin = false"
-                            class="px-4.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                            class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all">
                         Cancelar
                     </button>
                     <button type="submit" 
-                            class="px-4.5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl">
-                        <span>Save Threshold</span>
+                            class="px-5 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 active:scale-95 transition-all rounded-xl shadow-md shadow-primary-500/15">
+                        💾 Guardar
                     </button>
                 </div>
             </form>
@@ -687,12 +687,12 @@
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-[#1d2745]/30">
                     <button type="button" 
                             @click="openEdit = false"
-                            class="px-4.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                            class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all">
                         Cancelar
                     </button>
                     <button type="submit" 
-                            class="px-4.5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl">
-                        <span>✏️ Editar Precio</span>
+                            class="px-5 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 active:scale-95 transition-all rounded-xl shadow-md shadow-primary-500/15">
+                        ✏️ Editar Precio
                     </button>
                 </div>
             </form>
@@ -781,12 +781,12 @@
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-[#1d2745]/30">
                     <button type="button" 
                             @click="openGen = false"
-                            class="px-4.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
+                            class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all">
                         Cancelar
                     </button>
                     <button type="submit" 
-                            class="px-4.5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all shadow-md shadow-indigo-500/20 rounded-xl">
-                        <span>⚡ Asignar Precio General</span>
+                            class="px-5 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 active:scale-95 transition-all rounded-xl shadow-md shadow-primary-500/15">
+                        ⚡ Asignar Precio General
                     </button>
                 </div>
             </form>

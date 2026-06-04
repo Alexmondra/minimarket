@@ -9,16 +9,23 @@ use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\ProductoPresentacion;
 use App\Models\ProductoSucursal;
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Proveedor;
+use App\Models\ProductoPresentacionBarra;
 use App\Models\Sucursal;
+use App\Models\UniMedida;
 use Filament\Notifications\Notification;
 use App\Support\SucursalContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class AjusteStock extends Component
 {
+    use WithFileUploads;
     public bool $showModal = false;
 
     public string $tipoAjuste = 'entrada'; // 'entrada' o 'salida'
@@ -30,7 +37,7 @@ class AjusteStock extends Component
 
     public ?int $presentacionId = null;
 
-    public ?int $cantidad = 1;
+    public $cantidad = 1;
 
     public string $motivo = '';
 
@@ -42,6 +49,57 @@ class AjusteStock extends Component
     public bool $showProductoDropdown = false;
 
     public array $presentaciones = [];
+
+    public ?string $ultimaBusquedaSinResultado = null;
+
+    // Product creation modal
+    public bool $showCrearProductoModal = false;
+
+    public string $modoProductoPresentacion = 'nuevo';
+
+    public string $modalSearchProducto = '';
+
+    public array $modalProductosResultados = [];
+
+    public bool $modalShowProductoDropdown = false;
+
+    public ?int $modalProductoId = null;
+
+    public ?string $modalProductoNombre = null;
+
+    public ?string $modalNuevoProductoNombre = null;
+
+    public ?string $modalCodigoInterno = null;
+
+    public ?int $modalCategoriaId = null;
+
+    public ?int $modalMarcaId = null;
+
+    public bool $modalAfectoIgv = true;
+
+    public ?int $modalUnidadMedidaId = null;
+
+    public $modalCantidadPorEmpaque = 1;
+
+    public ?string $modalTipoPresentacion = null;
+
+    public ?string $modalCodigoBarra = null;
+
+    public bool $modalEsPesable = false;
+
+    public ?int $modalPresentacionBaseId = null;
+
+    public $modalImagen = null;
+
+    public ?int $modalEditingPresentationId = null;
+
+    public bool $showModalPresentacionDropdown = false;
+
+    public array $modalPresentacionesResultados = [];
+
+    public array $modalBarras = [];
+
+    public ?string $modalNuevoCodigoBarra = null;
 
     // Output specific inputs
     public string $lotePresentacionId = 'fifo'; // 'fifo' or a specific ID
@@ -76,7 +134,15 @@ class AjusteStock extends Component
     protected $listeners = [
         'abrirAjusteEntrada' => 'abrirEntrada',
         'abrirAjusteSalida' => 'abrirSalida',
+        'productoCreado' => 'setProducto',
     ];
+
+    public function updatedModalCantidadPorEmpaque(): void
+    {
+        if ($this->modalCantidadPorEmpaque <= 1) {
+            $this->modalPresentacionBaseId = null;
+        }
+    }
 
     public function abrirEntrada(?int $sucursalId = null): void
     {
@@ -102,6 +168,7 @@ class AjusteStock extends Component
 
     protected function resetForm(): void
     {
+        $this->showCrearProductoModal = false;
         $this->reset([
             'sucursalId', 'productoId', 'presentacionId', 'cantidad', 'motivo',
             'searchProducto', 'productosResultados', 'showProductoDropdown',
@@ -154,6 +221,7 @@ class AjusteStock extends Component
 
     public function updatedCantidad(): void
     {
+        $this->cantidad = (int) $this->cantidad;
         if ($this->tipoAjuste === 'entrada') {
             $this->calcularPrecioUnitario();
         }
@@ -196,44 +264,37 @@ class AjusteStock extends Component
         }
 
         $termRaw = trim($this->searchProducto);
-        $words = explode(' ', $termRaw);
 
         $this->productosResultados = ProductoPresentacion::query()
-            ->join('productos', 'producto_presentacion.producto_id', '=', 'productos.id')
-            ->leftJoin('unidades_medida', 'producto_presentacion.unidad_medida_id', '=', 'unidades_medida.id')
-            ->where('productos.activo', true)
-            ->where('productos.empresa_id', auth()->user()->empresa_id)
-            ->where(function ($q) use ($words) {
-                foreach ($words as $word) {
-                    $word = '%' . $word . '%';
-                    $q->where(function ($sub) use ($word) {
-                        $sub->where('productos.nombre', 'like', $word)
-                            ->orWhere('producto_presentacion.tipo_presentacion', 'like', $word)
-                            ->orWhere('productos.codigo_interno', 'like', $word);
+            ->with('unidadMedida', 'barras')
+            ->whereHas('producto', fn ($q) => $q->where('activo', true)->where('empresa_id', auth()->user()->empresa_id))
+            ->where(function ($q) use ($termRaw) {
+                $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', 'like', "%{$termRaw}%"))
+                    ->orWhere('tipo_presentacion', 'like', "%{$termRaw}%")
+                    ->orWhereHas('producto', function ($pq) use ($termRaw) {
+                        $pq->where('nombre', 'like', "%{$termRaw}%")
+                            ->orWhere('codigo_interno', 'like', "%{$termRaw}%");
                     });
-                }
             })
-            ->select(
-                'producto_presentacion.id as presentacion_id',
-                'productos.id as producto_id',
-                'productos.nombre as producto_nombre',
-                'producto_presentacion.tipo_presentacion',
-                'unidades_medida.abreviatura as unidad_medida_abr',
-                'productos.codigo_interno'
-            )
-            ->limit(15)
+            ->limit(10)
             ->get()
-            ->map(fn ($p) => [
-                'presentacion_id' => $p->presentacion_id,
+            ->sortByDesc(fn (ProductoPresentacion $p) => $p->barras->pluck('codigo_barra')->contains($termRaw))
+            ->map(fn (ProductoPresentacion $p) => [
+                'presentacion_id' => $p->id,
                 'producto_id' => $p->producto_id,
-                'producto_nombre' => $p->producto_nombre,
-                'tipo_presentacion' => $p->tipo_presentacion,
-                'unidad_medida_abr' => $p->unidad_medida_abr,
-                'codigo_interno' => $p->codigo_interno,
+                'producto_nombre' => $p->producto?->nombre ?? '',
+                'tipo_presentacion' => $p->tipo_presentacion ?? '',
+                'unidad_medida_abr' => $p->unidadMedida?->abreviatura ?? '',
+                'codigo_interno' => $p->producto?->codigo_interno ?? '',
             ])
+            ->values()
             ->toArray();
 
         $this->showProductoDropdown = count($this->productosResultados) > 0;
+
+        if (! $this->showProductoDropdown && ctype_digit($termRaw) && strlen($termRaw) >= 5 && $this->ultimaBusquedaSinResultado !== $termRaw) {
+            $this->abrirCrearProductoModal($termRaw);
+        }
     }
 
     public function seleccionarPresentacion(array $result): void
@@ -245,6 +306,22 @@ class AjusteStock extends Component
 
         $this->lotePresentacionId = 'fifo';
         $this->cargarLotesDisponibles();
+    }
+
+    public function setProducto(int $productoId): void
+    {
+        $producto = Producto::find($productoId);
+        if (! $producto) {
+            return;
+        }
+        $this->productoId = $producto->id;
+        $presentacion = $producto->presentaciones()->first();
+        if ($presentacion) {
+            $this->presentacionId = $presentacion->id;
+            $this->searchProducto = $producto->nombre . ' — ' . ($presentacion->tipo_presentacion ?? 'Presentación');
+            $this->cargarLotesDisponibles();
+        }
+        $this->showProductoDropdown = false;
     }
 
     protected function cargarLotesDisponibles(): void
@@ -279,7 +356,7 @@ class AjusteStock extends Component
             'sucursalId' => 'required|exists:sucursales,id',
             'productoId' => 'required|exists:productos,id',
             'presentacionId' => 'required|exists:producto_presentacion,id',
-            'cantidad' => 'required|integer|min:1',
+            'cantidad' => 'required|integer|min:1|max:999999999',
             'tipoMerma' => 'required|string',
             'motivo' => 'nullable|string|max:500',
         ]);
@@ -366,7 +443,7 @@ class AjusteStock extends Component
             'sucursalId' => 'required|exists:sucursales,id',
             'productoId' => 'required|exists:productos,id',
             'presentacionId' => 'required|exists:producto_presentacion,id',
-            'cantidad' => 'required|integer|min:1',
+            'cantidad' => 'required|integer|min:1|max:999999999',
             'totalPagado' => 'nullable|numeric|min:0',
             'loteCodigo' => 'required|string|max:100',
             'fechaVencimiento' => 'nullable|date',
@@ -563,6 +640,351 @@ class AjusteStock extends Component
             'totalPagado.min' => 'El total pagado no puede ser menor a 0.',
             'proveedorId.exists' => 'El proveedor seleccionado no es válido.',
         ];
+    }
+
+    public function abrirCrearProductoModal(?string $codigoBarra = null): void
+    {
+        $codigoBarra = trim((string) ($codigoBarra ?: $this->searchProducto));
+        $this->ultimaBusquedaSinResultado = $codigoBarra;
+
+        $selectedProductId = $this->productoId;
+
+        $this->resetCrearProductoModal();
+
+        if ($selectedProductId) {
+            $this->modoProductoPresentacion = 'existente';
+            $this->modalProductoId = $selectedProductId;
+            $this->modalSearchProducto = $this->searchProducto;
+            $this->modalCodigoBarra = ctype_digit($codigoBarra) ? $codigoBarra : null;
+        } else {
+            if (ctype_digit($codigoBarra)) {
+                $this->modalCodigoBarra = $codigoBarra;
+                $this->modalSearchProducto = '';
+                $this->modoProductoPresentacion = 'nuevo';
+            } else {
+                $this->modalCodigoBarra = null;
+                $this->modalSearchProducto = $codigoBarra;
+                $this->modalNuevoProductoNombre = $codigoBarra;
+                $this->modoProductoPresentacion = 'nuevo';
+            }
+        }
+
+        $this->showCrearProductoModal = true;
+    }
+
+    public function cerrarCrearProductoModal(): void
+    {
+        $this->showCrearProductoModal = false;
+        $this->resetCrearProductoModal();
+    }
+
+    protected function resetCrearProductoModal(): void
+    {
+        $this->reset([
+            'modalSearchProducto', 'modalProductosResultados', 'modalShowProductoDropdown',
+            'modalProductoId', 'modalProductoNombre', 'modalNuevoProductoNombre',
+            'modalCodigoInterno', 'modalCategoriaId', 'modalMarcaId',
+            'modalUnidadMedidaId', 'modalTipoPresentacion', 'modalCodigoBarra',
+            'modalEsPesable', 'modalPresentacionBaseId', 'modalImagen',
+            'modalEditingPresentationId', 'showModalPresentacionDropdown',
+            'modalPresentacionesResultados', 'modalBarras', 'modalNuevoCodigoBarra',
+        ]);
+        $this->modoProductoPresentacion = 'existente';
+        $this->modalAfectoIgv = true;
+        $this->modalCantidadPorEmpaque = 1;
+    }
+
+    public function updatedModoProductoPresentacion(): void
+    {
+        $this->modalPresentacionBaseId = null;
+    }
+
+    public function updatedModalTipoPresentacion(): void
+    {
+        if ($this->modoProductoPresentacion === 'nuevo' || !$this->modalProductoId) {
+            $this->modalPresentacionesResultados = [];
+            $this->showModalPresentacionDropdown = false;
+            return;
+        }
+
+        if ($this->modalEditingPresentationId) {
+            $p = ProductoPresentacion::find($this->modalEditingPresentationId);
+            if ($p && $p->tipo_presentacion !== $this->modalTipoPresentacion) {
+                $this->modalEditingPresentationId = null;
+            }
+        }
+
+        $term = trim((string) $this->modalTipoPresentacion);
+        if (strlen($term) < 1) {
+            $this->modalPresentacionesResultados = [];
+            $this->showModalPresentacionDropdown = false;
+            return;
+        }
+
+        $this->modalPresentacionesResultados = ProductoPresentacion::query()
+            ->with('unidadMedida')
+            ->where('producto_id', $this->modalProductoId)
+            ->where('tipo_presentacion', 'like', "%{$term}%")
+            ->limit(8)
+            ->get()
+            ->map(fn ($p): array => [
+                'id' => $p->id,
+                'tipo_presentacion' => $p->tipo_presentacion,
+                'cantidad' => $p->cantidad,
+                'unidad_medida_id' => $p->unidad_medida_id,
+                'unidad_medida_nombre' => $p->unidadMedida?->nombre,
+                'unidad_medida_abreviatura' => $p->unidadMedida?->abreviatura,
+                'es_pesable' => (bool) $p->es_pesable,
+                'presentacion_base_id' => $p->presentacion_base_id,
+            ])
+            ->toArray();
+
+        $this->showModalPresentacionDropdown = count($this->modalPresentacionesResultados) > 0;
+    }
+
+    public function seleccionarPresentacionDesdeModal(int $id): void
+    {
+        $p = ProductoPresentacion::findOrFail($id);
+        $this->modalEditingPresentationId = $p->id;
+        $this->modalTipoPresentacion = $p->tipo_presentacion;
+        $this->modalUnidadMedidaId = $p->unidad_medida_id;
+        $this->modalCantidadPorEmpaque = $p->cantidad;
+        $this->modalEsPesable = (bool) $p->es_pesable;
+        $this->modalPresentacionBaseId = $p->presentacion_base_id;
+        $this->showModalPresentacionDropdown = false;
+    }
+
+    public function agregarCodigoBarraDesdeModal(): void
+    {
+        $this->modalNuevoCodigoBarra = trim((string) $this->modalNuevoCodigoBarra);
+        if (blank($this->modalNuevoCodigoBarra)) {
+            return;
+        }
+
+        if (in_array($this->modalNuevoCodigoBarra, $this->modalBarras) || $this->modalNuevoCodigoBarra === $this->modalCodigoBarra) {
+            $this->addError('modalNuevoCodigoBarra', 'Este código ya está agregado.');
+            return;
+        }
+
+        $exists = ProductoPresentacionBarra::query()
+            ->where('codigo_barra', $this->modalNuevoCodigoBarra)
+            ->when($this->modalEditingPresentationId, function ($query) {
+                $query->where('producto_presentacion_id', '!=', $this->modalEditingPresentationId);
+            })
+            ->exists();
+
+        if ($exists) {
+            $this->addError('modalNuevoCodigoBarra', 'Este código de barra ya está asignado a otra presentación.');
+            return;
+        }
+
+        $this->modalBarras[] = $this->modalNuevoCodigoBarra;
+        $this->modalNuevoCodigoBarra = '';
+        $this->resetErrorBag('modalNuevoCodigoBarra');
+    }
+
+    public function removerCodigoBarraDesdeModal(int $index): void
+    {
+        if (isset($this->modalBarras[$index])) {
+            unset($this->modalBarras[$index]);
+            $this->modalBarras = array_values($this->modalBarras);
+        }
+    }
+
+    public function getBasePresentacionesProperty()
+    {
+        if ($this->modoProductoPresentacion === 'nuevo' || !$this->modalProductoId) {
+            return collect();
+        }
+
+        return ProductoPresentacion::query()
+            ->with('unidadMedida')
+            ->where('producto_id', $this->modalProductoId)
+            ->get();
+    }
+
+    public function updatedModalSearchProducto(): void
+    {
+        if (strlen($this->modalSearchProducto) < 2) {
+            $this->modalProductosResultados = [];
+            $this->modalShowProductoDropdown = false;
+            return;
+        }
+
+        $this->modalProductosResultados = Producto::query()
+            ->where('activo', true)
+            ->where('empresa_id', Auth::user()?->empresa_id)
+            ->where(function ($query) {
+                $query->where('nombre', 'like', "%{$this->modalSearchProducto}%")
+                    ->orWhere('codigo_interno', 'like', "%{$this->modalSearchProducto}%");
+            })
+            ->limit(8)
+            ->get()
+            ->map(fn (Producto $producto): array => [
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'codigo' => $producto->codigo_interno,
+            ])
+            ->toArray();
+
+        $this->modalShowProductoDropdown = count($this->modalProductosResultados) > 0;
+    }
+
+    public function seleccionarProductoParaPresentacion(int $id, string $nombre): void
+    {
+        $this->modalProductoId = $id;
+        $this->modalProductoNombre = $nombre;
+        $this->modalSearchProducto = $nombre;
+        $this->modalShowProductoDropdown = false;
+        $this->modalPresentacionBaseId = null;
+    }
+
+    public function crearProductoYPresentacion(): void
+    {
+        if (filled($this->modalNuevoCodigoBarra)) {
+            $this->agregarCodigoBarraDesdeModal();
+            if ($this->getErrorBag()->has('modalNuevoCodigoBarra')) {
+                return;
+            }
+        }
+
+        if ($this->modalCantidadPorEmpaque <= 1 || $this->modoProductoPresentacion === 'nuevo') {
+            $this->modalPresentacionBaseId = null;
+        }
+
+        $rules = [
+            'modalUnidadMedidaId' => 'required|exists:unidades_medida,id',
+            'modalCantidadPorEmpaque' => 'required|integer|min:1',
+            'modalTipoPresentacion' => 'required|string|max:255',
+            'modalCodigoBarra' => [
+                'nullable', 'string', 'max:255',
+                Rule::unique('producto_presentacion_barras', 'codigo_barra')
+                    ->ignore($this->modalEditingPresentationId, 'producto_presentacion_id'),
+            ],
+            'modalImagen' => 'nullable|image|max:2048',
+        ];
+
+        if ($this->modoProductoPresentacion === 'nuevo') {
+            $rules['modalNuevoProductoNombre'] = 'required|string|max:255';
+            $rules['modalCodigoInterno'] = 'nullable|string|max:100';
+            $rules['modalCategoriaId'] = 'nullable|exists:categorias,id';
+            $rules['modalMarcaId'] = 'nullable|exists:marcas,id';
+        } else {
+            $rules['modalProductoId'] = 'required|exists:productos,id';
+            $rules['modalPresentacionBaseId'] = [
+                'nullable',
+                Rule::exists('producto_presentacion', 'id')->where(function ($query) {
+                    $query->where('producto_id', $this->modalProductoId);
+                }),
+            ];
+        }
+
+        $this->validate($rules, [
+            'modalCodigoBarra.unique' => 'Este código de barra ya está registrado en otra presentación.',
+            'modalPresentacionBaseId.exists' => 'La presentación base seleccionada no es válida para este producto.',
+            'modalImagen.image' => 'El archivo debe ser una imagen válida.',
+            'modalImagen.max' => 'La imagen no debe pesar más de 2MB.',
+        ]);
+
+        $isEdit = (bool) $this->modalEditingPresentationId;
+
+        $presentacion = DB::transaction(function () use ($isEdit): ProductoPresentacion {
+            $producto = $this->modoProductoPresentacion === 'nuevo'
+                ? Producto::create([
+                    'empresa_id' => Auth::user()?->empresa_id ?? 1,
+                    'categoria_id' => $this->modalCategoriaId,
+                    'marca_id' => $this->modalMarcaId,
+                    'codigo_interno' => $this->modalCodigoInterno ?: 'PROD-'.strtoupper(substr(md5(uniqid()), 0, 8)),
+                    'nombre' => $this->modalNuevoProductoNombre,
+                    'slug' => $this->generarSlugUnico($this->modalNuevoProductoNombre),
+                    'afecto_igv' => $this->modalAfectoIgv,
+                    'activo' => true,
+                ])
+                : Producto::query()
+                    ->where('empresa_id', Auth::user()?->empresa_id)
+                    ->findOrFail($this->modalProductoId);
+
+            if ($isEdit) {
+                $pres = ProductoPresentacion::findOrFail($this->modalEditingPresentationId);
+                $pres->update([
+                    'unidad_medida_id' => $this->modalUnidadMedidaId,
+                    'cantidad' => $this->modalCantidadPorEmpaque,
+                    'tipo_presentacion' => $this->modalTipoPresentacion,
+                    'es_pesable' => $this->modalEsPesable,
+                    'presentacion_base_id' => $this->modalPresentacionBaseId,
+                ]);
+            } else {
+                $pres = ProductoPresentacion::create([
+                    'producto_id' => $producto->id,
+                    'unidad_medida_id' => $this->modalUnidadMedidaId,
+                    'cantidad' => $this->modalCantidadPorEmpaque,
+                    'tipo_presentacion' => $this->modalTipoPresentacion,
+                    'es_pesable' => $this->modalEsPesable,
+                    'presentacion_base_id' => $this->modalPresentacionBaseId,
+                ]);
+            }
+
+            if (filled($this->modalCodigoBarra)) {
+                $pres->barras()->firstOrCreate([
+                    'codigo_barra' => trim($this->modalCodigoBarra),
+                ]);
+            }
+
+            foreach ($this->modalBarras as $code) {
+                $pres->barras()->firstOrCreate([
+                    'codigo_barra' => $code,
+                ]);
+            }
+
+            if ($this->modalImagen) {
+                $path = $this->modalImagen->store('productos/presentaciones', 'public');
+                $pres->update(['imagen' => $path]);
+            }
+
+            return $pres;
+        });
+
+        $this->cerrarCrearProductoModal();
+
+        $this->productoId = $presentacion->producto_id;
+        $this->presentacionId = $presentacion->id;
+        $producto = $presentacion->producto;
+        $this->searchProducto = ($producto?->nombre ?? '') . ' — ' . ($presentacion->tipo_presentacion ?? '');
+        $this->cargarLotesDisponibles();
+
+        Notification::make()
+            ->title($isEdit ? 'Presentación actualizada y seleccionada' : 'Producto y presentación creados y seleccionados')
+            ->success()
+            ->send();
+    }
+
+    protected function generarSlugUnico(string $nombre): string
+    {
+        $baseSlug = str($nombre)->slug()->toString();
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (Producto::where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    public function getCategoriasProperty()
+    {
+        return Categoria::where('empresa_id', Auth::user()?->empresa_id)->orderBy('nombre')->get();
+    }
+
+    public function getMarcasProperty()
+    {
+        return Marca::where('empresa_id', Auth::user()?->empresa_id)->orderBy('nombre')->get();
+    }
+
+    public function getUnidadesMedidaProperty()
+    {
+        return UniMedida::where('activo', true)->orderBy('nombre')->get();
     }
 
     public function render()
