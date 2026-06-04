@@ -47,7 +47,7 @@
                         </span>
                         <input
                             type="text"
-                            wire:model.live="searchVentaQuery"
+                            wire:model.live.debounce.300ms="searchVentaQuery"
                             class="w-full text-sm font-medium text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 focus:ring-0 focus:outline-none rounded-xl py-2.5 pl-10 pr-10 transition placeholder:text-slate-400 dark:placeholder:text-slate-500"
                             placeholder="Buscar por cliente (DNI/RUC/Nombre), correlativo, serie..."
                             autofocus

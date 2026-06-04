@@ -11,6 +11,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Enums\ThemeMode;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -35,6 +36,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
                 'gray' => Color::Slate,
             ])
+            ->defaultThemeMode(ThemeMode::Dark)
             ->brandName(fn (): string => $this->getPanelBranding()['companyName'])
             ->brandLogo(fn (): HtmlString => new HtmlString(view('filament.components.company-brand', $this->getPanelBranding())->render()))
             ->darkModeBrandLogo(fn (): HtmlString => new HtmlString(view('filament.components.company-brand', $this->getPanelBranding())->render()))

@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class LoteResource extends Resource
 {
@@ -52,5 +53,25 @@ class LoteResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return app(SucursalContext::class)->applyToQuery(parent::getEloquentQuery());
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('ventas.crear') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
     }
 }

@@ -1007,7 +1007,7 @@
                                     <input 
                                         type="number" 
                                         step="0.01" 
-                                        wire:model.live="montoRecibido"
+                                        wire:model.live.debounce.300ms="montoRecibido"
                                         class="w-full pos-input rounded-xl py-2 pl-8 pr-3 text-xs font-bold focus:outline-none"
                                         placeholder="0.00"
                                     >
@@ -1073,8 +1073,8 @@
         </div>
         
         <!-- Submit (Registrar Venta) Button -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             wire:click="guardarVenta"
             wire:loading.attr="disabled"
             @disabled(!$this->canSave)
@@ -1177,7 +1177,7 @@
                             <label class="block font-semibold pos-text-muted mb-1">Documento</label>
                             <input 
                                 type="text" 
-                                wire:model.live="clienteDocumento" 
+wire:model.live.debounce.300ms="clienteDocumento"
                                 class="w-full pos-input rounded-xl py-2 px-3 focus:outline-none"
                                 placeholder="N° Documento"
                             >

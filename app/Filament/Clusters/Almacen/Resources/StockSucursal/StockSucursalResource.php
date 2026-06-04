@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class StockSucursalResource extends Resource
 {
@@ -102,5 +103,25 @@ class StockSucursalResource extends Resource
             });
 
         return app(SucursalContext::class)->applyToQuery($query);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('productos.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('stock.ajustar') ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->can('stock.ajustar') ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
     }
 }

@@ -320,10 +320,28 @@ class DetalleCompra extends Component
             $query->where('id', $soloPresentacionId);
         }
 
-        $this->presentacionesDisponibles = $query->get()
-            ->map(function (ProductoPresentacion $presentacion) use ($actuales, $lotePresMap): array {
+        $presentaciones = $query->get();
+        $ids = $presentaciones->pluck('id')->toArray();
+
+        // Batch-fetch all prices in a single query instead of N queries
+        $preciosBatch = ProductoSucursal::query()
+            ->where('producto_id', $this->productoId)
+            ->where('sucursal_id', $this->sucursalId)
+            ->whereHas('lotePresentacion', fn ($q) => $q->whereIn('producto_presentacion_id', $ids))
+            ->latest('id')
+            ->get()
+            ->keyBy(fn ($ps) => $ps->lotePresentacion?->producto_presentacion_id);
+
+        $this->presentacionesDisponibles = $presentaciones
+            ->map(function (ProductoPresentacion $presentacion) use ($actuales, $lotePresMap, $preciosBatch): array {
                 $actual = $actuales->get($presentacion->id, []);
-                $precioVenta = $this->obtenerPrecioVentaActual($presentacion->id);
+                $productoSucursal = $preciosBatch->get($presentacion->id);
+
+                $precioVenta = [
+                    'precio' => $productoSucursal?->precio !== null ? (float) $productoSucursal->precio : 0,
+                    'precio_mayorista' => $productoSucursal?->precio_mayorista !== null ? (float) $productoSucursal->precio_mayorista : null,
+                    'minimo_mayorista' => $productoSucursal?->minimo_mayorista ?? 2,
+                ];
 
                 $lotePres = $lotePresMap[$presentacion->id] ?? null;
                 $cantidad = null;
@@ -352,22 +370,6 @@ class DetalleCompra extends Component
                 ];
             })
             ->toArray();
-    }
-
-    protected function obtenerPrecioVentaActual(int $presentacionId): array
-    {
-        $productoSucursal = ProductoSucursal::query()
-            ->where('producto_id', $this->productoId)
-            ->where('sucursal_id', $this->sucursalId)
-            ->whereHas('lotePresentacion', fn ($query) => $query->where('producto_presentacion_id', $presentacionId))
-            ->latest()
-            ->first();
-
-        return [
-            'precio' => $productoSucursal?->precio !== null ? (float) $productoSucursal->precio : 0,
-            'precio_mayorista' => $productoSucursal?->precio_mayorista !== null ? (float) $productoSucursal->precio_mayorista : null,
-            'minimo_mayorista' => $productoSucursal?->minimo_mayorista ?? 2,
-        ];
     }
 
     public function verMasPresentaciones(): void

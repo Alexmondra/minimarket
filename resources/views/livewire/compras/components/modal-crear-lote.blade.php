@@ -112,8 +112,8 @@
                     </button>
                     <button type="button" wire:click="crearLote" wire:loading.attr="disabled"
                             class="px-4 py-1.5 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50 transition-colors">
-                        <span wire:loading.remove wire:target="crearLote">Crear Lote</span>
-                        <span wire:loading wire:target="crearLote">Creando...</span>
+                        <span wire:loading.remove.delay.200ms wire:target="crearLote">Crear Lote</span>
+                        <span wire:loading.delay.200ms wire:target="crearLote">Creando...</span>
                     </button>
                 </div>
             </div>

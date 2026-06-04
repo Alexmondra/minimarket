@@ -419,16 +419,16 @@
                             wire:click="agregarLote"
                             wire:loading.attr="disabled"
                             class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
-                        <span wire:loading.remove wire:target="agregarLote">Actualizar lote en la compra</span>
-                        <span wire:loading wire:target="agregarLote">Actualizando...</span>
+                        <span wire:loading.remove.delay.200ms wire:target="agregarLote">Actualizar lote en la compra</span>
+                        <span wire:loading.delay.200ms wire:target="agregarLote">Actualizando...</span>
                     </button>
                 @else
                     <button type="button"
                             wire:click="agregarLote"
                             wire:loading.attr="disabled"
                             class="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50">
-                        <span wire:loading.remove wire:target="agregarLote">Agregar lote a la compra</span>
-                        <span wire:loading wire:target="agregarLote">Agregando...</span>
+                        <span wire:loading.remove.delay.200ms wire:target="agregarLote">Agregar lote a la compra</span>
+                        <span wire:loading.delay.200ms wire:target="agregarLote">Agregando...</span>
                     </button>
                 @endif
             </div>
@@ -776,8 +776,8 @@
                             wire:click="crearPresentacionDesdeModal"
                             wire:loading.attr="disabled"
                             class="px-4 py-1.5 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50 transition-colors">
-                        <span wire:loading.remove wire:target="crearPresentacionDesdeModal">Crear y seleccionar</span>
-                        <span wire:loading wire:target="crearPresentacionDesdeModal">Guardando...</span>
+                        <span wire:loading.remove.delay.200ms wire:target="crearPresentacionDesdeModal">Crear y seleccionar</span>
+                        <span wire:loading.delay.200ms wire:target="crearPresentacionDesdeModal">Guardando...</span>
                     </button>
                 </div>
             </div>

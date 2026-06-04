@@ -83,7 +83,7 @@
                          x-init="$watch('openDropdown', val => { if (!val) activeIndex = -1; })">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Buscar Producto y Presentación *</label>
                         <input type="text"
-                               wire:model.live="searchProducto"
+                               wire:model.live.debounce.300ms="searchProducto"
                                placeholder="Ej: Coca 500ml, bolsa 1kg, lata..."
                                @keydown.arrow-down.prevent="if (openDropdown) { activeIndex = (activeIndex + 1) % total; } else { openDropdown = true; }"
                                @keydown.arrow-up.prevent="if (openDropdown) { activeIndex = (activeIndex - 1 + total) % total; }"

@@ -39,12 +39,12 @@ class VentasReport extends Component
         $qb = app(ReporteQueryBuilder::class);
         $query = $this->applyFilters($qb->ventasBase());
 
+        $agg = (clone $query)->selectRaw('COALESCE(SUM(total_neto), 0) as total, COUNT(*) as cant, COALESCE(AVG(total_neto), 0) as prom')->first();
+
         $this->stats = [
-            'total_ventas' => number_format((clone $query)->sum('total_neto'), 2),
-            'cantidad' => (clone $query)->count(),
-            'promedio' => (clone $query)->count() > 0
-                ? number_format((clone $query)->avg('total_neto'), 2)
-                : '0.00',
+            'total_ventas' => number_format((float) $agg->total, 2),
+            'cantidad' => (int) $agg->cant,
+            'promedio' => $agg->cant > 0 ? number_format((float) $agg->prom, 2) : '0.00',
         ];
         $this->loaded = true;
     }
@@ -84,11 +84,13 @@ class VentasReport extends Component
 
         $ventas = $query->paginate(15);
 
-        // Payment methods for filter dropdown
-        $metodos = Documento::whereNotNull('medio_pago')
-            ->distinct()
-            ->pluck('medio_pago')
-            ->toArray();
+        // Payment methods for filter dropdown (cached 1 hour)
+        $metodos = cache()->remember('ventas_medios_pago', 3600, function () {
+            return Documento::whereNotNull('medio_pago')
+                ->distinct()
+                ->pluck('medio_pago')
+                ->toArray();
+        });
 
         return view('livewire.reportes.ventas-report', [
             'ventas' => $ventas,

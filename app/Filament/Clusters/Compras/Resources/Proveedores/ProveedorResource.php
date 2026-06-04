@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class ProveedorResource extends Resource
 {
@@ -99,5 +100,25 @@ class ProveedorResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('proveedores.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('proveedores.crear') ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->can('proveedores.editar') ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->can('proveedores.eliminar') ?? false;
     }
 }

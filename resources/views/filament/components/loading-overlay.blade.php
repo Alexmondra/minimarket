@@ -3,7 +3,7 @@
         <div class="app-loading-overlay__brand">
             <div class="app-loading-overlay__mark">
                 @if ($companyLogoUrl)
-                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="app-loading-overlay__logo">
+                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="app-loading-overlay__logo" loading="lazy">
                 @else
                     <span class="app-loading-overlay__initials">{{ $companyInitials }}</span>
                 @endif
@@ -23,7 +23,7 @@
             <span class="app-loading-overlay__pulse-bar"></span>
         </div>
 
-        <p class="app-loading-overlay__caption">Sincronizando panel y recursos visuales...</p>
+        <p class="app-loading-overlay__caption" id="app-loading-caption">Cargando...</p>
     </div>
 </div>
 
@@ -45,8 +45,8 @@
         let shownAt = 0;
         let delayedRequestTimer = null;
         let initialLoadTimer = null;
-        const minimumVisibleMs = 380;
-        const revealDelayMs = 320;
+        const minimumVisibleMs = 200;
+        const revealDelayMs = 150;
 
         const reveal = () => {
             clearTimeout(delayedRequestTimer);
@@ -131,21 +131,6 @@
             conceal();
         });
 
-        document.addEventListener('livewire:init', () => {
-            if (!window.Livewire?.hook) {
-                return;
-            }
-
-            window.Livewire.hook('request', ({ succeed, fail }) => {
-                beginLoad({ delayed: true });
-
-                const finish = () => {
-                    endLoad();
-                };
-
-                succeed(finish);
-                fail(finish);
-            });
-        });
+        // Overlay only for page navigation (livewire:navigating), not per-request
     })();
 </script>

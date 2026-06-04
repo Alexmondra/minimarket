@@ -1225,7 +1225,7 @@ trait RegistrarVentaBehavior
             });
         }
 
-        $rows = $query->get()->groupBy(fn (ProductoSucursal $row) => $row->lotePresentacion?->producto_presentacion_id);
+        $rows = $query->limit(200)->get()->groupBy(fn (ProductoSucursal $row) => $row->lotePresentacion?->producto_presentacion_id);
 
         return $rows->map(function ($group): ?array {
             /** @var ProductoSucursal|null $first */

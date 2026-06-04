@@ -13,6 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class PresentacionResource extends Resource
 {
@@ -94,5 +95,25 @@ class PresentacionResource extends Resource
             ->whereHas('producto', fn ($q) => $q->where('empresa_id', $empresaId))
             ->groupBy('tipo_presentacion')
             ->orderBy('tipo_presentacion');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return (auth()->user()?->can('productos.global') && auth()->user()?->can('productos.ver')) ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return (auth()->user()?->can('productos.global') && auth()->user()?->can('productos.crear')) ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return (auth()->user()?->can('productos.global') && auth()->user()?->can('productos.editar')) ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
     }
 }

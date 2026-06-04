@@ -133,8 +133,8 @@
                     </button>
                     <button type="button" wire:click="crearProducto" wire:loading.attr="disabled"
                             class="px-4 py-1.5 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50 transition-colors">
-                        <span wire:loading.remove wire:target="crearProducto">Crear Producto</span>
-                        <span wire:loading wire:target="crearProducto">Creando...</span>
+                        <span wire:loading.remove.delay.200ms wire:target="crearProducto">Crear Producto</span>
+                        <span wire:loading.delay.200ms wire:target="crearProducto">Creando...</span>
                     </button>
                 </div>
             </div>

@@ -72,7 +72,8 @@ class ModalCrearLote extends Component
             return;
         }
 
-        $this->productosResultados = Producto::where('activo', true)
+        $this->productosResultados = Producto::with('presentaciones.unidadMedida')
+            ->where('activo', true)
             ->where(function ($q) {
                 $q->where('nombre', 'like', "%{$this->searchProducto}%")
                     ->orWhere('codigo_interno', 'like', "%{$this->searchProducto}%");

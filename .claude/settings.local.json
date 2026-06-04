@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(php *)",
+      "Bash(xargs -I {} basename {} .blade.php)",
+      "Bash(grep -E \"^\\(o-shopping-bag|o-check-badge|o-envelope|o-lock-closed\\)$\")",
+      "Bash(npm run *)",
+      "Bash(composer require *)",
+      "Bash(composer show *)"
+    ]
+  }
+}

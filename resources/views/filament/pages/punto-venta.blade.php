@@ -120,8 +120,8 @@
                             wire:loading.attr="disabled"
                             class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 text-sm transition shadow-lg shadow-emerald-500/10 focus:outline-none"
                         >
-                            <span wire:loading.remove wire:target="abrirCajaManual">Abrir Caja y Comenzar</span>
-                            <span wire:loading wire:target="abrirCajaManual" class="flex items-center gap-1.5">
+                            <span wire:loading.remove.delay.200ms wire:target="abrirCajaManual">Abrir Caja y Comenzar</span>
+                            <span wire:loading.delay.200ms wire:target="abrirCajaManual" class="flex items-center gap-1.5">
                                 <span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                                 Procesando Apertura...
                             </span>

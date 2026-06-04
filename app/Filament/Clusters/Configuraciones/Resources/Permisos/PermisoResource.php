@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Spatie\Permission\Models\Permission;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class PermisoResource extends Resource
 {
@@ -33,5 +34,25 @@ class PermisoResource extends Resource
             'edit-rol' => EditRol::route('/roles/{record}/edit'),
             'manage-permisos' => ManagePermisos::route('/roles/manage-permisos'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('permisos.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('roles.crear') ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->can('roles.editar') ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->can('roles.eliminar') ?? false;
     }
 }

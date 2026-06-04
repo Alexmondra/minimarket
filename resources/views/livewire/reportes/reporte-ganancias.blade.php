@@ -32,12 +32,7 @@
         $margenMes = $ventasMesRaw > 0 ? round(($gananciaMesRaw / $ventasMesRaw) * 100, 1) : 0;
     @endphp
 
-    <div class="mb-6">
-        <h2 class="text-lg font-black text-slate-900 dark:text-white">Reporte de Ganancias</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Cálculo: <strong>total_neto (venta) − precio_compra × cantidad</strong> por cada línea de venta. Las Notas de Crédito (devoluciones) se restan de las ventas y los costos correspondientes.
-        </p>
-    </div>
+ 
 
     {{-- Info alert — ganancia es estimada --}}
     <div class="flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20 mb-6">

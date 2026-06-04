@@ -224,17 +224,23 @@ class MetricCalculator
      */
     public function allKpis(): array
     {
-        return [
-            'ventas_dia' => $this->ventasDelDia(),
-            'ganancia_neta' => $this->gananciaNeta(),
-            'tickets_vendidos' => $this->ticketsVendidos(),
-            'productos_vendidos' => $this->productosVendidos(),
-            'productos_bajo_stock' => $this->productosBajoStock(),
-            'productos_por_vencer' => $this->productosPorVencer(),
-            'total_clientes' => $this->totalClientes(),
-            'total_ingresos' => $this->totalIngresos(),
-            'cajas_abiertas' => $this->cajasAbiertasCount(),
-        ];
+        $sucursalId = $this->context->activeSucursalId();
+        $suffix = $sucursalId ? "_{$sucursalId}" : '_global';
+        $cacheKey = 'kpis_' . now()->format('Ymd_H') . $suffix;
+
+        return cache()->remember($cacheKey, 300, function () {
+            return [
+                'ventas_dia' => $this->ventasDelDia(),
+                'ganancia_neta' => $this->gananciaNeta(),
+                'tickets_vendidos' => $this->ticketsVendidos(),
+                'productos_vendidos' => $this->productosVendidos(),
+                'productos_bajo_stock' => $this->productosBajoStock(),
+                'productos_por_vencer' => $this->productosPorVencer(),
+                'total_clientes' => $this->totalClientes(),
+                'total_ingresos' => $this->totalIngresos(),
+                'cajas_abiertas' => $this->cajasAbiertasCount(),
+            ];
+        });
     }
 
     /**
@@ -252,43 +258,41 @@ class MetricCalculator
      */
     private function calcularCosto(\Illuminate\Database\Eloquent\Builder $documentoQuery): float
     {
-        $ids = (clone $documentoQuery)->pluck('id');
+        $total = 0.0;
 
-        if ($ids->isEmpty()) {
-            return 0.0;
-        }
+        DetalleDocumento::whereIn('documento_id', (clone $documentoQuery)->select('id'))
+            ->select('id', 'documento_id', 'producto_presentacion_id', 'cantidad', 'lote_id')
+            ->with(['lote.lotePresentaciones:lote_id,producto_presentacion_id,precio_compra', 'lote.detalleCompra:lote_id,precio_compra'])
+            ->chunk(500, function ($detalles) use (&$total) {
+                foreach ($detalles as $detalle) {
+                    $cantidad = (float) ($detalle->cantidad ?? 1);
 
-        return (float) DetalleDocumento::whereIn('documento_id', $ids)
-            ->with(['lote.lotePresentaciones', 'lote.detalleCompra'])
-            ->get()
-            ->sum(function (DetalleDocumento $detalle) {
-                $cantidad = (float) ($detalle->cantidad ?? 1);
+                    $lotePresentaciones = $detalle->lote?->lotePresentaciones;
+                    $lotePresKeyed = $lotePresentaciones ? $lotePresentaciones->keyBy('producto_presentacion_id') : collect();
 
-                // 1. Best: lote_presentacion.precio_compra (per-unit, exact match)
-                $lpPrecio = $detalle->lote?->lotePresentaciones
-                    ?->firstWhere('producto_presentacion_id', $detalle->producto_presentacion_id)
-                    ?->precio_compra;
+                    $lpPrecio = $lotePresKeyed->get($detalle->producto_presentacion_id)?->precio_compra;
 
-                if ($lpPrecio !== null && (float) $lpPrecio > 0) {
-                    return (float) $lpPrecio * $cantidad;
-                }
-
-                // 2. Fallback: detalle_compra or lote (might be total batch, not per-unit)
-                $precioCompra = (float) ($detalle->lote?->detalleCompra?->precio_compra
-                    ?? $detalle->lote?->precio_compra
-                    ?? 0);
-
-                // If precio_compra looks like a batch total (> 10x typical unit price),
-                // try to normalize by stock
-                if ($precioCompra > 100 && $detalle->lote) {
-                    $stockTotal = $detalle->lote->stock_total;
-                    if ($stockTotal > 0) {
-                        $precioCompra = $precioCompra / $stockTotal;
+                    if ($lpPrecio !== null && (float) $lpPrecio > 0) {
+                        $total += (float) $lpPrecio * $cantidad;
+                        continue;
                     }
-                }
 
-                return $precioCompra * $cantidad;
+                    $precioCompra = (float) ($detalle->lote?->detalleCompra?->precio_compra
+                        ?? $detalle->lote?->precio_compra
+                        ?? 0);
+
+                    if ($precioCompra > 100 && $detalle->lote) {
+                        $stockTotal = $detalle->lote->stock_total;
+                        if ($stockTotal > 0) {
+                            $precioCompra = $precioCompra / $stockTotal;
+                        }
+                    }
+
+                    $total += $precioCompra * $cantidad;
+                }
             });
+
+        return $total;
     }
 
     /**

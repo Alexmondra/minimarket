@@ -296,7 +296,8 @@ html[data-sidebar-size='spacious'] {
     backdrop-filter: blur(14px);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    transition: opacity 250ms ease, transform 300ms ease;
+    transform: translateY(-12px);
 }
 
 .dark .app-loading-overlay {
@@ -308,6 +309,7 @@ html[data-sidebar-size='spacious'] {
 .app-loading-overlay.is-visible {
     opacity: 1;
     pointer-events: auto;
+    transform: translateY(0);
 }
 
 .app-loading-overlay__panel {

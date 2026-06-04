@@ -343,6 +343,11 @@ class MermaResource extends Resource
         return $query;
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('reportes.ver') ?? false;
+    }
+
     public static function canCreate(): bool
     {
         return false;

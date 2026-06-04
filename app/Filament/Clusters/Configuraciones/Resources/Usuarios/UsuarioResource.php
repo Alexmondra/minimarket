@@ -17,6 +17,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class UsuarioResource extends Resource
 {
@@ -80,5 +81,25 @@ class UsuarioResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('usuarios.ver') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('usuarios.crear') ?? false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->can('usuarios.editar') ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->can('usuarios.eliminar') ?? false;
     }
 }
