@@ -143,6 +143,7 @@ class ListLotes extends ListRecords
                 }
             )
             ->striped()
+            ->stackedOnMobile()
             ->filters([
                 SelectFilter::make('producto_nombre')
                     ->label('Producto')
@@ -201,7 +202,7 @@ class ListLotes extends ListRecords
             ->actionsColumnLabel('')
             ->actions([
                 \Filament\Actions\Action::make('registrarMerma')
-                    ->label(fn (\App\Models\Lote $record): string =>
+                    ->label(fn ($record): string =>
                         self::lotVisualState($record) === 'por_confirmar'
                             ? '⚠️ Confirmar'
                             : 'Registrar Merma')
