@@ -18,30 +18,6 @@ class ListLotes extends ListRecords
 {
     protected static string $resource = LoteResource::class;
 
-    protected string $view = 'filament.clusters.inventario.resources.lotes.pages.list-lotes';
-
-    public function getStatsProperty(): array
-    {
-        $query = app(SucursalContext::class)->applyToQuery(Lote::query());
-
-        return [
-            'total' => (clone $query)->whereHas('lotePresentaciones', fn ($q) => $q->where('stock', '>', 0))->count(),
-            'activos' => (clone $query)->where('estado_lote', 'activo')->count(),
-            'por_vencer' => (clone $query)->where('estado_lote', '!=', 'agotado')
-                ->whereNotNull('fecha_vencimiento')
-                ->where('fecha_vencimiento', '>', now())
-                ->where('fecha_vencimiento', '<=', now()->addDays(30))->count(),
-            'vencidos' => (clone $query)->where(function ($q) {
-                $q->where('estado_lote', 'vencido')
-                  ->orWhere(function ($qq) {
-                      $qq->where('estado_lote', '!=', 'agotado')
-                         ->whereNotNull('fecha_vencimiento')
-                         ->where('fecha_vencimiento', '<=', now());
-                  });
-            })->count(),
-        ];
-    }
-
     public function table(Table $table): Table
     {
         return $table
