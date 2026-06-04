@@ -6,9 +6,12 @@
 @source '../../../../app/Livewire';
 @source '../../../../resources/views/livewire';
 
-/* --- GLOBAL APP BACKGROUND TONE (COOL SOFT SLATE) --- */
+/* --- GLOBAL APP BACKGROUND TONE (PREMIUM LIGHT MODE) --- */
 .fi-layout, body.fi-body {
-    background-color: #f1f5f9 !important; /* Soft Slate 50 off-white for the entire system */
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 40%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+        #f4f6f9 !important;
 }
 .dark .fi-layout, .dark body.fi-body {
     background-color: #090b11 !important; /* Deep dark blue-gray background in Dark Mode */
@@ -17,10 +20,10 @@
 /* --- PREMIUM SIDEBAR SHELL --- */
 .fi-sidebar.fi-main-sidebar {
     background:
-        linear-gradient(180deg, rgba(233, 245, 255, 0.98) 0%, rgba(216, 238, 255, 0.97) 24%, rgba(203, 232, 255, 0.96) 100%),
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.22), transparent 34%),
-        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.18), transparent 42%);
-    @apply backdrop-blur-xl border-r border-sky-200/70 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.34)] ring-1 ring-sky-950/5 transition-all duration-300;
+        linear-gradient(180deg, rgba(219, 234, 254, 0.96) 0%, rgba(191, 219, 254, 0.93) 24%, rgba(224, 231, 255, 0.92) 100%),
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.28), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.22), transparent 42%);
+    @apply backdrop-blur-xl border-r border-sky-300/70 shadow-[0_22px_48px_-28px_rgba(2,132,199,0.38)] ring-1 ring-sky-950/8 transition-all duration-300;
     z-index: 40 !important;
 }
 
@@ -67,7 +70,7 @@
 }
 
 .fi-sidebar-group {
-    @apply rounded-[1.35rem] border border-white/65 bg-white/58 p-2 shadow-[0_16px_32px_-24px_rgba(3,105,161,0.34)];
+    @apply rounded-[1.35rem] border border-sky-200/80 bg-white/48 p-2 shadow-[0_20px_40px_-28px_rgba(3,105,161,0.45)];
 }
 
 .dark .fi-sidebar-group {
@@ -122,8 +125,8 @@
 
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
 .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 52%, rgba(224, 242, 254, 0.98) 100%);
-    @apply border-white/85 shadow-[0_18px_30px_-22px_rgba(14,165,233,0.42)] ring-1 ring-sky-400/20;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(219, 234, 254, 0.95) 52%, rgba(191, 219, 254, 0.92) 100%);
+    @apply border-sky-300/70 shadow-[0_18px_30px_-22px_rgba(14,165,233,0.50)] ring-1 ring-sky-400/30;
 }
 
 .dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
@@ -177,7 +180,7 @@
 
 /* --- GLASSMORPHIC TOPBAR --- */
 .fi-topbar {
-    @apply bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 transition-all duration-300;
+    @apply bg-white/70 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/50 shadow-[0_8px_20px_-12px_rgba(0,0,0,0.08)] transition-all duration-300;
     z-index: 50 !important;
 }
 
@@ -235,7 +238,7 @@
 
 /* --- SIDEBAR SIZE SWITCHER --- */
 .sidebar-size-switcher {
-    @apply mt-5 rounded-[1.4rem] border border-white/70 bg-white/52 p-3 shadow-[0_20px_35px_-28px_rgba(14,165,233,0.5)];
+    @apply mt-5 rounded-[1.4rem] border border-sky-200/80 bg-white/48 p-3 shadow-[0_20px_35px_-28px_rgba(14,165,233,0.55)];
 }
 
 .dark .sidebar-size-switcher {
@@ -291,8 +294,8 @@ html[data-sidebar-size='spacious'] {
     justify-content: center;
     padding: 1.5rem;
     background:
-        radial-gradient(circle at top, rgba(125, 211, 252, 0.28), transparent 34%),
-        linear-gradient(135deg, rgba(240, 249, 255, 0.92), rgba(224, 242, 254, 0.88));
+        radial-gradient(circle at top, rgba(125, 211, 252, 0.25), transparent 34%),
+        linear-gradient(135deg, rgba(241, 245, 249, 0.95), rgba(219, 234, 254, 0.90));
     backdrop-filter: blur(14px);
     opacity: 0;
     pointer-events: none;
@@ -569,11 +572,11 @@ html.app-busy body {
 /* Tabs container styling */
 .fi-sc-tabs {
     position: relative;
-    background: rgba(255, 255, 255, 0.45) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border: 1px solid rgba(226, 232, 240, 0.85) !important;
     border-radius: 24px !important;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.03) !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04) !important;
     padding: 1.5rem !important;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -654,8 +657,8 @@ html.app-busy body {
 
 /* Table Headers */
 .fi-ta-header-cell {
-    @apply text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50/30 dark:bg-slate-950/20 py-3.5 px-4;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+    @apply text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-100/50 dark:bg-slate-950/20 py-3.5 px-4;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.7) !important;
 }
 .dark .fi-ta-header-cell {
     border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
@@ -663,9 +666,10 @@ html.app-busy body {
 
 /* Table Rows */
 .fi-ta-row {
-    @apply hover:bg-slate-50/40 dark:hover:bg-slate-900/60 transition-all duration-200;
-    background-color: white !important;
-    border-bottom: 1px solid rgba(241, 245, 249, 0.4) !important;
+    @apply hover:bg-slate-100/20 dark:hover:bg-slate-900/60 transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.60) !important;
+    backdrop-filter: blur(4px) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
 }
 .dark .fi-ta-row {
     background-color: rgba(15, 23, 42, 0.4) !important;
@@ -823,14 +827,14 @@ html.app-busy body {
 
 /* Glass card base */
 .glass-card {
-    @apply relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/40 backdrop-blur-md shadow-sm transition-all duration-300;
-    background: #ffffff !important;
+    @apply relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/40 backdrop-blur-sm shadow-sm transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.90) 0%, rgba(248, 250, 252, 0.85) 100%) !important;
 }
 .dark .glass-card {
     background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.45), rgba(8, 12, 24, 0.65)) !important;
 }
 .glass-card:hover {
-    @apply shadow-md -translate-y-0.5 border-slate-300/80 dark:border-slate-700/60 shadow-slate-100/50 dark:shadow-none;
+    @apply shadow-md -translate-y-0.5 border-slate-300/90 dark:border-slate-700/60 shadow-slate-200/50 dark:shadow-none;
 }
 
 /* KPI Card */
@@ -858,6 +862,9 @@ html.app-busy body {
 .kpi-card:hover {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
     transform: translateY(-4px) scale(1.02) !important;
+}
+.kpi-card:not(.dark .kpi-card):hover {
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 .kpi-card:hover::before {
     opacity: 1;
@@ -1108,6 +1115,14 @@ html.app-busy body {
     scroll-snap-align: start;
 }
 
+/* --- PREMIUM FORM INPUTS (LIGHT MODE) --- */
+.fi-fo-field-wrp .fi-input-wrp {
+    @apply rounded-xl border-slate-200 bg-white/60 shadow-sm transition-all duration-300 dark:bg-slate-900/40 dark:border-slate-700/80;
+}
+.fi-fo-field-wrp .fi-input-wrp:focus-within {
+    @apply ring-2 ring-primary-500/20 border-primary-400 shadow-md shadow-primary-500/8 dark:ring-primary-400/15 dark:border-primary-400;
+}
+
 /* Alpine.js cloak */
 [x-cloak] { display: none !important; }
 
@@ -1131,6 +1146,9 @@ html.app-busy body {
 .colorful-card:hover {
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15) !important;
     transform: translateY(-4px) scale(1.01) !important;
+}
+.colorful-card:not(.dark .colorful-card):hover {
+    border: 1px solid rgba(255, 255, 255, 0.30) !important;
 }
 
 /* Light Mode Vivid Gradients */
