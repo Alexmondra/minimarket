@@ -1459,3 +1459,175 @@ html.app-busy body {
 .fi-fo-section .fi-section-header-description {
     @apply text-xs text-slate-500 dark:text-slate-400;
 }
+
+/* --- MINIMARKET PREMIUM TABLE ACTIONS --- */
+.fi-ta-actions {
+    @apply gap-2;
+}
+
+.mm-table-action {
+    min-height: 2.2rem !important;
+    border-radius: 0.85rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 14px 24px -18px rgba(15, 23, 42, 0.55) !important;
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease !important;
+}
+
+.mm-table-action:hover {
+    transform: translateY(-1px) scale(1.015) !important;
+    box-shadow: 0 18px 30px -20px rgba(15, 23, 42, 0.62) !important;
+    filter: saturate(1.08) brightness(1.02) !important;
+}
+
+.mm-table-action:active {
+    transform: translateY(0) scale(0.985) !important;
+}
+
+.mm-table-action-primary {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #fff !important;
+}
+
+.mm-table-action-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
+    color: #fff !important;
+}
+
+.mm-table-action-warning {
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%) !important;
+    color: #431407 !important;
+}
+
+.mm-table-action-success {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+    color: #fff !important;
+}
+
+.mm-table-action-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    color: #fff !important;
+}
+
+.mm-table-action-muted {
+    background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%) !important;
+    color: #334155 !important;
+    opacity: 0.82 !important;
+}
+
+.dark .mm-table-action {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 16px 28px -24px rgba(0, 0, 0, 0.9) !important;
+}
+
+.dark .mm-table-action-muted {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%) !important;
+    color: #cbd5e1 !important;
+}
+
+/* Productive retail feel: warmer cards and stronger row affordance. */
+.fi-ta-ctn {
+    @apply rounded-3xl border border-amber-100/70 bg-white/82 shadow-[0_28px_70px_-48px_rgba(146,64,14,0.35)] ring-1 ring-white/70 dark:border-slate-800/60 dark:bg-slate-950/35 dark:ring-white/5;
+}
+
+.fi-ta-row:hover {
+    background: linear-gradient(90deg, rgba(254, 243, 199, 0.52), rgba(236, 253, 245, 0.36)) !important;
+}
+
+.dark .fi-ta-row:hover {
+    background: linear-gradient(90deg, rgba(120, 53, 15, 0.22), rgba(6, 78, 59, 0.16)) !important;
+}
+
+/* --- PREMIUM CRUD FORMS: USERS, ROLES AND CONFIG --- */
+.mm-crud-card {
+    position: relative;
+    overflow: hidden !important;
+    border-radius: 1.55rem !important;
+    border: 1px solid rgba(226, 232, 240, 0.78) !important;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(251, 191, 36, 0.13), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.88)) !important;
+    box-shadow: 0 28px 70px -48px rgba(15, 23, 42, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.mm-crud-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(180deg, #f59e0b, #10b981);
+}
+
+.mm-crud-card-emerald::before { background: linear-gradient(180deg, #10b981, #14b8a6); }
+.mm-crud-card-violet::before { background: linear-gradient(180deg, #8b5cf6, #2563eb); }
+.mm-crud-card-amber::before { background: linear-gradient(180deg, #f59e0b, #f97316); }
+
+.dark .mm-crud-card {
+    border-color: rgba(51, 65, 85, 0.72) !important;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(245, 158, 11, 0.12), transparent 34%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.68)) !important;
+    box-shadow: none !important;
+}
+
+.mm-crud-card .fi-section-header {
+    padding-bottom: 0.9rem !important;
+}
+
+.mm-crud-card .fi-section-header-heading {
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+    color: #0f172a !important;
+}
+
+.dark .mm-crud-card .fi-section-header-heading {
+    color: #ffffff !important;
+}
+
+.mm-crud-card .fi-section-header-description {
+    color: #64748b !important;
+    font-weight: 600 !important;
+}
+
+.dark .mm-crud-card .fi-section-header-description {
+    color: #94a3b8 !important;
+}
+
+.mm-crud-card .fi-input-wrp,
+.mm-crud-card .fi-select-input {
+    border-radius: 1rem !important;
+    border-color: rgba(203, 213, 225, 0.85) !important;
+    background: rgba(255, 255, 255, 0.76) !important;
+}
+
+.dark .mm-crud-card .fi-input-wrp,
+.dark .mm-crud-card .fi-select-input {
+    border-color: rgba(71, 85, 105, 0.8) !important;
+    background: rgba(15, 23, 42, 0.68) !important;
+}
+
+.mm-header-action {
+    min-height: 2.65rem !important;
+    border-radius: 1rem !important;
+    padding-inline: 1.1rem !important;
+    font-weight: 900 !important;
+    box-shadow: 0 18px 34px -22px rgba(15, 23, 42, 0.55) !important;
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease !important;
+}
+
+.mm-header-action:hover {
+    transform: translateY(-1px) scale(1.015) !important;
+    filter: saturate(1.08) brightness(1.03) !important;
+}
+
+.mm-header-action-primary {
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+    color: #fff !important;
+}
+
+.mm-header-action-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #fff !important;
+}

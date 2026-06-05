@@ -24,21 +24,32 @@
         </div>
 
         {{-- Selector de Rol --}}
-        <div class="flex items-center gap-3 flex-wrap">
-            <label class="mp-label">Selecciona un Rol:</label>
-            <div class="mp-select-wrap">
-                <svg class="mp-select-icon" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 8a7 7 0 1114 0H3z"/>
-                </svg>
-                <select wire:model.live="selectedRoleId" class="mp-select">
-                    <option value="">-- Elige un rol --</option>
-                    @foreach($roles as $role)
-                        <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
-                    @endforeach
-                </select>
-                <svg class="mp-select-caret" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-                </svg>
+        <div class="mp-role-card">
+            <div class="mp-role-copy">
+                <span class="mp-eyebrow">Centro de permisos</span>
+                <h2 class="mp-role-title">Elige el rol que vas a configurar</h2>
+                <p class="mp-role-text">Selecciona un perfil y activa solo las capacidades que necesita para operar el minimarket.</p>
+            </div>
+            <div class="mp-role-panel">
+                <div class="mp-role-stat">
+                    <span class="mp-role-stat-value">{{ $roles->count() }}</span>
+                    <span class="mp-role-stat-label">roles disponibles</span>
+                </div>
+                <label class="mp-label" for="role-selector">Rol activo</label>
+                <div class="mp-select-wrap">
+                    <svg class="mp-select-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 8a7 7 0 1114 0H3z"/>
+                    </svg>
+                    <select id="role-selector" wire:model.live="selectedRoleId" class="mp-select">
+                        <option value="">Selecciona un rol</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                        @endforeach
+                    </select>
+                    <svg class="mp-select-caret" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
@@ -293,9 +304,79 @@
             .mp-spark-3 { width: 3px; height: 3px; bottom: 10px; right: -6px; opacity: 0.6; }
 
             .mp-label { color: var(--mp-text); font-weight: 600; font-size: 0.95rem; }
+            .mp-role-card {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+                gap: 1rem;
+                align-items: stretch;
+                padding: 1rem;
+                border: 1px solid var(--mp-border);
+                border-radius: 22px;
+                background:
+                    radial-gradient(circle at 10% 10%, rgba(99,102,241,0.22), transparent 30%),
+                    linear-gradient(135deg, rgba(15,23,42,0.78), rgba(30,41,59,0.42));
+                box-shadow: 0 24px 70px -34px rgba(15,23,42,0.85), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .mp-role-copy {
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .mp-eyebrow {
+                width: max-content;
+                border-radius: 999px;
+                padding: 0.25rem 0.65rem;
+                background: rgba(99,102,241,0.16);
+                color: #a5b4fc;
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .mp-role-title {
+                margin: 0.75rem 0 0;
+                color: #fff;
+                font-size: clamp(1.35rem, 3vw, 2rem);
+                font-weight: 850;
+                line-height: 1.05;
+            }
+            .mp-role-text {
+                max-width: 620px;
+                margin: 0.55rem 0 0;
+                color: #cbd5e1;
+                font-size: 0.95rem;
+            }
+            .mp-role-panel {
+                padding: 1rem;
+                border-radius: 18px;
+                background: rgba(15,23,42,0.56);
+                border: 1px solid rgba(148,163,184,0.16);
+            }
+            .mp-role-stat {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 1rem;
+                margin-bottom: 0.85rem;
+            }
+            .mp-role-stat-value {
+                color: #fff;
+                font-size: 2rem;
+                font-weight: 900;
+                line-height: 1;
+            }
+            .mp-role-stat-label {
+                color: var(--mp-muted);
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
             .mp-select-wrap {
                 position: relative;
                 min-width: 260px;
+                margin-top: 0.45rem;
             }
             .mp-select {
                 width: 100%;
@@ -303,10 +384,10 @@
                 background: rgba(30, 41, 59, 0.7);
                 color: var(--mp-text);
                 border: 1px solid var(--mp-border);
-                border-radius: 12px;
-                padding: 0.65rem 2.5rem 0.65rem 2.5rem;
-                font-weight: 600;
-                font-size: 0.95rem;
+                border-radius: 14px;
+                padding: 0.85rem 2.8rem 0.85rem 2.65rem;
+                font-weight: 750;
+                font-size: 1rem;
                 cursor: pointer;
                 transition: border-color .2s, box-shadow .2s;
             }
@@ -539,19 +620,49 @@
                 color: #0f172a;
                 border-color: #cbd5e1;
             }
+            :root:not(.dark) .mp-role-card {
+                background:
+                    radial-gradient(circle at 10% 10%, rgba(245,158,11,0.18), transparent 31%),
+                    radial-gradient(circle at 84% 18%, rgba(16,185,129,0.14), transparent 28%),
+                    linear-gradient(135deg, #ffffff, #fff7ed 48%, #ecfdf5);
+                border-color: rgba(251, 191, 36, 0.34);
+                box-shadow: 0 26px 80px -48px rgba(146,64,14,0.36), inset 0 1px 0 rgba(255,255,255,0.95);
+            }
+            :root:not(.dark) .mp-role-panel {
+                background: rgba(255,255,255,0.74);
+                border-color: rgba(251,191,36,0.26);
+                box-shadow: 0 18px 42px -34px rgba(15,23,42,0.38);
+            }
+            :root:not(.dark) .mp-role-title,
+            :root:not(.dark) .mp-role-stat-value { color: #0f172a; }
+            :root:not(.dark) .mp-role-text { color: #475569; }
+            :root:not(.dark) .mp-eyebrow { background: rgba(245,158,11,0.16); color: #92400e; }
             :root:not(.dark) .mp-info-title { color: #0f172a; }
             :root:not(.dark) .mp-info-text  { color: #475569; }
             :root:not(.dark) .mp-table-card {
-                background: #fff;
-                border-color: #e2e8f0;
+                background: rgba(255,255,255,0.86);
+                border-color: rgba(251,191,36,0.24);
+                box-shadow: 0 24px 70px -52px rgba(15,23,42,0.42);
             }
-            :root:not(.dark) .mp-th { background: #f8fafc; border-bottom-color: #e2e8f0; }
+            :root:not(.dark) .mp-th {
+                background: linear-gradient(180deg, #fff7ed, #f8fafc);
+                border-bottom-color: rgba(251,191,36,0.22);
+            }
             :root:not(.dark) .mp-th-module { color: #1e293b; }
             :root:not(.dark) .mp-td { border-bottom-color: #f1f5f9; }
+            :root:not(.dark) .mp-table tbody tr:hover .mp-td { background: rgba(254,243,199,0.32); }
             :root:not(.dark) .mp-td-num { color: #2563eb; }
             :root:not(.dark) .mp-module-name { color: #0f172a; }
             :root:not(.dark) .mp-check-box { background: #fff; border-color: #cbd5e1; }
             :root:not(.dark) .mp-btn-ghost { background: #f1f5f9; color: #0f172a; border-color: #e2e8f0; }
+
+            @media (max-width: 768px) {
+                .mp-role-card { grid-template-columns: 1fr; padding: 0.85rem; }
+                .mp-role-copy, .mp-role-panel { padding: 0.85rem; }
+                .mp-select-wrap { min-width: 100%; }
+                .mp-actions { flex-direction: column; }
+                .mp-btn { justify-content: center; }
+            }
         </style>
     </div>
 </x-filament-panels::page>

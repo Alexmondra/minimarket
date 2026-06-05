@@ -92,7 +92,7 @@ class ProductoSeeder extends Seeder
 
         $pp2a = DB::table('producto_presentacion')->insertGetId([
             'producto_id'       => $p2,
-            'unidad_medida_id'  => 4, // ml
+            'unidad_medida_id'  => 1, // ml
             'cantidad'          => 400,
             'tipo_presentacion' => 'Lata 400ml',
             'imagen'            => null,
@@ -109,7 +109,7 @@ class ProductoSeeder extends Seeder
 
         $pp2b = DB::table('producto_presentacion')->insertGetId([
             'producto_id'       => $p2,
-            'unidad_medida_id'  => 5, // paq
+            'unidad_medida_id'  => 1,
             'cantidad'          => 1,
             'tipo_presentacion' => 'Six Pack 400ml',
             'imagen'            => null,
@@ -141,7 +141,7 @@ class ProductoSeeder extends Seeder
 
         $pp3a = DB::table('producto_presentacion')->insertGetId([
             'producto_id'       => $p3,
-            'unidad_medida_id'  => 4, // ml
+            'unidad_medida_id'  => 1, // ml
             'cantidad'          => 500,
             'tipo_presentacion' => 'Botella 500ml',
             'imagen'            => null,
@@ -158,7 +158,7 @@ class ProductoSeeder extends Seeder
 
         $pp3b = DB::table('producto_presentacion')->insertGetId([
             'producto_id'       => $p3,
-            'unidad_medida_id'  => 3, // L
+            'unidad_medida_id'  => 1, // L
             'cantidad'          => 1.5,
             'tipo_presentacion' => 'Botella 1.5L',
             'imagen'            => null,
@@ -175,7 +175,7 @@ class ProductoSeeder extends Seeder
 
         $pp3c = DB::table('producto_presentacion')->insertGetId([
             'producto_id'       => $p3,
-            'unidad_medida_id'  => 3, // L
+            'unidad_medida_id'  => 1, // L
             'cantidad'          => 3,
             'tipo_presentacion' => 'Botella 3L',
             'imagen'            => null,

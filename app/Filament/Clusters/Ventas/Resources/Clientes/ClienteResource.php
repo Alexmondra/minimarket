@@ -31,23 +31,37 @@ class ClienteResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('tipo_documento')
                     ->label('Tipo')
+                    ->icon('heroicon-o-identification')
                     ->badge()
-                    ->color('gray'),
+                    ->color(fn (?string $state): string => match ($state) {
+                        'RUC' => 'info',
+                        'DNI' => 'success',
+                        default => 'gray',
+                    }),
                 TextColumn::make('documento')
                     ->label('Documento')
+                    ->weight('semibold')
+                    ->formatStateUsing(fn (?string $state): ?string => blank($state) || $state === '00000000' ? null : $state)
+                    ->placeholder('-')
                     ->searchable(),
                 TextColumn::make('razon_social')
                     ->label('Cliente')
+                    ->icon('heroicon-o-user-circle')
+                    ->weight('bold')
                     ->searchable()
                     ->formatStateUsing(fn ($state, Cliente $record) => $state ?: trim(($record->nombre ?? '').' '.($record->apellido ?? ''))),
                 TextColumn::make('telefono')
                     ->label('Telefono')
+                    ->icon('heroicon-o-phone')
                     ->placeholder('-'),
                 TextColumn::make('email')
                     ->label('Correo')
+                    ->icon('heroicon-o-envelope')
                     ->placeholder('-'),
             ])
             ->defaultSort('id', 'desc');

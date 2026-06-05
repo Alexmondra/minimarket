@@ -4,8 +4,10 @@ namespace App\Filament\Clusters\Configuraciones\Resources\Usuarios\Tables;
 
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -23,9 +25,13 @@ class UsuariosTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
+                    ->icon('heroicon-o-user-circle')
+                    ->weight('bold')
                     ->label('Nombre'),
                 TextColumn::make('email')
                     ->searchable()
@@ -42,6 +48,10 @@ class UsuariosTable
                     ->view('filament.tables.columns.roles-badge'),
                 IconColumn::make('activo')
                     ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
                     ->label('Activo'),
                 TextColumn::make('ultimo_acceso')
                     ->dateTime()
@@ -77,8 +87,30 @@ class UsuariosTable
                 TrashedFilter::make()->label('Eliminados'),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                    ->label('Perfil')
+                    ->button()
+                    ->size('sm')
+                    ->color('info')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-info']),
+                EditAction::make()
+                    ->label('Editar')
+                    ->button()
+                    ->size('sm')
+                    ->color('warning')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-warning']),
+                DeleteAction::make()
+                    ->label('Eliminar')
+                    ->before(fn ($record): bool => $record->update(['activo' => false]))
+                    ->button()
+                    ->size('sm')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-danger']),
+                RestoreAction::make()
+                    ->label('Restablecer')
+                    ->after(fn ($record): bool => $record->update(['activo' => true]))
+                    ->button()
+                    ->size('sm')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-success']),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

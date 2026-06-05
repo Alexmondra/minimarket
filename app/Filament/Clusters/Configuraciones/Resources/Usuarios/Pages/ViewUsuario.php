@@ -3,8 +3,8 @@
 namespace App\Filament\Clusters\Configuraciones\Resources\Usuarios\Pages;
 
 use App\Filament\Clusters\Configuraciones\Resources\Usuarios\UsuarioResource;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -15,9 +15,16 @@ class ViewUsuario extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
+            DeleteAction::make()
+                ->label('Enviar a eliminados')
+                ->before(fn (User $record): bool => $record->update(['activo' => false]))
+                ->button()
+                ->extraAttributes(['class' => 'mm-table-action mm-table-action-danger']),
+            RestoreAction::make()
+                ->label('Restablecer usuario')
+                ->after(fn (User $record): bool => $record->update(['activo' => true]))
+                ->button()
+                ->extraAttributes(['class' => 'mm-table-action mm-table-action-success']),
         ];
     }
 }

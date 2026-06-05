@@ -4,14 +4,13 @@ namespace App\Filament\Clusters\Configuraciones\Resources\Series;
 
 use App\Filament\Clusters\Configuraciones\Resources\Series\Pages\ListSeries;
 use App\Filament\Clusters\Configuraciones\Resources\Series\Pages\SeleccionarSucursal;
+use App\Models\Documento;
 use App\Models\Serie;
 use App\Support\SucursalContext;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\Select;
@@ -113,13 +112,23 @@ class SerieResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('sucursal.nombre_sucursal')
                     ->label('Sucursal')
+                    ->icon('heroicon-o-building-storefront')
+                    ->weight('bold')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('tipo_comprobante')
                     ->badge()
+                    ->icon(fn (string $state): string => match ($state) {
+                        'BOLETA' => 'heroicon-o-receipt-refund',
+                        'FACTURA' => 'heroicon-o-document-check',
+                        'TICKET' => 'heroicon-o-ticket',
+                        default => 'heroicon-o-document-text',
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'BOLETA' => 'success',
                         'FACTURA' => 'info',
@@ -135,12 +144,13 @@ class SerieResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color('gray')
+                    ->color('primary')
                     ->weight('bold')
                     ->label('Serie'),
                 TextColumn::make('correlativo')
                     ->numeric()
                     ->sortable()
+                    ->icon('heroicon-o-hashtag')
                     ->label('Siguiente numero')
                     ->description(fn (Serie $record): string => sprintf(
                         '%s-%08d',
@@ -167,14 +177,24 @@ class SerieResource extends Resource
             ])
             ->defaultSort('sucursal_id')
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-                RestoreAction::make(),
+                EditAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->color('info')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-info']),
+                DeleteAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->visible(fn (Serie $record): bool => ! self::serieTieneDocumentos($record))
+                    ->authorize(fn (Serie $record): bool => ! self::serieTieneDocumentos($record))
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-danger']),
+                RestoreAction::make()
+                    ->button()
+                    ->size('sm')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-success']),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
             ]);
@@ -220,16 +240,26 @@ class SerieResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->can('config.editar') ?? false;
+        return (auth()->user()?->can('config.editar') ?? false)
+            && $record instanceof Serie
+            && ! self::serieTieneDocumentos($record);
     }
 
     public static function canForceDelete(Model $record): bool
     {
-        return static::canDelete($record);
+        return false;
     }
 
     public static function canRestore(Model $record): bool
     {
-        return static::canDelete($record);
+        return auth()->user()?->can('config.editar') ?? false;
+    }
+
+    private static function serieTieneDocumentos(Serie $record): bool
+    {
+        return Documento::withTrashed()
+            ->where('sucursal_id', $record->sucursal_id)
+            ->where('serie', $record->serie)
+            ->exists();
     }
 }

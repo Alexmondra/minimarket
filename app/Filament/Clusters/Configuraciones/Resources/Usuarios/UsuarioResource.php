@@ -102,4 +102,14 @@ class UsuarioResource extends Resource
     {
         return auth()->user()?->can('usuarios.eliminar') ?? false;
     }
+
+    public static function canForceDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canRestore(Model $record): bool
+    {
+        return auth()->user()?->can('usuarios.eliminar') ?? false;
+    }
 }

@@ -16,7 +16,7 @@ class ListSeries extends ListRecords
         return [
             CreateAction::make(),
             Action::make('verSucursalesCards')
-                ->label('Ver sucursales en cards')
+                ->label('Vista por sucursal')
                 ->icon('heroicon-o-building-storefront')
                 ->color('info')
                 ->url(SerieResource::getUrl('seleccionar')),

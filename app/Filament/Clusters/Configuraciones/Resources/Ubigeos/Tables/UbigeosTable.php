@@ -17,8 +17,14 @@ class UbigeosTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('ubigeo')
+                    ->label('Codigo')
+                    ->badge()
+                    ->color('primary')
+                    ->weight('bold')
                     ->searchable(),
                 TextColumn::make('Superficie')
                     ->searchable()
@@ -30,15 +36,26 @@ class UbigeosTable
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('departamento')
+                    ->label('Departamento')
+                    ->icon('heroicon-o-map')
+                    ->weight('semibold')
                     ->searchable(),
                 TextColumn::make('provincia')
+                    ->label('Provincia')
                     ->searchable(),
                 TextColumn::make('distrito')
+                    ->label('Distrito')
+                    ->icon('heroicon-o-map-pin')
+                    ->weight('bold')
                     ->searchable(),
                 TextColumn::make('capital')
+                    ->label('Capital')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('region_natural')
+                    ->label('Region natural')
+                    ->badge()
+                    ->color('gray')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
@@ -58,8 +75,18 @@ class UbigeosTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                    ->label('Ver')
+                    ->button()
+                    ->size('sm')
+                    ->color('info')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-info']),
+                EditAction::make()
+                    ->label('Editar')
+                    ->button()
+                    ->size('sm')
+                    ->color('warning')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-warning']),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

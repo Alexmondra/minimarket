@@ -22,6 +22,8 @@ class SucursalesTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordAction(null)
+            ->recordUrl(null)
             ->columns([
                 ImageColumn::make('imagen_sucursal')
                     ->label('')
@@ -32,10 +34,11 @@ class SucursalesTable
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color('gray'),
+                    ->color('primary'),
                 TextColumn::make('nombre_sucursal')
                     ->searchable()
                     ->sortable()
+                    ->icon('heroicon-o-building-storefront')
                     ->weight('bold')
                     ->label('Sucursal')
                     ->description(fn ($record): string => $record->direccion ?? 'Sin direccion registrada'),
@@ -47,6 +50,7 @@ class SucursalesTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('ubigeoRel.distrito')
                     ->label('Distrito')
+                    ->icon('heroicon-o-map-pin')
                     ->searchable(),
                 TextColumn::make('direccion')
                     ->label('Direccion')
@@ -54,17 +58,25 @@ class SucursalesTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('telefono')
                     ->label('Telefono')
+                    ->icon('heroicon-o-phone')
                     ->searchable(),
                 TextColumn::make('email')
                     ->label('Correo')
+                    ->icon('heroicon-o-envelope')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('impuesto_porcentaje')
                     ->suffix('%')
                     ->numeric(2)
+                    ->badge()
+                    ->color('success')
                     ->label('Impuesto'),
                 IconColumn::make('activo')
                     ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
                     ->label('Activa'),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -94,9 +106,23 @@ class SucursalesTable
             ])
             ->defaultSort('nombre_sucursal')
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->label('Ver')
+                    ->button()
+                    ->size('sm')
+                    ->color('info')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-info']),
+                EditAction::make()
+                    ->label('Editar')
+                    ->button()
+                    ->size('sm')
+                    ->color('warning')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-warning']),
+                DeleteAction::make()
+                    ->label('Eliminar')
+                    ->button()
+                    ->size('sm')
+                    ->extraAttributes(['class' => 'mm-table-action mm-table-action-danger']),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

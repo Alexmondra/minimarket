@@ -16,6 +16,7 @@ class ListDocumentos extends ListRecords
             Action::make('registrarVenta')
                 ->label('Registrar venta')
                 ->icon('heroicon-o-bolt')
+                ->color('success')
                 ->url(DocumentoResource::getUrl('registrar'))
                 ->visible(auth()->user()?->can('ventas.crear') ?? false),
         ];
