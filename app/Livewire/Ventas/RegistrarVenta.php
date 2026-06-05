@@ -4,8 +4,15 @@ namespace App\Livewire\Ventas;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Lote;
+use App\Models\LotePresentacion;
+use App\Models\MovimientoInventario;
+use App\Models\Producto;
+use App\Models\ProductoPresentacion;
+use App\Models\ProductoPresentacionBarra;
 use App\Models\ProductoSucursal;
 use App\Models\Sucursal;
+use App\Models\UniMedida;
 use App\Support\SucursalContext;
 use App\Support\Ventas\AnulacionService;
 use App\Support\Ventas\CajaService;
@@ -14,7 +21,9 @@ use App\Support\Ventas\RegistrarVenta as RegistrarVentaAction;
 use App\Support\Ventas\VentaCalculator;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 trait RegistrarVentaBehavior
@@ -49,7 +58,41 @@ trait RegistrarVentaBehavior
 
     public array $productosResultados = [];
 
+    public array $productosSinStockResultados = [];
+
     public bool $showProductoDropdown = false;
+
+    public bool $showIngresoRapidoModal = false;
+
+    public bool $ingresoRapidoCrearProducto = false;
+
+    public ?int $ingresoRapidoPresentacionId = null;
+
+    public string $ingresoRapidoSearchTerm = '';
+
+    public string $ingresoRapidoCodigoBarra = '';
+
+    public string $ingresoRapidoProductoNombre = '';
+
+    public string $ingresoRapidoProductoSearch = '';
+
+    public array $ingresoRapidoProductosResultados = [];
+
+    public ?int $ingresoRapidoProductoId = null;
+
+    public string $ingresoRapidoPresentacionNombre = 'Unidad';
+
+    public int $ingresoRapidoPresentacionCantidad = 1;
+
+    public ?int $ingresoRapidoPresentacionBaseId = null;
+
+    public array $ingresoRapidoPresentacionesBase = [];
+
+    public ?float $ingresoRapidoCantidad = 1.0;
+
+    public ?float $ingresoRapidoPrecioVenta = null;
+
+    public ?float $ingresoRapidoCosto = null;
 
     public array $cartItems = [];
 
@@ -561,8 +604,7 @@ trait RegistrarVentaBehavior
         $term = trim($this->searchProducto);
 
         if (strlen($term) < 2 || ! $this->sucursalId) {
-            $this->productosResultados = [];
-            $this->showProductoDropdown = false;
+            $this->limpiarResultadosBusquedaProducto();
 
             return;
         }
@@ -663,7 +705,66 @@ trait RegistrarVentaBehavior
             ->values()
             ->all();
 
-        $this->showProductoDropdown = count($this->productosResultados) > 0;
+        $this->productosSinStockResultados = empty($this->productosResultados)
+            ? $this->buscarPresentacionesSinStock($term)
+            : [];
+
+        $this->showProductoDropdown = count($this->productosResultados) > 0 || count($this->productosSinStockResultados) > 0;
+    }
+
+    public function limpiarBusquedaProducto(): void
+    {
+        $this->searchProducto = '';
+        $this->limpiarResultadosBusquedaProducto();
+    }
+
+    protected function limpiarResultadosBusquedaProducto(): void
+    {
+        $this->productosResultados = [];
+        $this->productosSinStockResultados = [];
+        $this->showProductoDropdown = false;
+    }
+
+    protected function buscarPresentacionesSinStock(string $term): array
+    {
+        return ProductoPresentacion::query()
+            ->with(['producto', 'unidadMedida', 'barras'])
+            ->whereHas('producto', function ($query) {
+                $query->where('empresa_id', Auth::user()->empresa_id)
+                    ->where('activo', true);
+            })
+            ->where(function ($query) use ($term) {
+                $query->where('tipo_presentacion', 'like', "%{$term}%")
+                    ->orWhereHas('producto', function ($productQuery) use ($term) {
+                        $productQuery->where('nombre', 'like', "%{$term}%")
+                            ->orWhere('codigo_interno', 'like', "%{$term}%");
+                    })
+                    ->orWhereHas('barras', fn ($barraQuery) => $barraQuery->where('codigo_barra', 'like', "%{$term}%"));
+            })
+            ->whereDoesntHave('lotePresentaciones.productoSucursal', function ($query) {
+                $query->where('sucursal_id', $this->sucursalId)
+                    ->where('activo', true)
+                    ->whereHas('lotePresentacion', fn ($stockQuery) => $stockQuery
+                        ->where('stock', '>', 0)
+                        ->whereHas('lote', fn ($loteQuery) => $loteQuery->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+                    );
+            })
+            ->limit(5)
+            ->get()
+            ->map(function (ProductoPresentacion $presentacion): array {
+                $producto = $presentacion->producto;
+
+                return [
+                    'producto_presentacion_id' => $presentacion->id,
+                    'producto_id' => $producto?->id,
+                    'nombre' => $producto?->nombre ?? 'Producto',
+                    'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto?->codigo_interno,
+                    'presentacion' => $presentacion->tipo_presentacion ?: 'Presentacion',
+                    'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     protected function obtenerDetalleProducto(int $presentacionId): ?array
@@ -796,7 +897,306 @@ trait RegistrarVentaBehavior
 
         $this->searchProducto = '';
         $this->productosResultados = [];
+        $this->productosSinStockResultados = [];
         $this->showProductoDropdown = false;
+    }
+
+    public function abrirIngresoRapido(?int $presentacionId = null): void
+    {
+        $this->resetValidation();
+        $this->ingresoRapidoSearchTerm = trim($this->searchProducto);
+        $this->ingresoRapidoCodigoBarra = $this->pareceCodigoBarra($this->ingresoRapidoSearchTerm) ? $this->ingresoRapidoSearchTerm : '';
+        $this->ingresoRapidoPresentacionId = $presentacionId;
+        $this->ingresoRapidoCrearProducto = $presentacionId === null;
+        $this->ingresoRapidoProductoId = null;
+        $this->ingresoRapidoProductoSearch = '';
+        $this->ingresoRapidoProductosResultados = [];
+        $this->ingresoRapidoPresentacionCantidad = 1;
+        $this->ingresoRapidoPresentacionBaseId = null;
+        $this->ingresoRapidoPresentacionesBase = [];
+        $this->ingresoRapidoCantidad = 1.0;
+        $this->ingresoRapidoCosto = null;
+        $this->ingresoRapidoPrecioVenta = 1.0;
+
+        if ($presentacionId) {
+            $presentacion = ProductoPresentacion::query()
+                ->with(['producto', 'unidadMedida'])
+                ->find($presentacionId);
+
+            if (! $presentacion || ! $presentacion->producto) {
+                Notification::make()->title('Presentacion no disponible')->warning()->send();
+
+                return;
+            }
+
+            $ultimoPrecio = ProductoSucursal::query()
+                ->where('producto_id', $presentacion->producto_id)
+                ->whereHas('lotePresentacion', fn ($query) => $query->where('producto_presentacion_id', $presentacionId))
+                ->latest('id')
+                ->value('precio');
+
+            $this->ingresoRapidoProductoNombre = $presentacion->producto->nombre;
+            $this->ingresoRapidoPresentacionNombre = trim(($presentacion->tipo_presentacion ?: 'Presentacion') . ' ' . ($presentacion->unidadMedida?->abreviatura ? '(' . $presentacion->unidadMedida->abreviatura . ')' : ''));
+            $this->ingresoRapidoPrecioVenta = $ultimoPrecio !== null ? (float) $ultimoPrecio : 1.0;
+        } else {
+            $this->ingresoRapidoProductoNombre = $this->pareceCodigoBarra($this->ingresoRapidoSearchTerm) ? '' : $this->ingresoRapidoSearchTerm;
+            $this->ingresoRapidoPresentacionNombre = $this->pareceCodigoBarra($this->ingresoRapidoSearchTerm) ? 'Unidad' : ($this->ingresoRapidoSearchTerm ?: 'Unidad');
+            $this->ingresoRapidoProductoSearch = $this->ingresoRapidoProductoNombre;
+        }
+
+        $this->showProductoDropdown = false;
+        $this->showIngresoRapidoModal = true;
+    }
+
+    protected function pareceCodigoBarra(string $value): bool
+    {
+        return ctype_digit($value) && strlen($value) >= 5;
+    }
+
+    public function cerrarIngresoRapido(): void
+    {
+        $this->showIngresoRapidoModal = false;
+    }
+
+    public function updatedIngresoRapidoProductoSearch(): void
+    {
+        if (! $this->ingresoRapidoCrearProducto) {
+            return;
+        }
+
+        $this->ingresoRapidoProductoId = null;
+        $term = trim($this->ingresoRapidoProductoSearch);
+
+        if (strlen($term) < 2) {
+            $this->ingresoRapidoProductosResultados = [];
+
+            return;
+        }
+
+        $this->ingresoRapidoProductoNombre = $term;
+        $this->ingresoRapidoProductosResultados = Producto::query()
+            ->where('empresa_id', Auth::user()->empresa_id)
+            ->where('activo', true)
+            ->where(function ($query) use ($term) {
+                $query->where('nombre', 'like', "%{$term}%")
+                    ->orWhere('codigo_interno', 'like', "%{$term}%");
+            })
+            ->limit(5)
+            ->get(['id', 'nombre', 'codigo_interno'])
+            ->map(fn (Producto $producto): array => [
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'codigo' => $producto->codigo_interno,
+            ])
+            ->all();
+    }
+
+    public function seleccionarProductoIngresoRapido(int $productoId): void
+    {
+        $producto = Producto::query()
+            ->where('empresa_id', Auth::user()->empresa_id)
+            ->where('activo', true)
+            ->find($productoId);
+
+        if (! $producto) {
+            return;
+        }
+
+        $this->ingresoRapidoProductoId = $producto->id;
+        $this->ingresoRapidoProductoNombre = $producto->nombre;
+        $this->ingresoRapidoProductoSearch = $producto->nombre;
+        $this->ingresoRapidoProductosResultados = [];
+        $this->cargarPresentacionesBaseIngresoRapido($producto->id);
+
+        if ($this->ingresoRapidoPresentacionNombre === '' || $this->ingresoRapidoPresentacionNombre === 'Unidad') {
+            $this->ingresoRapidoPresentacionNombre = 'Unidad';
+        }
+    }
+
+    public function limpiarProductoIngresoRapido(): void
+    {
+        $this->ingresoRapidoProductoId = null;
+        $this->ingresoRapidoProductoSearch = '';
+        $this->ingresoRapidoProductoNombre = '';
+        $this->ingresoRapidoProductosResultados = [];
+        $this->ingresoRapidoPresentacionBaseId = null;
+        $this->ingresoRapidoPresentacionesBase = [];
+    }
+
+    protected function cargarPresentacionesBaseIngresoRapido(int $productoId): void
+    {
+        $this->ingresoRapidoPresentacionesBase = ProductoPresentacion::query()
+            ->with('unidadMedida')
+            ->where('producto_id', $productoId)
+            ->orderBy('tipo_presentacion')
+            ->limit(20)
+            ->get()
+            ->map(fn (ProductoPresentacion $presentacion): array => [
+                'id' => $presentacion->id,
+                'nombre' => trim(($presentacion->tipo_presentacion ?: 'Presentacion') . ' x ' . ($presentacion->cantidad ?: 1) . ' ' . ($presentacion->unidadMedida?->abreviatura ?? 'und')),
+            ])
+            ->all();
+    }
+
+    protected function obtenerOCrearPresentacionBase(Producto $producto, ?int $unidadId): ProductoPresentacion
+    {
+        if ($this->ingresoRapidoPresentacionBaseId) {
+            return ProductoPresentacion::query()
+                ->where('producto_id', $producto->id)
+                ->findOrFail($this->ingresoRapidoPresentacionBaseId);
+        }
+
+        return ProductoPresentacion::firstOrCreate(
+            [
+                'producto_id' => $producto->id,
+                'tipo_presentacion' => 'Unidad',
+                'cantidad' => 1,
+            ],
+            [
+                'unidad_medida_id' => $unidadId,
+                'es_pesable' => false,
+            ]
+        );
+    }
+
+    public function guardarIngresoRapido(): void
+    {
+        $rules = [
+            'ingresoRapidoCantidad' => 'required|numeric|min:0.001',
+            'ingresoRapidoPrecioVenta' => 'required|numeric|min:0',
+            'ingresoRapidoCosto' => 'nullable|numeric|min:0',
+            'ingresoRapidoCodigoBarra' => 'nullable|string|max:100',
+        ];
+
+        if ($this->ingresoRapidoCrearProducto) {
+            $rules['ingresoRapidoProductoNombre'] = 'required|string|min:2|max:255';
+            $rules['ingresoRapidoPresentacionNombre'] = 'required|string|min:2|max:120';
+            $rules['ingresoRapidoPresentacionCantidad'] = 'required|integer|min:1';
+            $rules['ingresoRapidoPresentacionBaseId'] = 'nullable|integer|exists:producto_presentacion,id';
+        } else {
+            $rules['ingresoRapidoPresentacionId'] = 'required|integer|exists:producto_presentacion,id';
+        }
+
+        $this->validate($rules, [
+            'ingresoRapidoProductoNombre.required' => 'Ingresa el nombre del producto.',
+            'ingresoRapidoPresentacionNombre.required' => 'Ingresa el nombre de la presentacion.',
+            'ingresoRapidoPresentacionCantidad.required' => 'Ingresa cuantas unidades contiene la presentacion.',
+            'ingresoRapidoCantidad.required' => 'Ingresa la cantidad.',
+            'ingresoRapidoPrecioVenta.required' => 'Ingresa el precio de venta.',
+        ]);
+
+        $presentacionId = DB::transaction(function (): int {
+            $producto = null;
+            $presentacion = null;
+
+            if ($this->ingresoRapidoCrearProducto) {
+                $unidadId = UniMedida::query()->where('abreviatura', 'und')->value('id')
+                    ?: UniMedida::query()->value('id');
+                $cantidadPresentacion = max((int) $this->ingresoRapidoPresentacionCantidad, 1);
+
+                if ($this->ingresoRapidoProductoId) {
+                    $producto = Producto::query()
+                        ->where('empresa_id', Auth::user()->empresa_id)
+                        ->where('activo', true)
+                        ->findOrFail($this->ingresoRapidoProductoId);
+                } else {
+                    $producto = Producto::create([
+                        'empresa_id' => Auth::user()->empresa_id,
+                        'codigo_interno' => $this->ingresoRapidoCodigoBarra !== '' ? trim($this->ingresoRapidoCodigoBarra) : null,
+                        'nombre' => trim($this->ingresoRapidoProductoNombre),
+                        'slug' => Str::slug($this->ingresoRapidoProductoNombre) . '-' . Str::lower(Str::random(6)),
+                        'afecto_igv' => true,
+                        'activo' => true,
+                    ]);
+                }
+
+                $presentacionBaseId = null;
+                if ($cantidadPresentacion > 1) {
+                    $presentacionBaseId = $this->obtenerOCrearPresentacionBase($producto, $unidadId)->id;
+                }
+
+                $presentacion = ProductoPresentacion::create([
+                    'producto_id' => $producto->id,
+                    'presentacion_base_id' => $presentacionBaseId,
+                    'unidad_medida_id' => $unidadId,
+                    'cantidad' => $cantidadPresentacion,
+                    'tipo_presentacion' => trim($this->ingresoRapidoPresentacionNombre) ?: 'Unidad',
+                    'es_pesable' => false,
+                ]);
+
+                $codigoBarra = trim($this->ingresoRapidoCodigoBarra);
+                if ($codigoBarra !== '') {
+                    ProductoPresentacionBarra::firstOrCreate(
+                        ['codigo_barra' => $codigoBarra],
+                        ['producto_presentacion_id' => $presentacion->id]
+                    );
+                }
+            } else {
+                $presentacion = ProductoPresentacion::query()
+                    ->with('producto')
+                    ->findOrFail($this->ingresoRapidoPresentacionId);
+                $producto = $presentacion->producto;
+            }
+
+            $cantidad = round((float) $this->ingresoRapidoCantidad, 3);
+            $costo = round((float) ($this->ingresoRapidoCosto ?? 0), 2);
+            $codigoLote = 'ingreso-rapido-' . $producto->id . '-' . now()->format('YmdHis');
+
+            $lote = Lote::create([
+                'sucursal_id' => $this->sucursalId,
+                'codigo_lote' => $codigoLote,
+                'producto_nombre' => $producto->nombre,
+                'fecha_fabricacion' => null,
+                'fecha_vencimiento' => null,
+                'precio_compra' => round($costo * $cantidad, 2),
+                'observaciones' => 'Ingreso rapido desde POS',
+                'estado_lote' => 'activo',
+            ]);
+
+            $lotePresentacion = LotePresentacion::create([
+                'lote_id' => $lote->id,
+                'producto_presentacion_id' => $presentacion->id,
+                'stock_inicial' => $cantidad,
+                'stock' => $cantidad,
+                'precio_compra' => $costo,
+                'estado' => LotePresentacion::ESTADO_ACTIVO,
+            ]);
+
+            ProductoSucursal::create([
+                'producto_id' => $producto->id,
+                'sucursal_id' => $this->sucursalId,
+                'lote_presentacion_id' => $lotePresentacion->id,
+                'stock_minimo' => 0,
+                'precio' => round((float) $this->ingresoRapidoPrecioVenta, 2),
+                'minimo_mayorista' => 2,
+                'precio_mayorista' => null,
+                'activo' => true,
+            ]);
+
+            MovimientoInventario::create([
+                'empresa_id' => Auth::user()->empresa_id,
+                'sucursal_id' => $this->sucursalId,
+                'producto_nombre' => $producto->nombre,
+                'producto_presentacion_id' => $presentacion->id,
+                'tipo' => 'ajuste_entrada',
+                'cantidad' => $cantidad,
+                'motivo' => 'Ingreso rapido desde POS',
+                'referencia' => 'LotePresentacion:' . $lotePresentacion->id,
+                'user_id' => Auth::id(),
+                'stock_final' => $cantidad,
+            ]);
+
+            return $presentacion->id;
+        });
+
+        $this->showIngresoRapidoModal = false;
+
+        Notification::make()
+            ->title('Ingreso rapido registrado')
+            ->success()
+            ->send();
+
+        $this->agregarProductoDirecto($presentacionId);
     }
 
     public function actualizarCantidad(int $index, $cantidad): void
@@ -1037,6 +1437,7 @@ trait RegistrarVentaBehavior
                 $this->agregarProducto($exactMatch->lotePresentacion->producto_presentacion_id);
                 $this->searchProducto = '';
                 $this->productosResultados = [];
+                $this->productosSinStockResultados = [];
                 $this->showProductoDropdown = false;
                 return;
             }
@@ -1047,7 +1448,20 @@ trait RegistrarVentaBehavior
             $this->agregarProducto($first['producto_presentacion_id']);
             $this->searchProducto = '';
             $this->productosResultados = [];
+            $this->productosSinStockResultados = [];
             $this->showProductoDropdown = false;
+
+            return;
+        }
+
+        if (! empty($this->productosSinStockResultados)) {
+            $this->abrirIngresoRapido($this->productosSinStockResultados[0]['producto_presentacion_id']);
+
+            return;
+        }
+
+        if (strlen($term) >= 2) {
+            $this->abrirIngresoRapido();
         }
     }
 

@@ -208,8 +208,9 @@ class RegistrarVenta
 
         $documento->loadMissing([
             'empresa',
-            'sucursal',
+            'sucursal.ubigeoRel',
             'cliente',
+            'sunat',
             'detalles.presentacion.unidadMedida',
         ]);
 

@@ -48,8 +48,9 @@ class ArchivoPrivadoController
         if ($documento->tipo_comprobante === 'TICKET') {
             $documento->load([
                 'empresa',
-                'sucursal',
+                'sucursal.ubigeoRel',
                 'cliente',
+                'sunat',
                 'detalles.presentacion.unidadMedida',
             ]);
             $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
@@ -67,8 +68,9 @@ class ArchivoPrivadoController
         if (! $archivo || ! Storage::disk('local')->exists($archivo->ruta_archivo)) {
             $documento->load([
                 'empresa',
-                'sucursal',
+                'sucursal.ubigeoRel',
                 'cliente',
+                'sunat',
                 'detalles.presentacion.unidadMedida',
             ]);
             $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);

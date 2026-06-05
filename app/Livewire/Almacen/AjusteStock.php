@@ -692,6 +692,7 @@ class AjusteStock extends Component
         $this->modoProductoPresentacion = 'existente';
         $this->modalAfectoIgv = true;
         $this->modalCantidadPorEmpaque = 1;
+        $this->modalUnidadMedidaId = UniMedida::where('abreviatura', 'und')->value('id');
     }
 
     public function updatedModoProductoPresentacion(): void

@@ -24,6 +24,7 @@
     $codigoSunat = $sunat?->codigo_respuesta_sunat ?? '';
     $mensajeSunat = $sunat?->mensaje_sunat ?? '';
     $sunatAceptado = $sunat && $sunat->estado_sunat;
+    $numeroComprobante = str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT);
 
     // --- QR SUNAT ---
     $tipoDoc = match($documento->tipo_comprobante) {
@@ -47,7 +48,7 @@
         $documento->empresa?->ruc ?? '',
         $tipoDoc,
         $documento->serie,
-        $documento->numero,
+        $numeroComprobante,
         number_format((float) $documento->total_igv, 2, '.', ''),
         number_format((float) $documento->total_neto, 2, '.', ''),
         $fechaEmision,
@@ -117,6 +118,37 @@
         ->where('documento_id', $documento->id)
         ->where('tipo', 'canje')
         ->sum('puntos');
+
+    $descripcionPresentacion = static function ($presentacion): string {
+        if (! $presentacion) {
+            return '';
+        }
+
+        $partes = [];
+        $tipo = trim((string) ($presentacion->tipo_presentacion ?? ''));
+        if ($tipo !== '') {
+            $partes[] = $tipo;
+        }
+
+        $cantidad = (float) ($presentacion->cantidad ?? 0);
+        $unidad = strtoupper(trim((string) ($presentacion->unidadMedida?->abreviatura ?? '')));
+        if ($cantidad > 0 && $unidad !== '') {
+            $cantidadTexto = rtrim(rtrim(number_format($cantidad, 3, '.', ''), '0'), '.');
+            $partes[] = 'x ' . $cantidadTexto . ' ' . $unidad;
+        }
+
+        return trim(implode(' ', $partes));
+    };
+
+    $formatoCantidad = static function (mixed $cantidad): string {
+        $valor = (float) $cantidad;
+
+        if (abs($valor - round($valor)) < 0.00001) {
+            return number_format($valor, 0, '.', '');
+        }
+
+        return rtrim(rtrim(number_format($valor, 3, '.', ''), '0'), '.');
+    };
 @endphp
 <!doctype html>
 <html lang="es">
@@ -195,6 +227,13 @@
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         td, th { padding: 2px 0; vertical-align: top; word-wrap: break-word; }
 
+        .presentation-line {
+            display: block;
+            font-size: 9px;
+            color: #444;
+            line-height: 1.1;
+        }
+
         img.logo {
             max-width: 65%;
             height: auto;
@@ -271,7 +310,7 @@
         <div style="font-size: 11px;">
             <div style="display: flex; justify-content: space-between;">
                 <b>{{ $tipoComprobanteLegible }}:</b>
-                <span>{{ $documento->serie }}-{{ str_pad($documento->numero, 8, '0', STR_PAD_LEFT) }}</span>
+                <span>{{ $documento->serie }}-{{ $numeroComprobante }}</span>
             </div>
             <div><b>Fecha:</b> {{ $fechaEmision instanceof \Carbon\Carbon ? $fechaEmision->format('d/m/Y H:i') : date('d/m/Y H:i', strtotime($fechaEmision)) }}</div>
             <div>
@@ -299,9 +338,15 @@
             </thead>
             <tbody>
                 @foreach($documento->detalles as $det)
+                    @php($presentacionTexto = $descripcionPresentacion($det->presentacion))
                     <tr>
-                        <td class="font-bold">{{ number_format((float)$det->cantidad, 0) }}</td>
-                        <td>{{ $det->producto_nombre }}</td>
+                        <td class="font-bold">{{ $formatoCantidad($det->cantidad) }}</td>
+                        <td>
+                            {{ $det->producto_nombre }}
+                            @if($presentacionTexto !== '' && ! str_contains(mb_strtolower($det->producto_nombre), mb_strtolower($presentacionTexto)))
+                                <span class="presentation-line">{{ $presentacionTexto }}</span>
+                            @endif
+                        </td>
                         <td class="text-right">{{ number_format((float)$det->total_linea, 2) }}</td>
                     </tr>
                 @endforeach
@@ -387,7 +432,7 @@
                         <span style="color: orange;">Pendiente SUNAT ({{ $codigoSunat }})</span>
                     @endif
                 @else
-                    <b>{{ $documento->serie }}-{{ str_pad($documento->numero, 8, '0', STR_PAD_LEFT) }}</b><br>
+                    <b>{{ $documento->serie }}-{{ $numeroComprobante }}</b><br>
                     Emitido: {{ now()->format('d/m/Y H:i') }}<br>
                     {{ $documento->empresa?->razon_social }}
                 @endif

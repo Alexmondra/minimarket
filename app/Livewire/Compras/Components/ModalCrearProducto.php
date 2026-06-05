@@ -70,6 +70,8 @@ class ModalCrearProducto extends Component
             'tipoPresentacion', 'codigoBarra', 'showCrearCategoria',
             'nuevaCategoria', 'showCrearMarca', 'nuevaMarca',
         ]);
+
+        $this->unidadMedidaId = UniMedida::where('abreviatura', 'und')->value('id');
     }
 
     public function toggleCrearCategoria(): void

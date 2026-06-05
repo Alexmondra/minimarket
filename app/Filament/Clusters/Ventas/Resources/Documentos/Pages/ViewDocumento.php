@@ -135,8 +135,9 @@ class ViewDocumento extends ViewRecord
                     // Load missing relations
                     $documento->load([
                         'empresa',
-                        'sucursal',
+                        'sucursal.ubigeoRel',
                         'cliente',
+                        'sunat',
                         'detalles.presentacion.unidadMedida',
                     ]);
 

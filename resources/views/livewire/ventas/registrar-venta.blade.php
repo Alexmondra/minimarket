@@ -471,6 +471,14 @@
                         x-data="{
                             selectedIndex: -1,
                             resultsCount: 0,
+                            updateResultsCount() {
+                                const conStock = $wire.productosResultados ? $wire.productosResultados.length : 0;
+                                const sinStock = $wire.productosSinStockResultados ? $wire.productosSinStockResultados.length : 0;
+                                const crearRapido = ($wire.searchProducto || '').length >= 2 && conStock === 0 && sinStock === 0 ? 1 : 0;
+
+                                this.resultsCount = conStock + sinStock + crearRapido;
+                                this.selectedIndex = this.resultsCount > 0 ? 0 : -1;
+                            },
                             selectNext() {
                                 if (this.resultsCount > 0) {
                                     this.selectedIndex = (this.selectedIndex + 1) % this.resultsCount;
@@ -504,10 +512,9 @@
                             }
                         }"
                         x-init="
-                            $watch('$wire.productosResultados', value => {
-                                resultsCount = value ? value.length : 0;
-                                selectedIndex = -1;
-                            });
+                            $watch('$wire.productosResultados', () => updateResultsCount());
+                            $watch('$wire.productosSinStockResultados', () => updateResultsCount());
+                            $watch('$wire.searchProducto', () => updateResultsCount());
                         "
                         @keydown.arrow-down.prevent="selectNext()"
                         @keydown.arrow-up.prevent="selectPrev()"
@@ -528,7 +535,7 @@
                         @if(strlen($searchProducto) >= 2)
                             <button 
                                 type="button" 
-                                wire:click="$set('searchProducto', '')"
+                                wire:click="limpiarBusquedaProducto"
                                 class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-450 hover:text-white"
                             >
                                 <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -538,24 +545,28 @@
                         @endif
 
                         <!-- Product Search Dropdown Results inside relative container to lock width -->
-                        @if($showProductoDropdown)
-                            <div class="absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-750 bg-slate-900/95 dark:bg-slate-950/95 shadow-2xl backdrop-blur-md divide-y divide-slate-800 w-full">
+                        @if($showProductoDropdown || (strlen($searchProducto) >= 2 && count($productosResultados) === 0 && count($productosSinStockResultados) === 0))
+                            <div class="absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-emerald-500/25 bg-emerald-50 dark:bg-slate-950 shadow-2xl shadow-emerald-950/20 divide-y divide-slate-200/80 dark:divide-slate-800 w-full ring-1 ring-emerald-500/10">
+                                <div class="sticky top-0 z-10 flex items-center justify-between gap-3 bg-emerald-100 dark:bg-slate-900 px-4 py-2 border-b border-emerald-500/15">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Resultados</span>
+                                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Usa ↑ ↓ y Enter</span>
+                                </div>
                                 @foreach($productosResultados as $producto)
                                     <button 
                                         type="button" 
                                         wire:click="agregarProducto({{ $producto['producto_presentacion_id'] }})"
-                                        :class="{ 'bg-emerald-500/20': selectedIndex === {{ $loop->index }} }"
+                                        :class="{ 'bg-emerald-500 dark:bg-emerald-600 ring-2 ring-inset ring-emerald-700 dark:ring-emerald-300 shadow-inner shadow-emerald-900/20': selectedIndex === {{ $loop->index }} }"
                                         data-index="{{ $loop->index }}"
-                                        class="w-full px-4 py-3 text-left hover:bg-emerald-500/10 transition duration-150 flex items-center justify-between gap-4 text-white"
+                                        class="group w-full px-4 py-3 text-left hover:bg-emerald-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
                                     >
-                                        <div class="space-y-0.5">
+                                        <div class="space-y-0.5 min-w-0">
                                             <div class="flex items-center gap-2">
-                                                <span class="text-sm font-bold text-white">{{ $producto['nombre'] }}</span>
-                                                <span class="rounded bg-slate-800 px-1.5 py-0.2 text-[9px] font-bold text-slate-300">
+                                                <span class="text-sm font-black text-slate-950 dark:text-white truncate">{{ $producto['nombre'] }}</span>
+                                                <span class="rounded-lg bg-emerald-100 text-emerald-700 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-black dark:text-slate-300 border border-emerald-200 dark:border-slate-700">
                                                     {{ $producto['presentacion'] }}
                                                 </span>
                                             </div>
-                                            <div class="text-[11px] text-slate-400">
+                                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                                                 Cod: {{ $producto['codigo'] }} | Stock: {{ number_format($producto['stock'], 0) }}
                                             </div>
                                         </div>
@@ -564,6 +575,55 @@
                                         </div>
                                     </button>
                                 @endforeach
+
+                                @if(count($productosSinStockResultados) > 0)
+                                    <div class="px-4 py-2 bg-amber-500/10 text-[10px] font-black uppercase tracking-wider text-amber-300">
+                                        Producto registrado, sin stock en esta sucursal
+                                    </div>
+                                    @foreach($productosSinStockResultados as $producto)
+                                        @php($sinStockIndex = count($productosResultados) + $loop->index)
+                                        <button 
+                                            type="button" 
+                                            wire:click="abrirIngresoRapido({{ $producto['producto_presentacion_id'] }})"
+                                            :class="{ 'bg-amber-500 dark:bg-amber-600 ring-2 ring-inset ring-amber-700 dark:ring-amber-300 shadow-inner shadow-amber-900/20': selectedIndex === {{ $sinStockIndex }} }"
+                                            data-index="{{ $sinStockIndex }}"
+                                            class="w-full px-4 py-3 text-left hover:bg-amber-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
+                                        >
+                                            <div class="space-y-0.5">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-sm font-black text-slate-950 dark:text-white">{{ $producto['nombre'] }}</span>
+                                                    <span class="rounded bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.2 text-[9px] font-bold text-amber-200">
+                                                        {{ $producto['presentacion'] }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                                    Cod: {{ $producto['codigo'] ?: 'Sin codigo' }} | Stock: 0
+                                                </div>
+                                            </div>
+                                            <div class="rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-300">
+                                                Agregar rapido
+                                            </div>
+                                        </button>
+                                    @endforeach
+                                @endif
+
+                                @if(strlen($searchProducto) >= 2 && count($productosResultados) === 0 && count($productosSinStockResultados) === 0)
+                                    <button 
+                                        type="button" 
+                                        wire:click="abrirIngresoRapido"
+                                        :class="{ 'bg-emerald-500 dark:bg-emerald-600 ring-2 ring-inset ring-emerald-700 dark:ring-emerald-300 shadow-inner shadow-emerald-900/20': selectedIndex === 0 }"
+                                        data-index="0"
+                                        class="w-full px-4 py-4 text-left hover:bg-emerald-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
+                                    >
+                                        <div class="space-y-1">
+                                            <div class="text-sm font-black text-slate-950 dark:text-white">No esta registrado en inventario</div>
+                                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Crear producto rapido con codigo: {{ $searchProducto }}</div>
+                                        </div>
+                                        <div class="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-black text-emerald-300">
+                                            Crear y vender
+                                        </div>
+                                    </button>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -1350,6 +1410,282 @@ wire:model.live.debounce.300ms="clienteDocumento"
         </div>
     @endif
 
+    <!-- Modal de Ingreso Rapido POS -->
+    @if ($showIngresoRapidoModal)
+        <div 
+            x-data
+            x-init="setTimeout(() => $refs.cantidadInput?.focus(), 150)"
+            wire:click.self="cerrarIngresoRapido"
+            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350"
+            style="z-index: 99999 !important;"
+        >
+            <div class="pos-card p-6 max-w-lg w-full mx-4 space-y-5 text-left shadow-2xl border pos-border bg-white/95 dark:bg-slate-900/95 rounded-2xl">
+                <div class="flex items-start justify-between gap-4 border-b pos-border pb-4">
+                    <div>
+                        <h3 class="text-base font-black uppercase tracking-wider pos-text text-slate-900 dark:text-white">
+                            Ingreso rapido para venta
+                        </h3>
+                        <p class="text-[11px] pos-text-muted mt-1">
+                            Se creara un lote ingreso-rapido sin vencimiento y se agregara al carrito.
+                        </p>
+                    </div>
+                    <button type="button" wire:click="cerrarIngresoRapido" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[11px] font-semibold text-amber-700 dark:text-amber-200">
+                    Este ingreso es solo para vender rapido. Para compras completas usa el modulo de compras.
+                </div>
+
+                <div class="space-y-4">
+                    @if ($ingresoRapidoCrearProducto)
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Codigo de barra</label>
+                                <input
+                                    type="text"
+                                    wire:model.live="ingresoRapidoCodigoBarra"
+                                    class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-semibold focus:outline-none"
+                                    placeholder="Opcional, editable"
+                                >
+                                @error('ingresoRapidoCodigoBarra')
+                                    <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Presentacion nueva</label>
+                                <input
+                                    type="text"
+                                    wire:model.live="ingresoRapidoPresentacionNombre"
+                                    class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-semibold focus:outline-none"
+                                    placeholder="Unidad, Botella 600ml, Caja..."
+                                >
+                                @error('ingresoRapidoPresentacionNombre')
+                                    <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Buscar producto existente o escribir nuevo</label>
+                            <div
+                                class="relative"
+                                x-data="{
+                                    selectedQuickIndex: -1,
+                                    quickResultsCount: 0,
+                                    updateQuickResultsCount() {
+                                        this.quickResultsCount = $wire.ingresoRapidoProductosResultados ? $wire.ingresoRapidoProductosResultados.length : 0;
+                                        this.selectedQuickIndex = this.quickResultsCount > 0 ? 0 : -1;
+                                    },
+                                    selectQuickNext() {
+                                        if (this.quickResultsCount > 0) {
+                                            this.selectedQuickIndex = (this.selectedQuickIndex + 1) % this.quickResultsCount;
+                                            this.scrollQuickToActive();
+                                        }
+                                    },
+                                    selectQuickPrev() {
+                                        if (this.quickResultsCount > 0) {
+                                            this.selectedQuickIndex = (this.selectedQuickIndex - 1 + this.quickResultsCount) % this.quickResultsCount;
+                                            this.scrollQuickToActive();
+                                        }
+                                    },
+                                    scrollQuickToActive() {
+                                        this.$nextTick(() => {
+                                            const activeEl = this.$el.querySelector('[data-quick-index=\'' + this.selectedQuickIndex + '\']');
+                                            if (activeEl) {
+                                                activeEl.scrollIntoView({ block: 'nearest' });
+                                            }
+                                        });
+                                    },
+                                    selectQuickCurrent() {
+                                        if (this.selectedQuickIndex >= 0) {
+                                            const activeEl = this.$el.querySelector('[data-quick-index=\'' + this.selectedQuickIndex + '\']');
+                                            if (activeEl) {
+                                                activeEl.click();
+                                            }
+                                        }
+                                    }
+                                }"
+                                x-init="$watch('$wire.ingresoRapidoProductosResultados', () => updateQuickResultsCount())"
+                                @keydown.arrow-down.prevent="selectQuickNext()"
+                                @keydown.arrow-up.prevent="selectQuickPrev()"
+                                @keydown.enter.prevent="selectQuickCurrent()"
+                            >
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.250ms="ingresoRapidoProductoSearch"
+                                    class="w-full pos-input rounded-xl py-2.5 px-3 pr-24 text-sm font-semibold focus:outline-none"
+                                    placeholder="Busca y selecciona, o escribe el nombre nuevo..."
+                                >
+                                <div class="pointer-events-none absolute right-3 top-2.5 hidden sm:flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                    ↑ ↓ Enter
+                                </div>
+
+                                @if(count($ingresoRapidoProductosResultados) > 0)
+                                    <div class="absolute left-0 right-0 z-50 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-emerald-500/25 bg-emerald-50 dark:bg-slate-950 shadow-2xl shadow-emerald-950/20 divide-y divide-slate-200/80 dark:divide-slate-800 ring-1 ring-emerald-500/10 overflow-hidden">
+                                        <div class="sticky top-0 z-10 flex items-center justify-between gap-3 bg-emerald-100 dark:bg-slate-900 px-3 py-2 border-b border-emerald-500/15">
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Productos encontrados</span>
+                                            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Selecciona uno existente</span>
+                                        </div>
+                                        @foreach($ingresoRapidoProductosResultados as $productoModal)
+                                            <button
+                                                type="button"
+                                                wire:click="seleccionarProductoIngresoRapido({{ $productoModal['id'] }})"
+                                                data-quick-index="{{ $loop->index }}"
+                                                :class="{ 'bg-emerald-500 dark:bg-emerald-600 ring-2 ring-inset ring-emerald-700 dark:ring-emerald-300 shadow-inner shadow-emerald-900/20': selectedQuickIndex === {{ $loop->index }} }"
+                                                class="group w-full px-3 py-3 text-left hover:bg-emerald-500/10 transition text-slate-900 dark:text-white flex items-center justify-between gap-3"
+                                            >
+                                                <div class="min-w-0">
+                                                    <div class="text-xs font-black text-slate-950 dark:text-white truncate">{{ $productoModal['nombre'] }}</div>
+                                                    <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{{ $productoModal['codigo'] ?: 'Sin codigo interno' }}</div>
+                                                </div>
+                                                <span class="rounded-lg bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 opacity-80 group-hover:opacity-100">
+                                                    Usar
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($ingresoRapidoProductoId)
+                                <div class="flex items-center justify-between rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
+                                    <div>
+                                        <div class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">Se agregara como presentacion de</div>
+                                        <div class="text-xs font-black pos-text">{{ $ingresoRapidoProductoNombre }}</div>
+                                    </div>
+                                    <button type="button" wire:click="limpiarProductoIngresoRapido" class="text-[10px] font-black text-emerald-700 dark:text-emerald-300 hover:underline">
+                                        Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="rounded-xl border border-dashed pos-border bg-slate-50/60 dark:bg-slate-950/30 px-3 py-2">
+                                    <div class="text-[10px] font-black uppercase tracking-wider pos-text-muted">Si no seleccionas uno existente</div>
+                                    <div class="text-xs font-semibold pos-text mt-0.5">
+                                        Se creara producto nuevo: <span class="font-black">{{ $ingresoRapidoProductoNombre ?: 'Escribe un nombre' }}</span>
+                                    </div>
+                                    @error('ingresoRapidoProductoNombre')
+                                        <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Unidades por presentacion</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    wire:model.live="ingresoRapidoPresentacionCantidad"
+                                    class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
+                                >
+                                @error('ingresoRapidoPresentacionCantidad')
+                                    <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            @if((int) $ingresoRapidoPresentacionCantidad > 1)
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Base para descomprimir</label>
+                                    <select
+                                        wire:model.live="ingresoRapidoPresentacionBaseId"
+                                        class="w-full pos-select rounded-xl py-2.5 px-3 text-sm font-semibold focus:outline-none"
+                                    >
+                                        <option value="">Unidad automatica</option>
+                                        @foreach($ingresoRapidoPresentacionesBase as $base)
+                                            <option value="{{ $base['id'] }}">{{ $base['nombre'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1 text-[10px] pos-text-muted">Solo aparece si contiene mas de 1 unidad.</p>
+                                    @error('ingresoRapidoPresentacionBaseId')
+                                        <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @else
+                                <div class="rounded-xl border border-dashed pos-border bg-slate-50/60 dark:bg-slate-950/30 px-3 py-2 flex items-center">
+                                    <p class="text-[10px] font-semibold pos-text-muted">Para venta rapida normal deja 1. Si es caja/pack, sube la cantidad y podras elegir base.</p>
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="rounded-xl border pos-border bg-slate-50/80 dark:bg-slate-950/40 px-4 py-3">
+                            <div class="text-[10px] font-black uppercase tracking-wider pos-text-muted">Producto seleccionado</div>
+                            <div class="mt-1 text-sm font-black pos-text">{{ $ingresoRapidoProductoNombre }}</div>
+                            <div class="text-[11px] pos-text-muted">{{ $ingresoRapidoPresentacionNombre }}</div>
+                        </div>
+                    @endif
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Cantidad</label>
+                            <input
+                                x-ref="cantidadInput"
+                                type="number"
+                                min="0.001"
+                                step="0.001"
+                                wire:model.live="ingresoRapidoCantidad"
+                                class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
+                            >
+                            @error('ingresoRapidoCantidad')
+                                <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Precio venta</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                wire:model.live="ingresoRapidoPrecioVenta"
+                                class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
+                            >
+                            @error('ingresoRapidoPrecioVenta')
+                                <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Costo opcional</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                wire:model.live="ingresoRapidoCosto"
+                                class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
+                                placeholder="0.00"
+                            >
+                            @error('ingresoRapidoCosto')
+                                <span class="text-rose-500 text-[10px] block mt-1 font-semibold">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t pos-border">
+                    <button
+                        type="button"
+                        wire:click="cerrarIngresoRapido"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="guardarIngresoRapido"
+                        wire:loading.attr="disabled"
+                        wire:target="guardarIngresoRapido"
+                        class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-extrabold text-xs rounded-xl transition shadow-md shadow-emerald-500/10"
+                    >
+                        <span wire:loading.remove wire:target="guardarIngresoRapido">Guardar y agregar</span>
+                        <span wire:loading wire:target="guardarIngresoRapido">Guardando...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Modal de Advertencia Lote Vencido (POS) -->
     @if ($showVencidoWarningModal)
         <div 
@@ -1631,4 +1967,3 @@ wire:model.live.debounce.300ms="clienteDocumento"
     {{-- Modal incluido dentro del div raíz de Livewire para asegurar el correcto renderizado y reactividad --}}
     @include('livewire.ventas.modals.buscar-venta')
 </div>
-
