@@ -9,6 +9,8 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class EditEmpresa extends EditRecord
 {
@@ -32,12 +34,8 @@ class EditEmpresa extends EditRecord
 
     public function content(Schema $schema): Schema
     {
-        if ($this->isEditing) {
-            return parent::content($schema);
-        }
-
         return $schema->components([
-            View::make('filament.clusters.configuraciones.resources.empresas.pages.view-empresa-custom'),
+            View::make('filament.clusters.configuraciones.resources.empresas.pages.view-empresa-master'),
         ]);
     }
 
@@ -59,6 +57,61 @@ class EditEmpresa extends EditRecord
         }
     }
 
+    protected function rules(): array
+    {
+        return [
+            'data.ruc' => ['required', 'digits:11', Rule::unique('empresas', 'ruc')->ignore($this->record->id)],
+            'data.razon_social' => ['required', 'string', 'max:255'],
+            'data.direccion_fiscal' => ['nullable', 'string', 'max:255'],
+            'data.entorno' => ['boolean'],
+            'data.incluido_tributo' => ['boolean'],
+            'data.logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'data.certificado' => ['nullable', 'file', 'mimes:pem,pfx,cer,crt,p12', 'max:5120'],
+            'data.certificado_pass' => ['nullable', 'string', 'max:255'],
+            'data.user_sol' => ['nullable', 'string', 'max:255'],
+            'data.pass_sol' => ['nullable', 'string', 'max:255'],
+            'data.sunat_client_id' => ['nullable', 'string', 'max:255'],
+            'data.sunat_client_secret' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    public function save(bool $shouldRedirect = true, bool $shouldSendSavedNotification = true): void
+    {
+        if (! $this->canEdit()) {
+            abort(403);
+        }
+
+        $this->validate();
+
+        $data = $this->data;
+
+        // Normalizar campos de archivo (Livewire puede dejarlos como array o TemporaryUploadedFile)
+        foreach (['logo', 'certificado'] as $field) {
+            if (! isset($data[$field])) {
+                continue;
+            }
+
+            $value = $data[$field];
+
+            if (is_array($value)) {
+                $value = $value[0] ?? null;
+            }
+
+            if ($value instanceof TemporaryUploadedFile) {
+                $disk = $field === 'logo' ? 'public' : 'local';
+                $dir = $field === 'logo' ? 'empresas/logos' : 'empresas/certificados';
+                $data[$field] = $value->store($dir, $disk);
+            } elseif ($value === null) {
+                unset($data[$field]);
+            } else {
+                $data[$field] = $value;
+            }
+        }
+
+        $this->handleRecordUpdate($this->record, $data);
+        $this->afterSave();
+    }
+
     protected function getHeaderActions(): array
     {
         if (! $this->isEditing) {
@@ -67,7 +120,6 @@ class EditEmpresa extends EditRecord
 
         $actions = [];
 
-        // Solo mostrar el toggle si el usuario tiene permiso de edición
         if ($this->canEdit()) {
             $actions[] = Action::make('toggleEditing')
                 ->label('Volver a vista')
@@ -97,23 +149,7 @@ class EditEmpresa extends EditRecord
 
     protected function getFormActions(): array
     {
-        // Solo mostrar botones de guardar/cancelar si el usuario tiene permiso
-        if (! $this->isEditing || ! $this->canEdit()) {
-            return [];
-        }
-
-        return [
-            Action::make('save')
-                ->label('Guardar cambios')
-                ->color('success')
-                ->icon('heroicon-o-check-circle')
-                ->action('save'),
-            Action::make('cancel')
-                ->label('Cancelar')
-                ->color('danger')
-                ->icon('heroicon-o-x-circle')
-                ->action('cancelEditing'),
-        ];
+        return [];
     }
 
     public function cancelEditing(): void

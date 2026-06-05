@@ -4,6 +4,7 @@
     use BaconQrCode\Renderer\RendererStyle\RendererStyle;
     use BaconQrCode\Writer;
 
+    $esTicket = $documento->tipo_comprobante === 'TICKET';
     $total = (float) $documento->total_neto;
     $entero = (int) floor($total);
     $centimos = (int) round(($total - $entero) * 100);
@@ -28,7 +29,7 @@
     $tipoDoc = match($documento->tipo_comprobante) {
         'FACTURA' => '01',
         'BOLETA'  => '03',
-        default   => '03',
+        default   => 'TK',
     };
 
     $tipoDocCliente = match($documento->cliente?->tipo_documento) {
@@ -82,18 +83,28 @@
         return rtrim(rtrim(number_format($valor, 3, '.', ''), '0'), '.');
     };
 
-    $qrString = implode('|', [
-        $documento->empresa?->ruc ?? '',
-        $tipoDoc,
-        $documento->serie,
-        $numeroComprobante,
-        number_format((float) $documento->total_igv, 2, '.', ''),
-        number_format((float) $documento->total_neto, 2, '.', ''),
-        $fechaEmision->format('Y-m-d'),
-        $tipoDocCliente,
-        $documento->cliente?->documento ?? '00000000',
-        $hash,
-    ]) . '|';
+    $qrString = $esTicket
+        ? implode('|', [
+            $documento->empresa?->ruc ?? '',
+            'TICKET',
+            $documento->serie,
+            $numeroComprobante,
+            number_format((float) $documento->total_neto, 2, '.', ''),
+            $fechaEmision->format('Y-m-d'),
+            $documento->cliente?->documento ?? '00000000',
+        ]) . '|'
+        : implode('|', [
+            $documento->empresa?->ruc ?? '',
+            $tipoDoc,
+            $documento->serie,
+            $numeroComprobante,
+            number_format((float) $documento->total_igv, 2, '.', ''),
+            number_format((float) $documento->total_neto, 2, '.', ''),
+            $fechaEmision->format('Y-m-d'),
+            $tipoDocCliente,
+            $documento->cliente?->documento ?? '00000000',
+            $hash,
+        ]) . '|';
 
     $qrBase64 = '';
     try {
@@ -146,7 +157,7 @@
     $mostrarEstadoSunat = false;
     $estadoSunatTexto = '';
     $estadoSunatClase = '';
-    if (in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA', 'NOTA_CREDITO', 'NOTA_DEBITO'], true) && $codigoSunat !== '') {
+    if (! $esTicket && in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA', 'NOTA_CREDITO', 'NOTA_DEBITO'], true) && $codigoSunat !== '') {
         $mostrarEstadoSunat = true;
         if ($sunatAceptado) {
             $estadoSunatTexto = 'Aceptado por SUNAT';
@@ -631,17 +642,21 @@
                                 <span class="status-badge {{ $estadoSunatClase }}">{{ $estadoSunatTexto }}</span>
                             </div>
                         @endif
-                        @if($codigoSunat)
+                        @if(! $esTicket && $codigoSunat)
                             <div style="margin-top: 8px;"><span class="strong">Código SUNAT:</span> {{ $codigoSunat }}</div>
                         @endif
-                        @if($mensajeSunat && $codigoSunat)
+                        @if(! $esTicket && $mensajeSunat && $codigoSunat)
                             <div><span class="strong">Mensaje:</span> {{ $mensajeSunat }}</div>
                         @endif
-                        @if($hash)
+                        @if(! $esTicket && $hash)
                             <div class="hash"><span class="strong">Hash:</span> {{ $hash }}</div>
                         @endif
                         <div class="legal-note">
-                            Representación impresa de {{ mb_strtolower($tipoComprobanteLegible) }}. El código QR contiene los datos tributarios exigidos por SUNAT para consulta del comprobante.
+                            @if($esTicket)
+                                Documento interno de venta. No válido como comprobante electrónico SUNAT.
+                            @else
+                                Representación impresa de {{ mb_strtolower($tipoComprobanteLegible) }}. El código QR contiene los datos tributarios exigidos por SUNAT para consulta del comprobante.
+                            @endif
                         </div>
                     </td>
                     <td class="qr-cell">

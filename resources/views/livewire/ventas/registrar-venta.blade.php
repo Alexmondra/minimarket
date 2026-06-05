@@ -694,6 +694,7 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                                 @forelse($cartItems as $index => $item)
+                                    @php($stockSobregirado = (float) ($item['cantidad'] ?? 0) > (float) ($item['stock'] ?? 0))
                                     <tr wire:key="cart-item-row-{{ $item['producto_presentacion_id'] }}-{{ $item['cantidad'] }}" class="align-middle pos-table-row transition-all duration-150 animate-add-item">
                                         <!-- Product info with mock icon -->
                                         <td class="py-2.5 pr-2">
@@ -721,6 +722,11 @@
                                                 <div class="min-w-0">
                                                     <span class="font-bold text-xs block leading-tight truncate pos-text">{{ $item['nombre'] }}</span>
                                                     <span class="text-[10px] pos-text-muted block mt-0.5">{{ $item['presentacion'] }}</span>
+                                                    @if($stockSobregirado)
+                                                        <span class="mt-1 inline-flex rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                                                            Stock insuficiente, quedara en 0
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>

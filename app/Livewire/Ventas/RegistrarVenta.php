@@ -1205,9 +1205,17 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        $cantidad = max(min((float) $cantidad, (float) $this->cartItems[$index]['stock']), 0.001);
+        $cantidad = max((float) $cantidad, 0.001);
         $this->cartItems[$index]['cantidad'] = round($cantidad, 3);
         $this->recalcularPrecio($index);
+
+        if ($cantidad > (float) ($this->cartItems[$index]['stock'] ?? 0)) {
+            Notification::make()
+                ->title('Stock insuficiente')
+                ->body('Estas sobregirando el stock. La venta se permitira y el inventario quedara en 0.')
+                ->warning()
+                ->send();
+        }
     }
 
     public function quitarItem(int $index): void

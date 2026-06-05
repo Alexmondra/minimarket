@@ -55,11 +55,14 @@ class ArchivoPrivadoController
             ]);
             $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
             $ventaFileService = app(VentaFileService::class);
-            $ventaFileService->guardarPdf($documento, $pdf->output());
+            $documento->archivos()->where('tipo_archivo', 'pdf')->delete();
+            $archivo = $ventaFileService->guardarPdf($documento, $pdf->output());
+            $path = Storage::disk('local')->path($archivo->ruta_archivo);
 
-            return response($pdf->output(), 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="'.$documento->serie.'-'.$documento->numero.'.pdf"',
+            return response()->file($path, [
+                'Content-Disposition' => 'inline; filename="'.($archivo->nombre_archivo ?: $documento->serie.'-'.$documento->numero.'.pdf').'"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
             ]);
         }
 

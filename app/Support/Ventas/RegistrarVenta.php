@@ -340,9 +340,7 @@ class RegistrarVenta
                 ->get();
         }
 
-        if ($stocks->sum('stock') < $remaining) {
-            throw new \RuntimeException("Stock insuficiente para {$lineItem['producto_nombre']}.");
-        }
+        $stockReferencia = $stocks->first();
 
         while ($remaining > 0) {
             /** @var LotePresentacion|null $stock */
@@ -351,6 +349,8 @@ class RegistrarVenta
             if (! $stock) {
                 break;
             }
+
+            $stockReferencia = $stock;
 
             $consumir = min(round((float) $stock->stock, 3), $remaining);
             $ratio = round($consumir / (float) $lineItem['cantidad'], 8);
@@ -394,6 +394,46 @@ class RegistrarVenta
             ]);
 
             $remaining = round($remaining - $consumir, 3);
+        }
+
+        if ($remaining > 0) {
+            if (! $stockReferencia) {
+                $stockReferencia = LotePresentacion::query()
+                    ->with(['lote', 'productoSucursal' => fn ($query) => $query->where('sucursal_id', $sucursalId)->latest('id')])
+                    ->where('producto_presentacion_id', $lineItem['producto_presentacion_id'])
+                    ->whereHas('productoSucursal', fn ($query) => $query
+                        ->where('sucursal_id', $sucursalId)
+                        ->where('activo', true))
+                    ->latest('id')
+                    ->first();
+            }
+
+            if (! $stockReferencia) {
+                throw new \RuntimeException("No hay un lote de referencia para {$lineItem['producto_nombre']}.");
+            }
+
+            $ratio = round($remaining / (float) $lineItem['cantidad'], 8);
+            $productoSucursal = $stockReferencia->productoSucursal;
+
+            DetalleDocumento::create([
+                'documento_id' => $documento->id,
+                'lote_id' => $stockReferencia->lote_id,
+                'producto_id' => $lineItem['producto_id'],
+                'producto_nombre' => $lineItem['producto_nombre'],
+                'producto_presentacion_id' => $lineItem['producto_presentacion_id'],
+                'producto_sucursal_id' => $productoSucursal?->id,
+                'cantidad' => $remaining,
+                'precio_unitario' => $lineCalculation['precio_unitario'],
+                'valor_unitario' => $lineCalculation['valor_unitario'],
+                'igv' => $lineCalculation['igv_unitario'],
+                'total_igv' => round($lineCalculation['total_igv'] * $ratio, 2),
+                'tipo_afectacion' => $lineCalculation['tipo_afectacion'],
+                'descuento_unitario' => $lineCalculation['descuento_unitario'],
+                'subtotal_bruto' => round($lineCalculation['subtotal_bruto'] * $ratio, 2),
+                'subtotal_descuento' => round($lineCalculation['subtotal_descuento'] * $ratio, 2),
+                'subtotal_neto' => round($lineCalculation['subtotal_neto'] * $ratio, 2),
+                'total_linea' => round($lineCalculation['total_linea'] * $ratio, 2),
+            ]);
         }
     }
 

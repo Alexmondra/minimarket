@@ -37,9 +37,7 @@ class VentaFileService
         $filename = $this->nombreBase($documento).'-pdf.pdf';
         $path = $this->rutaBase($documento).'/'.$filename;
 
-        if ($documento->tipo_comprobante !== 'TICKET') {
-            Storage::disk('local')->put($path, $pdfContent);
-        }
+        Storage::disk('local')->put($path, $pdfContent);
 
         return Archivo::updateOrCreate(
             [
