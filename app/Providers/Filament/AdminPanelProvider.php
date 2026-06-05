@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\Login::class)
+            ->favicon(asset('favicon.ico') . '?v=4')
             ->colors([
                 'primary' => Color::Amber,
                 'gray' => Color::Slate,
