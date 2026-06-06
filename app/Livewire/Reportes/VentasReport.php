@@ -3,10 +3,8 @@
 namespace App\Livewire\Reportes;
 
 use App\Models\Documento;
-use App\Support\Reportes\MetricCalculator;
 use App\Support\Reportes\ReporteQueryBuilder;
-use App\Support\SucursalContext;
-use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,11 +13,15 @@ class VentasReport extends Component
     use WithPagination;
 
     public string $fechaDesde = '';
+
     public string $fechaHasta = '';
+
     public string $medioPago = '';
+
     public string $search = '';
 
     public array $stats = [];
+
     public bool $loaded = false;
 
     public function mount(): void
@@ -29,10 +31,28 @@ class VentasReport extends Component
         $this->loadStats();
     }
 
-    public function updatedFechaDesde(): void { $this->resetPage(); $this->loadStats(); }
-    public function updatedFechaHasta(): void { $this->resetPage(); $this->loadStats(); }
-    public function updatedMedioPago(): void { $this->resetPage(); $this->loadStats(); }
-    public function updatedSearch(): void { $this->resetPage(); }
+    public function updatedFechaDesde(): void
+    {
+        $this->resetPage();
+        $this->loadStats();
+    }
+
+    public function updatedFechaHasta(): void
+    {
+        $this->resetPage();
+        $this->loadStats();
+    }
+
+    public function updatedMedioPago(): void
+    {
+        $this->resetPage();
+        $this->loadStats();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
 
     public function loadStats(): void
     {
@@ -49,9 +69,38 @@ class VentasReport extends Component
         $this->loaded = true;
     }
 
-    public function exportar(): void
+    public function exportarExcel(string $alcance = 'sunat')
     {
-        // Placeholder for export functionality
+        $ventas = $this->ventasParaExportar($alcance)->get();
+        $filename = $this->nombreArchivo('ventas', $alcance, 'xls');
+
+        return response()->streamDownload(function () use ($ventas, $alcance) {
+            echo view('reportes.exportes.ventas-excel', [
+                'ventas' => $ventas,
+                'alcance' => $this->etiquetaAlcance($alcance),
+                'filtros' => $this->filtrosExportacion(),
+                'resumen' => $this->resumenExportacion($ventas),
+            ])->render();
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+        ]);
+    }
+
+    public function exportarPdf(string $alcance = 'sunat')
+    {
+        $ventas = $this->ventasParaExportar($alcance)->get();
+        $filename = $this->nombreArchivo('ventas', $alcance, 'pdf');
+
+        $pdf = Pdf::loadView('reportes.exportes.ventas-pdf', [
+            'ventas' => $ventas,
+            'alcance' => $this->etiquetaAlcance($alcance),
+            'filtros' => $this->filtrosExportacion(),
+            'resumen' => $this->resumenExportacion($ventas),
+        ])->setPaper('a4', 'landscape');
+
+        return response()->streamDownload(fn () => print ($pdf->output()), $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     private function applyFilters($query)
@@ -67,12 +116,68 @@ class VentasReport extends Component
         }
         if ($this->search) {
             $query->where(function ($q) {
-                $q->whereHas('cliente', fn($c) => $c->where('nombre', 'like', "%{$this->search}%"))
-                  ->orWhere('serie', 'like', "%{$this->search}%")
-                  ->orWhere('numero', 'like', "%{$this->search}%");
+                $q->whereHas('cliente', fn ($c) => $c->where('nombre', 'like', "%{$this->search}%"))
+                    ->orWhere('serie', 'like', "%{$this->search}%")
+                    ->orWhere('numero', 'like', "%{$this->search}%");
             });
         }
+
         return $query;
+    }
+
+    private function ventasParaExportar(string $alcance)
+    {
+        $qb = app(ReporteQueryBuilder::class);
+
+        $query = $this->applyFilters($qb->ventasBase())
+            ->with(['cliente', 'user', 'sucursal'])
+            ->orderBy('fecha_emision')
+            ->orderBy('serie')
+            ->orderBy('numero');
+
+        if ($alcance !== 'todo') {
+            $query->whereIn('tipo_comprobante', ['BOLETA', 'FACTURA']);
+        }
+
+        return $query;
+    }
+
+    private function filtrosExportacion(): array
+    {
+        return [
+            'desde' => $this->fechaDesde ?: 'Inicio',
+            'hasta' => $this->fechaHasta ?: 'Hoy',
+            'medio_pago' => $this->medioPago ?: 'Todos',
+            'busqueda' => $this->search ?: 'Sin busqueda',
+        ];
+    }
+
+    private function resumenExportacion($ventas): array
+    {
+        $total = $ventas->sum(fn (Documento $venta) => (float) $venta->total_neto);
+        $cantidad = $ventas->count();
+
+        return [
+            'total' => number_format($total, 2),
+            'cantidad' => $cantidad,
+            'promedio' => number_format($cantidad > 0 ? $total / $cantidad : 0, 2),
+        ];
+    }
+
+    private function etiquetaAlcance(string $alcance): string
+    {
+        return $alcance === 'todo'
+            ? 'Todos los comprobantes, incluyendo tickets'
+            : 'Solo boletas y facturas';
+    }
+
+    private function nombreArchivo(string $base, string $alcance, string $extension): string
+    {
+        $desde = $this->fechaDesde ?: 'inicio';
+        $hasta = $this->fechaHasta ?: now()->format('Y-m-d');
+        $sufijo = $alcance === 'todo' ? 'con-tickets' : 'boletas-facturas';
+
+        return "{$base}-{$sufijo}-{$desde}-{$hasta}.{$extension}";
     }
 
     public function render()

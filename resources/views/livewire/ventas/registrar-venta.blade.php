@@ -1950,21 +1950,21 @@ wire:model.live.debounce.300ms="clienteDocumento"
                 }
             });
 
-            document.addEventListener('click', () => {
+            document.addEventListener('click', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
                 setTimeout(focusSearchInput, 50);
             });
         });
 
-        // For Livewire 3 request lifecycle
+        // For Livewire 3 request lifecycle (only if no input is focused)
         document.addEventListener('livewire:initialized', () => {
             Livewire.hook('request', ({ respond }) => {
                 respond(() => {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
                     setTimeout(() => {
-                        const active = document.activeElement;
-                        if (active && active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT') {
-                            const input = document.getElementById('search-producto-input');
-                            if (input) input.focus();
-                        }
+                        const input = document.getElementById('search-producto-input');
+                        if (input) input.focus();
                     }, 50);
                 });
             });

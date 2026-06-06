@@ -246,8 +246,7 @@
                         </div>
 
                         @if(count($detalles) > 0)
-                            <button type="button" wire:click="finalizarCompra"
-                                wire:confirm="¿Estás seguro de finalizar la compra? Los detalles se guardarán definitivamente."
+                            <button type="button" wire:click="mostrarConfirmacion"
                                 class="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-extrabold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 rounded-xl shadow-lg shadow-primary-500/20 active:scale-[0.98] transition-all">
                                 ✅ Finalizar Compra
                             </button>
@@ -265,6 +264,103 @@
         <div class="relative z-[9999]">
             @livewire('compras.components.modal-crear-producto')
         </div>
+
+        {{-- Modal Confirmar Compra --}}
+        @if($showConfirmarModal)
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                wire:click.self="$set('showConfirmarModal', false)">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+                    wire:click.self.stop>
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/40">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Confirmar Compra</h3>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Revisa los detalles antes de finalizar</p>
+                            </div>
+                        </div>
+                        <button type="button" wire:click="$set('showConfirmarModal', false)"
+                            class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    {{-- Body: Productos --}}
+                    <div class="p-6 space-y-4">
+                        <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">📦 Productos recibidos</h4>
+
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800/40">
+                            @forelse($detalles as $detalle)
+                                @php
+                                    $lote = $detalle['lote'] ?? [];
+                                    $pres = $lote['lote_presentaciones'] ?? [];
+                                    $nombre = $lote['producto_nombre'] ?? 'Producto';
+                                    $totalQty = collect($pres)->sum('stock');
+                                    $precio = (float) ($detalle['precio_compra'] ?? 0);
+                                @endphp
+                                <div class="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                                    <div class="flex-1 min-w-0 mr-4">
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{{ $nombre }}</p>
+                                        @if($lote['codigo_lote'] ?? false)
+                                            <p class="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">Lote: {{ $lote['codigo_lote'] }}</p>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-6 shrink-0">
+                                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-right">{{ (int) $totalQty }} uds</span>
+                                        <span class="text-sm font-extrabold text-slate-800 dark:text-slate-100 w-20 text-right">S/ {{ number_format($precio, 2) }}</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-xs text-slate-400 py-4 text-center">No hay productos agregados</p>
+                            @endforelse
+                        </div>
+
+                        {{-- Totales --}}
+                        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400">Total unidades</span>
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ number_format($totalUnidades, 0) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400">Subtotal</span>
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">S/ {{ number_format($subtotalCompra, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400">Productos diferentes</span>
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ $cantidadProductos }}</span>
+                            </div>
+                            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700/60 flex justify-between items-center">
+                                <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Total compra</span>
+                                <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">S/ {{ number_format($totalFinal, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800/40 bg-slate-50/30 dark:bg-slate-950/10 rounded-b-2xl">
+                        <button type="button" wire:click="$set('showConfirmarModal', false)"
+                            class="px-5 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all">
+                            Cancelar
+                        </button>
+                        <button type="button" wire:click="finalizarCompra" wire:loading.attr="disabled"
+                            class="px-6 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-xl shadow-md shadow-emerald-500/15 disabled:opacity-50 transition-all">
+                            <span wire:loading.remove.delay.200ms wire:target="finalizarCompra">
+                                ✅ Finalizar Compra
+                            </span>
+                            <span wire:loading.delay.200ms wire:target="finalizarCompra" class="inline-flex items-center gap-1.5">
+                                <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Finalizando...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
     @endif
 
     {{-- Modal Nuevo Proveedor --}}

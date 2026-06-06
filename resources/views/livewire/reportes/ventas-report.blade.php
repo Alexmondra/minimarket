@@ -7,7 +7,7 @@
 
     {{-- Filter Bar --}}
     <div class="glass-card p-4 mb-6">
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
             <div>
                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Desde</label>
                 <input type="date" wire:model.live="fechaDesde"
@@ -33,10 +33,42 @@
                 <input type="search" wire:model.live.debounce.300ms="search" placeholder="Cliente, comprobante..."
                     class="w-full mt-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition">
             </div>
-            <div class="flex items-end">
-                <button wire:click="exportar"
-                    class="w-full h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition">
-                    Exportar
+        </div>
+    </div>
+
+    {{-- Export Center --}}
+    <div class="mb-6 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-950 dark:shadow-none">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="max-w-2xl">
+                <div class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    Exportacion inteligente
+                </div>
+                <h3 class="mt-3 text-base font-black text-slate-950 dark:text-white">Descarga el reporte listo para contabilidad</h3>
+                <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                    Usa <strong>Boletas y facturas</strong> para reportes SUNAT. Usa <strong>Todo con tickets</strong> cuando necesites ver la venta real completa del minimarket.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <button wire:click="exportarExcel('sunat')" wire:loading.attr="disabled"
+                    class="group h-12 rounded-2xl bg-emerald-600 px-4 text-left text-xs font-black text-white shadow-lg shadow-emerald-600/20 ring-1 ring-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-70 dark:bg-emerald-500 dark:text-emerald-950 dark:shadow-emerald-950/30 dark:hover:bg-emerald-400">
+                    <span class="block text-[10px] uppercase tracking-wider text-emerald-100 dark:text-emerald-950/70">Excel</span>
+                    Boletas y facturas
+                </button>
+                <button wire:click="exportarPdf('sunat')" wire:loading.attr="disabled"
+                    class="group h-12 rounded-2xl bg-slate-900 px-4 text-left text-xs font-black text-white shadow-lg shadow-slate-900/20 ring-1 ring-slate-800/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-wait disabled:opacity-70 dark:bg-slate-100 dark:text-slate-950 dark:shadow-none dark:hover:bg-white">
+                    <span class="block text-[10px] uppercase tracking-wider text-slate-300 dark:text-slate-500">PDF</span>
+                    Boletas y facturas
+                </button>
+                <button wire:click="exportarExcel('todo')" wire:loading.attr="disabled"
+                    class="group h-12 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-left text-xs font-black text-emerald-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-wait disabled:opacity-70 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/60">
+                    <span class="block text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Excel</span>
+                    Todo con tickets
+                </button>
+                <button wire:click="exportarPdf('todo')" wire:loading.attr="disabled"
+                    class="group h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-left text-xs font-black text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                    <span class="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">PDF</span>
+                    Todo con tickets
                 </button>
             </div>
         </div>

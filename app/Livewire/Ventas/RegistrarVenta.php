@@ -1480,8 +1480,6 @@ trait RegistrarVentaBehavior
             $index = (int) $parts[0];
             if (isset($this->cartItems[$index])) {
                 $this->cartItems[$index]['precio_manual'] = true;
-                $val = $this->cartItems[$index]['precio'];
-                $this->cartItems[$index]['precio'] = max((float) $val, 0.0);
             }
         }
     }

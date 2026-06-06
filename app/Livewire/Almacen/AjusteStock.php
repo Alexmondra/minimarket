@@ -221,7 +221,6 @@ class AjusteStock extends Component
 
     public function updatedCantidad(): void
     {
-        $this->cantidad = (int) $this->cantidad;
         if ($this->tipoAjuste === 'entrada') {
             $this->calcularPrecioUnitario();
         }

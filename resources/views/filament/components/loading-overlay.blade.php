@@ -42,11 +42,9 @@
         }
 
         let activeLoads = 0;
-        let shownAt = 0;
         let delayedRequestTimer = null;
         let initialLoadTimer = null;
-        const minimumVisibleMs = 200;
-        const revealDelayMs = 150;
+        const revealDelayMs = 800;
 
         const reveal = () => {
             clearTimeout(delayedRequestTimer);
@@ -54,7 +52,6 @@
 
             if (!overlay.classList.contains('is-visible')) {
                 overlay.classList.add('is-visible');
-                shownAt = Date.now();
             }
 
             document.documentElement.classList.add('app-busy');
@@ -64,19 +61,12 @@
             clearTimeout(delayedRequestTimer);
             clearTimeout(initialLoadTimer);
 
-            const hide = () => {
-                if (!force && activeLoads > 0) {
-                    return;
-                }
+            if (!force && activeLoads > 0) {
+                return;
+            }
 
-                overlay.classList.remove('is-visible');
-                document.documentElement.classList.remove('app-busy');
-            };
-
-            const elapsed = Date.now() - shownAt;
-            const wait = force ? 0 : Math.max(0, minimumVisibleMs - elapsed);
-
-            window.setTimeout(hide, wait);
+            overlay.classList.remove('is-visible');
+            document.documentElement.classList.remove('app-busy');
         };
 
         const beginLoad = ({ delayed = false } = {}) => {
@@ -122,8 +112,6 @@
             activeLoads = 0;
             conceal();
         });
-
-        window.addEventListener('beforeunload', reveal);
 
         document.addEventListener('livewire:navigating', () => beginLoad());
         document.addEventListener('livewire:navigated', () => {

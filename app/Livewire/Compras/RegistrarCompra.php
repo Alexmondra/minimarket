@@ -52,6 +52,9 @@ class RegistrarCompra extends Component
     // Modal de registrar nuevo proveedor
     public bool $showRegistrarProveedorModal = false;
 
+    // Modal de confirmación de compra
+    public bool $showConfirmarModal = false;
+
     public string $nuevoProveedorTipoDocumento = 'RUC';
 
     public string $nuevoProveedorDocumento = '';
@@ -237,11 +240,19 @@ class RegistrarCompra extends Component
             ->send();
     }
 
+    public function mostrarConfirmacion(): void
+    {
+        $this->actualizarResumen();
+        $this->showConfirmarModal = true;
+    }
+
     public function finalizarCompra(): void
     {
         if (! $this->compraId) {
             return;
         }
+
+        $this->showConfirmarModal = false;
 
         $totales = $this->calcularTotales();
 

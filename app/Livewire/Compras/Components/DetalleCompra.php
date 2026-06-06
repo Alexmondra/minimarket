@@ -386,7 +386,7 @@ class DetalleCompra extends Component
             $field = $parts[1];
 
             if ($field === 'cantidad' || $field === 'total_pagado') {
-                $qty = (int) ($this->presentacionesDisponibles[$index]['cantidad'] ?? 0);
+                $qty = (float) ($this->presentacionesDisponibles[$index]['cantidad'] ?? 0);
                 $totalPagado = (float) ($this->presentacionesDisponibles[$index]['total_pagado'] ?? 0);
 
                 if ($qty > 0 && $totalPagado > 0) {
