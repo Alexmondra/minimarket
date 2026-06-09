@@ -54,16 +54,14 @@ class ArchivoPrivadoController
                 'detalles.presentacion.unidadMedida',
             ]);
             $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-            $ventaFileService = app(VentaFileService::class);
-            $documento->archivos()->where('tipo_archivo', 'pdf')->delete();
-            $archivo = $ventaFileService->guardarPdf($documento, $pdf->output());
-            $path = Storage::disk('local')->path($archivo->ruta_archivo);
+            $tmpPath = tempnam(sys_get_temp_dir(), 'ticket-pdf-');
+            $pdf->save($tmpPath);
 
-            return response()->file($path, [
-                'Content-Disposition' => 'inline; filename="'.($archivo->nombre_archivo ?: $documento->serie.'-'.$documento->numero.'.pdf').'"',
+            return response()->file($tmpPath, [
+                'Content-Disposition' => 'inline; filename="'.$documento->serie.'-'.$documento->numero.'.pdf"',
                 'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
                 'Pragma' => 'no-cache',
-            ]);
+            ])->deleteFileAfterSend(true);
         }
 
         $archivo = $documento->archivos()->where('tipo_archivo', 'pdf')->first();
@@ -94,43 +92,17 @@ class ArchivoPrivadoController
     {
         abort_unless(app(SucursalContext::class)->canAccessSucursal((int) $documento->sucursal_id), 403);
 
-        if ($documento->tipo_comprobante === 'TICKET') {
-            $documento->load([
-                'empresa',
-                'sucursal',
-                'cliente',
-                'detalles.presentacion.unidadMedida',
-            ]);
-            $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
-            $ventaFileService = app(VentaFileService::class);
-            $ventaFileService->guardarTicketHtml($documento, $htmlTicket);
+        $documento->load([
+            'empresa',
+            'sucursal',
+            'cliente',
+            'detalles.presentacion.unidadMedida',
+        ]);
+        $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
 
-            return response($htmlTicket, 200, [
-                'Content-Type' => 'text/html',
-                'Content-Disposition' => 'inline; filename="'.$documento->serie.'-'.$documento->numero.'.html"',
-            ]);
-        }
-
-        $archivo = $documento->archivos()->where('tipo_archivo', 'ticket_html')->first();
-
-        if (! $archivo || ! Storage::disk('local')->exists($archivo->ruta_archivo)) {
-            $documento->load([
-                'empresa',
-                'sucursal',
-                'cliente',
-                'detalles.presentacion.unidadMedida',
-            ]);
-            $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
-            $ventaFileService = app(VentaFileService::class);
-
-            $documento->archivos()->where('tipo_archivo', 'ticket_html')->delete();
-            $archivo = $ventaFileService->guardarTicketHtml($documento, $htmlTicket);
-        }
-
-        $path = Storage::disk('local')->path($archivo->ruta_archivo);
-
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.($archivo->nombre_archivo ?: basename($path)).'"',
+        return response($htmlTicket, 200, [
+            'Content-Type' => 'text/html',
+            'Content-Disposition' => 'inline; filename="'.$documento->serie.'-'.$documento->numero.'.html"',
         ]);
     }
 }

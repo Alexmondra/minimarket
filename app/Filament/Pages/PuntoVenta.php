@@ -18,9 +18,9 @@ class PuntoVenta extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationLabel = 'Punto de venta';
+    protected static ?string $navigationLabel = 'Registrar ventas';
 
-    protected static ?string $title = 'Punto de venta';
+    protected static ?string $title = 'Registrar ventas';
 
     protected static ?int $navigationSort = 1;
 

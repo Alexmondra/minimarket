@@ -46,8 +46,7 @@ class ViewDocumento extends ViewRecord
         $documento = $this->getDocumento();
         $xml = $documento->archivos->firstWhere('tipo_archivo', 'xml')
             ?: $documento->archivos->firstWhere('tipo_archivo', 'xml_firmado');
-        $cdr = $documento->archivos->firstWhere('tipo_archivo', 'cdr_zip')
-            ?: $documento->archivos->firstWhere('tipo_archivo', 'cdr_xml');
+        $cdr = $documento->archivos->firstWhere('tipo_archivo', 'cdr_zip');
 
         return [
             Action::make('verTicket')
@@ -123,8 +122,8 @@ class ViewDocumento extends ViewRecord
                         ]);
                     });
 
-                    // Delete old ticket_html and pdf files
-                    $oldArchivos = $documento->archivos()->whereIn('tipo_archivo', ['ticket_html', 'pdf'])->get();
+                    // Delete old pdf files
+                    $oldArchivos = $documento->archivos()->where('tipo_archivo', 'pdf')->get();
                     foreach ($oldArchivos as $old) {
                         if ($old->ruta_archivo && Storage::disk('local')->exists($old->ruta_archivo)) {
                             Storage::disk('local')->delete($old->ruta_archivo);
@@ -141,10 +140,7 @@ class ViewDocumento extends ViewRecord
                         'detalles.presentacion.unidadMedida',
                     ]);
 
-                    // Render and save ticket HTML
-                    $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
-                    $ventaFileService = app(VentaFileService::class);
-                    $ventaFileService->guardarTicketHtml($documento, $htmlTicket);
+
 
                     // Render and save PDF
                     $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);

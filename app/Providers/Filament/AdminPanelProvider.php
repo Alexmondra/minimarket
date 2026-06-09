@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Escritorio;
+use App\Filament\Pages\MiPerfil;
 use App\Http\Middleware\EnsureSucursalContext;
 use App\Support\SucursalContext;
 use Filament\Http\Middleware\Authenticate;
@@ -19,12 +20,20 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        if (! file_exists(public_path('storage'))) {
+            Artisan::call('storage:link', ['--quiet' => true]);
+        }
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -65,6 +74,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Clusters/Sunat/Resources'), for: 'App\\Filament\\Clusters\\Sunat\\Resources')
             ->discoverResources(in: app_path('Filament/Clusters/Ventas/Resources'), for: 'App\\Filament\\Clusters\\Ventas\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->profile(MiPerfil::class, isSimple: false)
             ->pages([
                 Escritorio::class,
             ])

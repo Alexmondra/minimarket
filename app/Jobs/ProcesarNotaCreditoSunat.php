@@ -14,29 +14,17 @@ class ProcesarNotaCreditoSunat implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * The number of times the job may be attempted.
-     */
     public $tries = 5;
 
-    /**
-     * The number of seconds to wait before retrying.
-     */
     public $backoff = [10, 60, 300, 900];
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
         public Documento $notaCredito,
         public Documento $documentoAfectado,
     ) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(FacturacionService $facturacionService): void
     {
-        $facturacionService->procesarNota($this->notaCredito, $this->documentoAfectado);
+        $facturacionService->enviarNotaSunat($this->notaCredito, $this->documentoAfectado);
     }
 }

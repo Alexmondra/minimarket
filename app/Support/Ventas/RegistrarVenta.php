@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Support\Facturacion\FacturacionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RegistrarVenta
 {
@@ -133,6 +134,13 @@ class RegistrarVenta
             $totales = $calculo['totales'];
             $montoRecibido = (float) ($payload['monto_recibido'] ?? 0);
             $totalNeto = (float) $totales['total_neto'];
+
+            if ($tipoComprobante === 'BOLETA' && $totalNeto >= 700.00) {
+                if (!$cliente || $cliente->documento === '00000000' || trim($cliente->documento) === '') {
+                    throw new \RuntimeException('Las boletas con importe igual o mayor a S/ 700.00 requieren identificar al cliente (DNI/CE válido y nombres completos).');
+                }
+            }
+
             if ($medioPago !== 'EFECTIVO') {
                 $montoRecibido = $totalNeto;
             }
@@ -214,15 +222,21 @@ class RegistrarVenta
             'detalles.presentacion.unidadMedida',
         ]);
 
-        $htmlTicket = view('ventas.ticket', [
-            'documento' => $documento,
-        ])->render();
-        $this->fileService->guardarTicketHtml($documento, $htmlTicket);
+        if (in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
+            try {
+                $hash = $this->facturacionService->preparar($documento);
+                $documento->load('sunat');
+                $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+                $this->fileService->guardarPdf($documento, $pdf->output());
+            } catch (\Throwable $e) {
+                Log::error('Error generando PDF sincrono para documento.', [
+                    'documento_id' => $documento->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
 
-        $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-        $this->fileService->guardarPdf($documento, $pdf->output());
-
-        ProcesarFacturaSunat::dispatch($documento);
+            ProcesarFacturaSunat::dispatch($documento);
+        }
 
         return $documento->fresh([
             'cliente',
@@ -595,8 +609,7 @@ class RegistrarVenta
         $ubigeo = $sucursal->ubigeoRel;
         if ($ubigeo) {
             $departamento = strtoupper(trim($ubigeo->departamento));
-            $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
-            if (in_array($departamento, $exempt)) {
+            if (in_array($departamento, Sucursal::DEPARTAMENTOS_EXENTOS_AMAZONIA)) {
                 return true;
             }
         }

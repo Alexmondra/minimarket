@@ -66,7 +66,7 @@ class ProcesarFacturaSunatTest extends TestCase
         });
     }
 
-    public function test_job_handle_calls_facturacion_service(): void
+    public function test_job_handle_calls_enviar_sunat(): void
     {
         $ubigeo = Ubigeo::create([
             'ubigeo' => '150101',
@@ -107,7 +107,7 @@ class ProcesarFacturaSunatTest extends TestCase
 
         $serviceMock = $this->createMock(FacturacionService::class);
         $serviceMock->expects($this->once())
-            ->method('procesar')
+            ->method('enviarSunat')
             ->with($this->callback(fn ($doc) => $doc->id === $documento->id));
 
         $job = new ProcesarFacturaSunat($documento);

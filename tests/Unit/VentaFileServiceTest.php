@@ -83,7 +83,7 @@ class VentaFileServiceTest extends TestCase
         $expectedFilename = '20123456789-F001-00000001-pdf.pdf';
         $this->assertSame($expectedFilename, $archivo->nombre_archivo);
 
-        $expectedPath = 'ventas/'.$empresa->id.'/'.now()->format('Y/m').'/factura/'.$expectedFilename;
+        $expectedPath = 'comprobantes/'.now()->format('Y/m').'/facturas_boletas/'.$expectedFilename;
         $this->assertSame($expectedPath, $archivo->ruta_archivo);
 
         Storage::disk('local')->assertExists($expectedPath);

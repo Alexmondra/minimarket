@@ -32,6 +32,18 @@ class DocumentoGreenterFactory
             throw new RuntimeException('El comprobante no aplica para envio SUNAT.');
         }
 
+        $legends = [
+            (new Legend)
+                ->setCode('1000')
+                ->setValue($this->montoEnLetras($this->money($documento->total_neto))),
+        ];
+
+        if ($documento->esExentoAmazonia()) {
+            $legends[] = (new Legend)
+                ->setCode('2001')
+                ->setValue('BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA');
+        }
+
         return (new Invoice)
             ->setUblVersion('2.1')
             ->setTipoOperacion('0101')
@@ -52,11 +64,7 @@ class DocumentoGreenterFactory
             ->setSubTotal($this->money($documento->total_neto))
             ->setMtoImpVenta($this->money($documento->total_neto))
             ->setDetails($this->details($documento))
-            ->setLegends([
-                (new Legend)
-                    ->setCode('1000')
-                    ->setValue($this->montoEnLetras($this->money($documento->total_neto))),
-            ]);
+            ->setLegends($legends);
     }
 
     protected function company(Empresa $empresa, Documento $documento): Company
@@ -73,7 +81,7 @@ class DocumentoGreenterFactory
                     ->setDepartamento($ubigeo?->departamento ?: '-')
                     ->setProvincia($ubigeo?->provincia ?: '-')
                     ->setDistrito($ubigeo?->distrito ?: '-')
-                    ->setDireccion($empresa->direccion_fiscal ?: $documento->sucursal?->direccion ?: '-')
+                    ->setDireccion($documento->sucursal?->direccion ?: $empresa->direccion_fiscal ?: '-')
                     ->setCodLocal($this->codigoLocal($documento->sucursal?->codigo))
             );
     }
@@ -231,11 +239,19 @@ class DocumentoGreenterFactory
         $note->setDetails($details);
 
         // Leyendas
-        $note->setLegends([
+        $legends = [
             (new Legend)
                 ->setCode('1000')
                 ->setValue($this->montoEnLetras($this->money($documentoAfectado->total_neto))),
-        ]);
+        ];
+
+        if ($nota->esExentoAmazonia()) {
+            $legends[] = (new Legend)
+                ->setCode('2001')
+                ->setValue('BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA');
+        }
+
+        $note->setLegends($legends);
 
         return $note;
     }

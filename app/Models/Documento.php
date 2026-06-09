@@ -132,4 +132,24 @@ class Documento extends Model
     {
         return $this->hasMany(DocumentoReferencium::class, 'documento_referenciado_id');
     }
+
+    public function esExentoAmazonia(): bool
+    {
+        $sucursal = $this->sucursal;
+        if (!$sucursal) {
+            return false;
+        }
+
+        if ((float) $sucursal->impuesto_porcentaje === 0.0) {
+            return true;
+        }
+
+        $ubigeo = $sucursal->ubigeoRel;
+        if ($ubigeo) {
+            $departamento = strtoupper(trim($ubigeo->departamento));
+            return in_array($departamento, Sucursal::DEPARTAMENTOS_EXENTOS_AMAZONIA);
+        }
+
+        return false;
+    }
 }

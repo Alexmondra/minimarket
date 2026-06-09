@@ -5,7 +5,6 @@ namespace App\Support\Facturacion;
 use App\Models\Archivo;
 use App\Models\Documento;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class FacturacionFileService
 {
@@ -16,12 +15,7 @@ class FacturacionFileService
 
     public function guardarCdrZip(Documento $documento, string $zip): Archivo
     {
-        return $this->guardar($documento, 'cdr_zip', 'zip', $zip);
-    }
-
-    public function guardarCdrXml(Documento $documento, string $xml): Archivo
-    {
-        return $this->guardar($documento, 'cdr_xml', 'xml', $xml);
+        return $this->guardar($documento, 'cdr', 'zip', $zip);
     }
 
     public function extraerCdrXml(string $zip): ?string
@@ -68,7 +62,10 @@ class FacturacionFileService
 
     protected function guardar(Documento $documento, string $tipo, string $extension, string $contenido): Archivo
     {
-        $filename = $this->nombreBase($documento).'-'.$tipo.'.'.$extension;
+        $filename = $this->nombreBase($documento).'.'.$extension;
+        if ($tipo !== 'xml') {
+            $filename = $this->nombreBase($documento).'-'.$tipo.'.'.$extension;
+        }
         $path = $this->rutaBase($documento).'/'.$filename;
 
         Storage::disk('local')->put($path, $contenido);
@@ -76,7 +73,7 @@ class FacturacionFileService
         return Archivo::updateOrCreate(
             [
                 'documento_id' => $documento->id,
-                'tipo_archivo' => $tipo,
+                'tipo_archivo' => $tipo === 'cdr' ? 'cdr_zip' : $tipo,
             ],
             [
                 'proveedor_almacenamiento' => 'local',
@@ -89,11 +86,14 @@ class FacturacionFileService
 
     protected function rutaBase(Documento $documento): string
     {
+        $carpeta = in_array($documento->tipo_comprobante, ['NOTA_CREDITO', 'NOTA_DEBITO'], true)
+            ? 'nc_nd'
+            : 'facturas_boletas';
+
         return sprintf(
-            'facturacion/%s/%s/%s',
-            $documento->empresa_id,
-            $documento->fecha_emision?->format('Y/m'),
-            Str::slug($documento->tipo_comprobante)
+            'comprobantes/%s/%s',
+            ($documento->fecha_emision ?? now())->format('Y/m'),
+            $carpeta
         );
     }
 
@@ -103,7 +103,7 @@ class FacturacionFileService
             '%s-%s-%s',
             $documento->empresa?->ruc ?? $documento->empresa_id,
             $documento->serie,
-            $documento->numero
+            str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT)
         );
     }
 }

@@ -625,6 +625,9 @@
                                 Documento interno de venta. No válido como comprobante electrónico SUNAT.
                             @else
                                 Representación impresa de {{ mb_strtolower($tipoComprobanteLegible) }}. El código QR contiene los datos tributarios exigidos por SUNAT para consulta del comprobante.
+                                @if($documento->esExentoAmazonia())
+                                    <br><span class="strong">BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA</span>
+                                @endif
                             @endif
                         </div>
                     </td>

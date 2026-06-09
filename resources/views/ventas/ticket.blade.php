@@ -421,6 +421,9 @@
                         <span style="font-size: 7px;">Hash: {{ substr($hash, 0, 40) }}...</span><br>
                     @endif
                     Consulte en: <b>{{ $consultaUrl }}</b><br>
+                    @if($documento->esExentoAmazonia())
+                        <div style="font-weight: bold; margin-top: 4px; font-size: 8px;">BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA</div>
+                    @endif
                 @else
                     <b>{{ $documento->serie }}-{{ $numeroComprobante }}</b><br>
                     Emitido: {{ now()->format('d/m/Y H:i') }}<br>

@@ -136,8 +136,8 @@ class ArchivoResource extends Resource
                             ]);
                         });
 
-                        // Delete old ticket_html and pdf files
-                        $oldArchivos = $documento->archivos()->whereIn('tipo_archivo', ['ticket_html', 'pdf'])->get();
+                        // Delete old pdf files
+                        $oldArchivos = $documento->archivos()->where('tipo_archivo', 'pdf')->get();
                         foreach ($oldArchivos as $old) {
                             if ($old->ruta_archivo && Storage::disk('local')->exists($old->ruta_archivo)) {
                                 Storage::disk('local')->delete($old->ruta_archivo);
@@ -154,10 +154,7 @@ class ArchivoResource extends Resource
                             'detalles.presentacion.unidadMedida',
                         ]);
 
-                        // Render and save ticket HTML
-                        $htmlTicket = view('ventas.ticket', ['documento' => $documento])->render();
-                        $ventaFileService = app(VentaFileService::class);
-                        $ventaFileService->guardarTicketHtml($documento, $htmlTicket);
+
 
                         // Render and save PDF
                         $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
@@ -183,9 +180,6 @@ class ArchivoResource extends Resource
                 $query->where(function (Builder $q) {
                     $q->whereHas('documento', fn ($d) => $d->whereIn('tipo_comprobante', ['BOLETA', 'FACTURA']))
                         ->whereIn('tipo_archivo', ['xml', 'xml_firmado']);
-                })->orWhere(function (Builder $q) {
-                    $q->whereHas('documento', fn ($d) => $d->where('tipo_comprobante', 'TICKET'))
-                        ->where('tipo_archivo', 'ticket_html');
                 });
             })
             ->with(['documento', 'documento.archivos']);

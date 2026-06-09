@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Empresa;
+use App\Models\Sucursal;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class EmpresaSucursalSeeder extends Seeder
@@ -14,41 +15,33 @@ class EmpresaSucursalSeeder extends Seeder
         // ==========================================
         // 1. EMPRESAS
         // ==========================================
-        DB::table('empresas')->insert([
-            [
-                'ruc' => '20000000001',
-                'razon_social' => 'MINIMARKET G0 FOOD MARKET',
-                'direccion_fiscal' => 'JR. 28 DE JULIO CON JR ICA',
-                'incluido_tributo' => true,
-                'entorno' => false,
-            ],
+        $empresa = Empresa::create([
+            'ruc' => '20000000001',
+            'razon_social' => 'MINIMARKET G0 FOOD MARKET',
+            'direccion_fiscal' => 'JR. 28 DE JULIO CON JR ICA',
+            'incluido_tributo' => true,
+            'entorno' => false,
         ]);
 
         // ==========================================
-        // 2. SUCURSALES (2 por cada empresa)
+        // 2. SUCURSALES
         // ==========================================
-        $sucursales = [
-            // Empresa 1: Minimarket El Ahorro
-            [
-                'empresa_id' => 1,
-                'codigo' => '0000',
-                'ubigeo' => '170101',
-                'direccion' => 'JR. 28 DE JULIO CON JR ICA',
-                'telefono' => '987654322',
-                'email' => 'sucursal2@elahorro.com',
-                'nombre_sucursal' => 'principal',
-                'activo' => true,
-            ],
-            
-        ];
-
-        DB::table('sucursales')->insert($sucursales);
+        $sucursal = Sucursal::create([
+            'empresa_id' => $empresa->id,
+            'codigo' => '0000',
+            'ubigeo' => '170101',
+            'direccion' => 'JR. 28 DE JULIO CON JR ICA',
+            'telefono' => '987654322',
+            'email' => 'sucursal2@elahorro.com',
+            'nombre_sucursal' => 'principal',
+            'activo' => true,
+        ]);
 
         // ==========================================
-        // 3. USUARIOS (1 por cada empresa)
+        // 3. USUARIOS
         // ==========================================
         $user1 = User::create([
-            'empresa_id' => 1,
+            'empresa_id' => $empresa->id,
             'name' => 'Admin',
             'email' => 'admin@1.com',
             'password' => Hash::make('12345678'),
@@ -56,12 +49,9 @@ class EmpresaSucursalSeeder extends Seeder
             'activo' => true,
         ]);
 
-       
         // ==========================================
         // 4. SUCURSAL_USER (asignar usuarios a sucursales)
         // ==========================================
-        DB::table('sucursal_user')->insert([
-            ['sucursal_id' => 1, 'user_id' => $user1->id],
-        ]);
+        $user1->sucursales()->attach($sucursal->id);
     }
 }

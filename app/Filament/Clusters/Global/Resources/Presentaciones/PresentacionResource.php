@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class PresentacionResource extends Resource
 {
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $model = ProductoPresentacion::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube-transparent';

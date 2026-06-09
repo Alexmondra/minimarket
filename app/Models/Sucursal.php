@@ -12,6 +12,8 @@ class Sucursal extends Model
 
     protected $table = 'sucursales';
 
+    public const DEPARTAMENTOS_EXENTOS_AMAZONIA = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
+
     protected static function boot()
     {
         parent::boot();
@@ -85,8 +87,7 @@ class Sucursal extends Model
                 $ubigeo = Ubigeo::where('ubigeo', $ubigeoCode)->first();
                 if ($ubigeo) {
                     $departamento = strtoupper(trim($ubigeo->departamento));
-                    $exempt = ['LORETO', 'MADRE DE DIOS', 'UCAYALI', 'SAN MARTIN', 'AMAZONAS'];
-                    if (in_array($departamento, $exempt)) {
+                    if (in_array($departamento, self::DEPARTAMENTOS_EXENTOS_AMAZONIA)) {
                         $sucursal->impuesto_porcentaje = 0.00;
                     } else {
                         $sucursal->impuesto_porcentaje = 18.00;

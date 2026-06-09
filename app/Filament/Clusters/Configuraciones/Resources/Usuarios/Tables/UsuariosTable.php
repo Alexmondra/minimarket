@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
@@ -28,9 +29,14 @@ class UsuariosTable
             ->recordAction(null)
             ->recordUrl(null)
             ->columns([
+                ImageColumn::make('avatar_url')
+                    ->label('')
+                    ->width(40)
+                    ->height(40)
+                    ->circular()
+                    ->defaultImageUrl(fn ($record): string => 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&format=svg&color=FFFFFF&background=64748b'),
                 TextColumn::make('name')
                     ->searchable()
-                    ->icon('heroicon-o-user-circle')
                     ->weight('bold')
                     ->label('Nombre'),
                 TextColumn::make('email')

@@ -1300,8 +1300,9 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        if ($this->tipoComprobante === 'BOLETA' && $totalNeto > 700 && trim($this->clienteDocumento) === '') {
-            Notification::make()->title('La boleta mayor a S/ 700 requiere cliente')->warning()->send();
+        $doc = trim($this->clienteDocumento);
+        if ($this->tipoComprobante === 'BOLETA' && $totalNeto >= 700 && ($doc === '' || $doc === '00000000')) {
+            Notification::make()->title('Las boletas con importe igual o mayor a S/ 700.00 requieren identificar al cliente (DNI/CE válido y nombres completos).')->danger()->send();
             $this->isSaving = false;
 
             return;
@@ -1404,7 +1405,8 @@ trait RegistrarVentaBehavior
         $resumen = $this->resumen;
         $totalNeto = (float) ($resumen['totales']['total_neto'] ?? 0.0);
 
-        if ($this->tipoComprobante === 'BOLETA' && $totalNeto > 700 && trim($this->clienteDocumento) === '') {
+        $doc = trim($this->clienteDocumento);
+        if ($this->tipoComprobante === 'BOLETA' && $totalNeto >= 700 && ($doc === '' || $doc === '00000000')) {
             return false;
         }
 

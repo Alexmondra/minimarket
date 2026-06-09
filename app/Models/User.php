@@ -10,12 +10,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Filament\Models\Contracts\HasAvatar;
 use Spatie\Permission\Traits\HasRoles;
 
 
-#[Fillable(['name', 'email', 'password', 'empresa_id', 'telefono', 'activo'])]
+#[Fillable(['name', 'email', 'password', 'empresa_id', 'telefono', 'activo', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements \Filament\Models\Contracts\FilamentUser
+class User extends Authenticatable implements \Filament\Models\Contracts\FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, SoftDeletes;
@@ -50,6 +53,24 @@ class User extends Authenticatable implements \Filament\Models\Contracts\Filamen
     {
         // Esto le da permiso a cualquier usuario que crees en tu base de datos
         return true; 
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if (blank($this->avatar)) {
+            return null;
+        }
+
+        if (Str::startsWith($this->avatar, ['http://', 'https://', 'data:image/'])) {
+            return $this->avatar;
+        }
+
+        return asset('storage/' . ltrim($this->avatar, '/'));
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->getFilamentAvatarUrl();
     }
 
 }

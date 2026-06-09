@@ -11,7 +11,10 @@ use App\Models\LotePresentacion;
 use App\Models\MovimientoInventario;
 use App\Models\Serie;
 use App\Models\User;
+use App\Support\Facturacion\FacturacionService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AnulacionService
 {
@@ -31,6 +34,8 @@ class AnulacionService
     public function __construct(
         protected VentaCalculator $calculator,
         protected PuntosService $puntosService,
+        protected FacturacionService $facturacionService,
+        protected VentaFileService $fileService,
     ) {}
 
     /**
@@ -200,13 +205,27 @@ class AnulacionService
             return $nota;
         });
 
-        // Encolar envío a SUNAT
+        // Preparar XML y PDF sincrono, luego encolar solo el envío a SUNAT
+        try {
+            $hash = $this->facturacionService->prepararNota($notaCredito, $documento);
+            $notaCredito->load('sunat');
+            $pdf = Pdf::loadView('ventas.pdf', ['documento' => $notaCredito]);
+            $this->fileService->guardarPdf($notaCredito, $pdf->output());
+        } catch (\Throwable $e) {
+            Log::error('Error generando PDF sincrono para Nota de Credito.', [
+                'documento_id' => $notaCredito->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
         ProcesarNotaCreditoSunat::dispatch($notaCredito, $documento);
 
         return $notaCredito->fresh([
             'cliente', 'empresa', 'sucursal',
             'detalles.presentacion.unidadMedida',
             'documentoReferencia',
+            'archivos',
+            'sunat',
         ]);
     }
 
