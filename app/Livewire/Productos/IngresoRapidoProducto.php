@@ -47,13 +47,13 @@ class IngresoRapidoProducto extends Component
 
     public string $tipoPresentacion = 'Unidad';
 
-    public int $cantidadPresentacion = 1;
+    public $cantidadPresentacion = 1;
 
     public ?int $presentacionBaseId = null;
 
     public bool $afectoIgv = true;
 
-    public int $cantidadIngreso = 1;
+    public $cantidadIngreso = 1;
 
     public ?string $codigoLote = null;
 
@@ -61,19 +61,19 @@ class IngresoRapidoProducto extends Component
 
     public ?string $ubicacion = null;
 
-    public int $stockMinimo = 5;
+    public $stockMinimo = 5;
 
-    public ?float $precioCompra = null;
+    public $precioCompra = null;
 
-    public ?float $totalPagado = null;
+    public $totalPagado = null;
 
-    public ?float $precioVenta = null;
+    public $precioVenta = null;
 
-    public ?float $precioOferta = null;
+    public $precioOferta = null;
 
-    public ?float $precioMayorista = null;
+    public $precioMayorista = null;
 
-    public int $minimoMayorista = 12;
+    public $minimoMayorista = 12;
 
     public ?int $productoExistenteId = null;
 
@@ -134,7 +134,6 @@ class IngresoRapidoProducto extends Component
 
         if ($term === '') {
             $this->productoSearchResults = [];
-            $this->limpiarFormulario();
             return;
         }
 
@@ -154,20 +153,9 @@ class IngresoRapidoProducto extends Component
         $this->buscarProductos();
     }
 
-    public function updatedPrecioCompra(): void
-    {
-        if (! $this->precioVenta && $this->precioCompra) {
-            $this->precioVenta = round($this->precioCompra * 1.3, 2);
-        }
-    }
-
     public function updatedTotalPagado(): void
     {
         $this->precioCompra = $this->costoUnitarioCalculado();
-
-        if (! $this->precioVenta && $this->precioCompra) {
-            $this->precioVenta = round($this->precioCompra * 1.3, 2);
-        }
     }
 
     public function updatedCantidadIngreso(): void

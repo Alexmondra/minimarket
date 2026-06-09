@@ -153,7 +153,7 @@
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Cantidad por presentacion</label>
-                                <input type="number" min="1" wire:model.live="cantidadPresentacion" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white">
+                                <input type="number" min="1" wire:model.blur="cantidadPresentacion" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white">
                                 @error('cantidadPresentacion') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror
                             </div>
                             @if ((int) $cantidadPresentacion > 1)
@@ -167,24 +167,64 @@
                 @endif
             </section>
 
-            <section class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <section
+                x-data="{
+                    cantidadIngreso: @entangle('cantidadIngreso'),
+                    totalPagado: @entangle('totalPagado'),
+                    precioVenta: @entangle('precioVenta'),
+                    precioMayorista: @entangle('precioMayorista'),
+                    number(value) {
+                        const parsed = parseFloat(String(value ?? '').replace(',', '.'));
+
+                        return Number.isFinite(parsed) ? parsed : 0;
+                    },
+                    money(value) {
+                        return this.number(value).toFixed(2);
+                    },
+                    get cantidad() {
+                        return Math.max(1, Math.trunc(this.number(this.cantidadIngreso)) || 1);
+                    },
+                    get costoUnitario() {
+                        return this.number(this.totalPagado) / this.cantidad;
+                    },
+                    get margen() {
+                        return this.number(this.precioVenta) - this.costoUnitario;
+                    },
+                    get margenPorcentaje() {
+                        return this.costoUnitario > 0 ? (this.margen / this.costoUnitario) * 100 : null;
+                    },
+                    get margenTotal() {
+                        return this.margen * this.cantidad;
+                    },
+                    get margenMayorista() {
+                        return this.number(this.precioMayorista) - this.costoUnitario;
+                    },
+                    get margenMayoristaPorcentaje() {
+                        return this.costoUnitario > 0 && this.number(this.precioMayorista) > 0 ? (this.margenMayorista / this.costoUnitario) * 100 : null;
+                    },
+                    get margenTotalMayorista() {
+                        return this.number(this.precioMayorista) > 0 ? this.margenMayorista * this.cantidad : null;
+                    },
+                }"
+                class="grid grid-cols-1 gap-5 lg:grid-cols-2"
+            >
                 <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
                     <h3 class="text-lg font-black text-slate-950 dark:text-white">Stock y lote</h3>
                     <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">El costo unitario se calcula solo con el total pagado.</p>
                     <div class="mt-5 space-y-4">
                         <div>
                             <label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Cantidad ingresada</label>
-                            <input type="number" min="1" wire:model.live.debounce.250ms="cantidadIngreso" class="h-14 w-full rounded-2xl border border-emerald-300 bg-emerald-50 px-4 text-2xl font-black text-emerald-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+                            <input type="number" min="1" x-model="cantidadIngreso" wire:model.blur="cantidadIngreso" class="h-14 w-full rounded-2xl border border-emerald-300 bg-emerald-50 px-4 text-2xl font-black text-emerald-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
                             @error('cantidadIngreso') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Total pagado por este ingreso</label>
                             <div class="flex h-12 items-center rounded-2xl border border-slate-300 bg-white px-4 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 dark:border-slate-700 dark:bg-slate-950/50">
                                 <span class="mr-2 text-sm font-black text-slate-400">S/</span>
-                                <input type="number" min="0" step="0.01" wire:model.live.debounce.250ms="totalPagado" placeholder="0.00" class="w-full border-0 bg-transparent p-0 text-sm font-black text-slate-900 outline-none focus:ring-0 dark:text-white">
+                                <input type="number" min="0" step="0.01" x-model="totalPagado" wire:model.blur="totalPagado" placeholder="0.00" class="w-full border-0 bg-transparent p-0 text-sm font-black text-slate-900 outline-none focus:ring-0 dark:text-white">
                             </div>
                             @error('totalPagado') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror
-                            <p class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">Costo unitario calculado: S/ {{ number_format((float) ($precioCompra ?? 0), 4) }}</p>
+                            <p class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">Costo unitario calculado: S/ <span x-text="costoUnitario.toFixed(4)"></span></p>
                         </div>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Lote</label><input type="text" wire:model="codigoLote" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
@@ -205,24 +245,22 @@
                             <label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Precio venta</label>
                             <div class="flex h-14 items-center rounded-2xl border border-amber-300 bg-amber-50 px-4 focus-within:border-amber-500 focus-within:ring-4 focus-within:ring-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
                                 <span class="mr-2 text-sm font-black text-amber-600 dark:text-amber-300">S/</span>
-                                <input type="number" min="0" step="0.01" wire:model.live.debounce.300ms="precioVenta" placeholder="0.00" class="w-full border-0 bg-transparent p-0 text-2xl font-black text-amber-800 outline-none focus:ring-0 dark:text-amber-200">
+                                <input type="number" min="0" step="0.01" x-model="precioVenta" wire:model="precioVenta" placeholder="0.00" class="w-full border-0 bg-transparent p-0 text-2xl font-black text-amber-800 outline-none focus:ring-0 dark:text-amber-200">
                             </div>
                             @error('precioVenta') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror
                         </div>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Mayorista</label><input type="number" min="0" step="0.01" wire:model="precioMayorista" placeholder="Opcional" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
+                            <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Mayorista</label><input type="number" min="0" step="0.01" x-model="precioMayorista" wire:model="precioMayorista" placeholder="Opcional" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
                             <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Min. mayorista</label><input type="number" min="1" wire:model="minimoMayorista" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                             <p class="text-xs font-black uppercase tracking-wide text-slate-400">Ganancia estimada</p>
-                            <div class="mt-2 flex items-end justify-between gap-3"><p class="text-2xl font-black {{ ($this->margen ?? 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">S/ {{ number_format((float) ($this->margen ?? 0), 2) }}</p><p class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">{{ $this->margenPorcentaje !== null ? $this->margenPorcentaje.'%' : 'Sin margen' }}</p></div>
-                            <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Por unidad · {{ $this->cantidadIngreso }} und</p>
-                            @if ($this->margenTotal !== null)
-                                <div class="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700"><p class="text-lg font-black text-emerald-600 dark:text-emerald-400">S/ {{ number_format((float) $this->margenTotal, 2) }}</p><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Vendiendo todo</p></div>
-                            @endif
-                            @if ($this->margenTotalMayorista !== null)
-                                <div class="mt-2 flex items-end justify-between gap-3"><p class="text-base font-black text-indigo-600 dark:text-indigo-400">S/ {{ number_format((float) $this->margenTotalMayorista, 2) }}</p><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Al por mayor · {{ $this->margenPorcentajeMayorista !== null ? $this->margenPorcentajeMayorista.'%' : '' }}</p></div>
-                            @endif
+                            <div class="mt-2 flex items-end justify-between gap-3"><p class="text-2xl font-black" :class="margen >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">S/ <span x-text="money(margen)"></span></p><p class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800" x-text="margenPorcentaje !== null ? margenPorcentaje.toFixed(1) + '%' : 'Sin margen'"></p></div>
+                            <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Por unidad · <span x-text="cantidad"></span> und</p>
+                            <div class="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700"><p class="text-lg font-black" :class="margenTotal >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">S/ <span x-text="money(margenTotal)"></span></p><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Vendiendo todo</p></div>
+                            <template x-if="margenTotalMayorista !== null">
+                                <div class="mt-2 flex items-end justify-between gap-3"><p class="text-base font-black" :class="margenTotalMayorista >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">S/ <span x-text="money(margenTotalMayorista)"></span></p><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Al por mayor · <span x-text="margenMayoristaPorcentaje !== null ? margenMayoristaPorcentaje.toFixed(1) + '%' : ''"></span></p></div>
+                            </template>
                         </div>
                     </div>
                 </div>

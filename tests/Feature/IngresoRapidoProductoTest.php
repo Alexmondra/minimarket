@@ -125,6 +125,58 @@ class IngresoRapidoProductoTest extends TestCase
         ]);
     }
 
+    public function test_clearing_search_does_not_erase_quick_entry_form_fields(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(IngresoRapidoProducto::class)
+            ->set('busqueda', 'Gaseosa')
+            ->set('nombre', 'Gaseosa Nueva 500ml')
+            ->set('nuevaCategoria', 'Bebidas')
+            ->set('nuevaMarca', 'Marca Nueva')
+            ->set('unidadMedidaId', $this->unidad->id)
+            ->set('tipoPresentacion', 'Botella 500ml')
+            ->set('cantidadPresentacion', 1)
+            ->set('codigoBarra', '7750001000012')
+            ->set('cantidadIngreso', 24)
+            ->set('totalPagado', 28.80)
+            ->set('precioVenta', 2.00)
+            ->set('busqueda', '')
+            ->assertSet('nombre', 'Gaseosa Nueva 500ml')
+            ->assertSet('nuevaCategoria', 'Bebidas')
+            ->assertSet('nuevaMarca', 'Marca Nueva')
+            ->assertSet('tipoPresentacion', 'Botella 500ml')
+            ->assertSet('codigoBarra', '7750001000012')
+            ->assertSet('cantidadIngreso', 24)
+            ->assertSet('totalPagado', 28.80)
+            ->assertSet('precioVenta', 2.00);
+    }
+
+    public function test_price_inputs_keep_partial_decimal_values_while_typing(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(IngresoRapidoProducto::class)
+            ->set('totalPagado', '12.')
+            ->set('precioVenta', '2.')
+            ->set('precioMayorista', '1.')
+            ->assertSet('totalPagado', '12.')
+            ->assertSet('precioVenta', '2.')
+            ->assertSet('precioMayorista', '1.');
+    }
+
+    public function test_total_paid_does_not_autofill_sale_price_for_new_entry(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(IngresoRapidoProducto::class)
+            ->assertSet('precioVenta', null)
+            ->set('cantidadIngreso', 12)
+            ->set('totalPagado', 24.00)
+            ->assertSet('precioCompra', 2.0)
+            ->assertSet('precioVenta', null);
+    }
+
     public function test_searches_existing_product_and_creates_new_presentation_for_it(): void
     {
         $this->actingAs($this->user);
