@@ -1,6 +1,10 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+    --spacing-4.5: 1.125rem;
+}
+
 @source '../../../../app/Filament';
 @source '../../../../resources/views/filament';
 @source '../../../../app/Livewire';
@@ -873,6 +877,31 @@ html.app-busy body {
     opacity: 1;
 }
 
+.kpi-strip-grid {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+}
+
+.kpi-strip-card {
+    flex: 1 0 10rem;
+    min-width: 10rem;
+    padding: 0.85rem !important;
+}
+
+.kpi-strip-card:hover {
+    transform: translateY(-2px) scale(1.01) !important;
+}
+
+@media (min-width: 1280px) {
+    .kpi-strip-card {
+        min-width: 0;
+        flex-basis: 0;
+    }
+}
+
 /* Light Mode: Vibrant typography overrides */
 .kpi-card p,
 .kpi-card p span,
@@ -1631,3 +1660,62 @@ html.app-busy body {
     background: linear-gradient(135deg, #10b981, #059669) !important;
     color: #fff !important;
 }
+
+/* --- LIQUID WATER RIPPLE EFFECT & HOLOGRAPHIC SHINE --- */
+.liquid-card {
+    background-size: 200% 200% !important;
+    transition: background-position 0.8s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), ring-color 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes liquid-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+html:not(.dark) .liquid-card:hover {
+    animation: liquid-flow 4s ease infinite !important;
+}
+
+/* Holographic Reflection Sheen */
+.liquid-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: translate(-120%, -120%) rotate(-45deg);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.liquid-card:hover::before {
+    opacity: 1;
+    transform: translate(80%, 80%) rotate(-45deg);
+}
+
+.dark .liquid-card::before {
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
+
+

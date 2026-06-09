@@ -3,7 +3,12 @@
 <div 
     x-data="{
         activeTab: 'cart',
+        categoriesCollapsed: localStorage.getItem('pos_categories_collapsed') === '1',
         theme: localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light'),
+        toggleCategories() {
+            this.categoriesCollapsed = ! this.categoriesCollapsed;
+            localStorage.setItem('pos_categories_collapsed', this.categoriesCollapsed ? '1' : '0');
+        },
         init() {
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'F2') {
@@ -182,6 +187,16 @@
             }
         }
 
+        @media (min-width: 1280px) {
+            .pos-main-grid.pos-categories-collapsed .pos-col-catalog {
+                display: none !important;
+            }
+
+            .pos-main-grid.pos-categories-collapsed .pos-col-cart {
+                grid-column: span 6 / span 6 !important;
+            }
+        }
+
         /* Micro-animations */
         @keyframes pulse-green {
             0% { background-color: rgba(16, 185, 129, 0); }
@@ -222,6 +237,13 @@
         .pos-viewport .pos-active-category {
             background-color: var(--pos-active-category-bg) !important;
             color: var(--pos-active-category-text) !important;
+        }
+
+        .pos-viewport .pos-comprobante-active {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 55%, #0ea5e9 100%) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            color: #ffffff !important;
+            box-shadow: 0 14px 30px -14px rgba(79, 70, 229, 0.8) !important;
         }
 
         /* Payment methods styling */
@@ -415,12 +437,24 @@
 
     <!-- 2. Main Content Body (Grid cols 12) -->
     <main class="p-5">
-        <div class="pos-main-grid">
+        <div class="pos-main-grid" :class="{ 'pos-categories-collapsed': categoriesCollapsed }">
             
             <!-- Column 1: CATEGORIES (Col span: 2) -->
             <div class="col-span-12 lg:col-span-2 pos-column pos-col-catalog relative z-10">
                 <div class="pos-card p-4 flex flex-col h-full min-h-0">
-                    <span class="text-xs font-black uppercase tracking-wider pos-text-muted block mb-3">Categorías</span>
+                    <div class="mb-3 flex items-center justify-between gap-2">
+                        <span class="text-xs font-black uppercase tracking-wider pos-text-muted block">Categorías</span>
+                        <button
+                            type="button"
+                            @click="toggleCategories()"
+                            class="hidden xl:inline-flex h-8 w-8 items-center justify-center rounded-xl border pos-border pos-hoverable pos-text-muted transition focus:outline-none"
+                            title="Contraer categorias"
+                        >
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                     <nav class="space-y-1.5 overflow-y-auto flex-1 pr-1">
                         <!-- Todos button -->
                         <button 
@@ -466,6 +500,18 @@
                 
                 <!-- Search bar & Results -->
                 <div class="pos-card p-4 flex gap-3 items-center relative z-50">
+                    <button
+                        type="button"
+                        @click="toggleCategories()"
+                        class="hidden xl:inline-flex h-11 items-center gap-2 rounded-xl border pos-border pos-hoverable px-3 text-xs font-black uppercase tracking-wider pos-text-muted transition focus:outline-none"
+                        :title="categoriesCollapsed ? 'Mostrar categorias' : 'Ocultar categorias'"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                            <path x-show="!categoriesCollapsed" stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            <path x-show="categoriesCollapsed" stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                        <span x-text="categoriesCollapsed ? 'Categorias' : 'Ocultar'"></span>
+                    </button>
                     <div 
                         class="relative flex-1"
                         x-data="{
@@ -559,15 +605,22 @@
                                         data-index="{{ $loop->index }}"
                                         class="group w-full px-4 py-3 text-left hover:bg-emerald-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
                                     >
-                                        <div class="space-y-0.5 min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-sm font-black text-slate-950 dark:text-white truncate">{{ $producto['nombre'] }}</span>
-                                                <span class="rounded-lg bg-emerald-100 text-emerald-700 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-black dark:text-slate-300 border border-emerald-200 dark:border-slate-700">
-                                                    {{ $producto['presentacion'] }}
-                                                </span>
-                                            </div>
-                                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                                Cod: {{ $producto['codigo'] }} | Stock: {{ number_format($producto['stock'], 0) }}
+                                        <div class="flex min-w-0 items-center gap-3">
+                                            @if(!empty($producto['imagen_url']))
+                                                <img src="{{ $producto['imagen_url'] }}" alt="{{ $producto['nombre'] }}" class="h-11 w-11 shrink-0 rounded-xl border border-white/70 object-cover shadow-sm dark:border-slate-700">
+                                            @else
+                                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-lg">📦</div>
+                                            @endif
+                                            <div class="min-w-0 space-y-0.5">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-sm font-black text-slate-950 dark:text-white truncate">{{ $producto['nombre'] }}</span>
+                                                    <span class="rounded-lg bg-emerald-100 text-emerald-700 dark:bg-slate-800 px-1.5 py-0.5 text-[9px] font-black dark:text-slate-300 border border-emerald-200 dark:border-slate-700">
+                                                        {{ $producto['presentacion'] }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                                    Cod: {{ $producto['codigo'] }} | Stock: {{ number_format($producto['stock'], 0) }}
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-sm font-black text-emerald-400">
@@ -589,15 +642,22 @@
                                             data-index="{{ $sinStockIndex }}"
                                             class="w-full px-4 py-3 text-left hover:bg-amber-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
                                         >
-                                            <div class="space-y-0.5">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-sm font-black text-slate-950 dark:text-white">{{ $producto['nombre'] }}</span>
-                                                    <span class="rounded bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.2 text-[9px] font-bold text-amber-200">
-                                                        {{ $producto['presentacion'] }}
-                                                    </span>
-                                                </div>
-                                                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                                    Cod: {{ $producto['codigo'] ?: 'Sin codigo' }} | Stock: 0
+                                            <div class="flex min-w-0 items-center gap-3">
+                                                @if(!empty($producto['imagen_url']))
+                                                    <img src="{{ $producto['imagen_url'] }}" alt="{{ $producto['nombre'] }}" class="h-11 w-11 shrink-0 rounded-xl border border-white/70 object-cover shadow-sm dark:border-slate-700">
+                                                @else
+                                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-lg">📦</div>
+                                                @endif
+                                                <div class="min-w-0 space-y-0.5">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-sm font-black text-slate-950 dark:text-white truncate">{{ $producto['nombre'] }}</span>
+                                                        <span class="rounded bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.2 text-[9px] font-bold text-amber-200">
+                                                            {{ $producto['presentacion'] }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                                        Cod: {{ $producto['codigo'] ?: 'Sin codigo' }} | Stock: 0
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-300">
@@ -627,12 +687,7 @@
                             </div>
                         @endif
                     </div>
-                    <!-- Mock Barcode Scanner Button -->
-                    <button type="button" class="p-3 bg-slate-200/50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border pos-border rounded-xl text-slate-500 dark:text-slate-300 focus:outline-none transition">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m-8 4v8m0-8h8m-8 8h8M4 12h16m0 0v-4m0 4v4m0-8h-4" />
-                        </svg>
-                    </button>
+                    
                 </div>
 
                 <!-- Catalog Grid (Shown if Category Filter is active) -->
@@ -655,11 +710,18 @@
                                 <button 
                                     type="button"
                                     wire:click="agregarProducto({{ $prod['producto_presentacion_id'] }})"
-                                    class="p-2.5 rounded-xl border pos-border bg-slate-100/40 dark:bg-slate-900/40 hover:border-blue-500 dark:hover:border-emerald-500 transition text-left flex flex-col justify-between h-24"
+                                    class="p-2.5 rounded-xl border pos-border bg-slate-100/40 dark:bg-slate-900/40 hover:border-blue-500 dark:hover:border-emerald-500 transition text-left flex flex-col justify-between h-28"
                                 >
-                                    <div>
-                                        <h3 class="text-xs font-bold leading-tight line-clamp-2 pos-text">{{ $prod['nombre'] }}</h3>
-                                        <p class="text-[9px] pos-text-muted mt-0.5">{{ $prod['presentacion'] }}</p>
+                                    <div class="flex gap-2">
+                                        @if(!empty($prod['imagen_url']))
+                                            <img src="{{ $prod['imagen_url'] }}" alt="{{ $prod['nombre'] }}" class="h-10 w-10 shrink-0 rounded-lg border pos-border object-cover shadow-inner">
+                                        @else
+                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border pos-border bg-white/50 text-base dark:bg-slate-950/40">📦</div>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <h3 class="text-xs font-bold leading-tight line-clamp-2 pos-text">{{ $prod['nombre'] }}</h3>
+                                            <p class="text-[9px] pos-text-muted mt-0.5 truncate">{{ $prod['presentacion'] }}</p>
+                                        </div>
                                     </div>
                                     <div class="flex justify-between items-end mt-1">
                                         <span class="text-[9px] font-bold {{ $prod['stock'] > 10 ? 'text-emerald-500' : 'text-amber-500' }}">
@@ -695,38 +757,59 @@
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
                                 @forelse($cartItems as $index => $item)
                                     @php($stockSobregirado = (float) ($item['cantidad'] ?? 0) > (float) ($item['stock'] ?? 0))
+                                    @php($cantidadItem = (float) ($item['cantidad'] ?? 0))
+                                    @php($precioItem = (float) ($item['precio'] ?? 0))
                                     <tr wire:key="cart-item-row-{{ $item['producto_presentacion_id'] }}-{{ $item['cantidad'] }}" class="align-middle pos-table-row transition-all duration-150 animate-add-item">
                                         <!-- Product info with mock icon -->
                                         <td class="py-2.5 pr-2">
                                             <div class="flex items-center gap-2">
-                                                <!-- Mock Product Icon -->
-                                                <div class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-900 border pos-border flex items-center justify-center text-base shrink-0 shadow-inner">
-                                                    @if(stripos($item['nombre'], 'agua') !== false)
-                                                        🥤
-                                                    @elseif(stripos($item['nombre'], 'gaseosa') !== false || stripos($item['nombre'], 'cola') !== false)
-                                                        🥤
-                                                    @elseif(stripos($item['nombre'], 'pan') !== false)
-                                                        🍞
-                                                    @elseif(stripos($item['nombre'], 'leche') !== false)
-                                                        🥛
-                                                    @elseif(stripos($item['nombre'], 'snack') !== false || stripos($item['nombre'], 'papa') !== false)
-                                                        🍟
-                                                    @elseif(stripos($item['nombre'], 'arroz') !== false)
-                                                        🌾
-                                                    @elseif(stripos($item['nombre'], 'huevo') !== false)
-                                                        🥚
-                                                    @else
-                                                        📦
-                                                    @endif
-                                                </div>
+                                                @if(!empty($item['imagen_url']))
+                                                    <img src="{{ $item['imagen_url'] }}" alt="{{ $item['nombre'] }}" class="h-9 w-9 rounded-lg border pos-border object-cover shrink-0 shadow-inner">
+                                                @else
+                                                    <div class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-900 border pos-border flex items-center justify-center text-base shrink-0 shadow-inner">
+                                                        @if(stripos($item['nombre'], 'agua') !== false)
+                                                            🥤
+                                                        @elseif(stripos($item['nombre'], 'gaseosa') !== false || stripos($item['nombre'], 'cola') !== false)
+                                                            🥤
+                                                        @elseif(stripos($item['nombre'], 'pan') !== false)
+                                                            🍞
+                                                        @elseif(stripos($item['nombre'], 'leche') !== false)
+                                                            🥛
+                                                        @elseif(stripos($item['nombre'], 'snack') !== false || stripos($item['nombre'], 'papa') !== false)
+                                                            🍟
+                                                        @elseif(stripos($item['nombre'], 'arroz') !== false)
+                                                            🌾
+                                                        @elseif(stripos($item['nombre'], 'huevo') !== false)
+                                                            🥚
+                                                        @else
+                                                            📦
+                                                        @endif
+                                                    </div>
+                                                @endif
                                                 <div class="min-w-0">
                                                     <span class="font-bold text-xs block leading-tight truncate pos-text">{{ $item['nombre'] }}</span>
-                                                    <span class="text-[10px] pos-text-muted block mt-0.5">{{ $item['presentacion'] }}</span>
-                                                    @if($stockSobregirado)
-                                                        <span class="mt-1 inline-flex rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                                                            Stock insuficiente, quedara en 0
-                                                        </span>
-                                                    @endif
+                                                    <span class="mt-0.5 flex items-center gap-1.5 text-[10px] pos-text-muted">
+                                                        <span class="truncate">{{ $item['presentacion'] }}</span>
+                                                        @if($stockSobregirado)
+                                                            <span x-data="{ show: false }" class="relative inline-flex">
+                                                                <button
+                                                                    type="button"
+                                                                    x-on:click="show = ! show"
+                                                                    x-on:click.outside="show = false"
+                                                                    class="inline-flex h-4 w-4 items-center justify-center rounded-full border border-amber-400/60 bg-amber-400/15 text-[10px] font-black text-amber-600 transition hover:bg-amber-400/25 dark:text-amber-300"
+                                                                    title="Stock insuficiente"
+                                                                >!</button>
+                                                                <span
+                                                                    x-cloak
+                                                                    x-show="show"
+                                                                    x-transition
+                                                                    class="absolute left-5 top-1/2 z-30 w-52 -translate-y-1/2 rounded-xl border border-amber-400/30 bg-amber-50 px-3 py-2 text-left text-[10px] font-bold leading-snug text-amber-800 shadow-xl dark:bg-slate-950 dark:text-amber-200"
+                                                                >
+                                                                    Stock disponible: {{ number_format((float) ($item['stock'] ?? 0), 3) }}. La venta se permitira y el inventario quedara en 0.
+                                                                </span>
+                                                            </span>
+                                                        @endif
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
@@ -742,11 +825,13 @@
                                                     -
                                                 </button>
                                                 <input 
-                                                    type="number" 
+                                                    type="text" 
+                                                    inputmode="decimal"
+                                                    pattern="[0-9]*[.]?[0-9]*"
                                                     step="0.001"
-                                                    value="{{ $item['cantidad'] }}"
+                                                    value="{{ $cantidadItem }}"
                                                     wire:change="actualizarCantidad({{ $index }}, $event.target.value)"
-                                                    @keydown="if (['e', 'E', '+', '-'].includes($event.key)) $event.preventDefault();"
+                                                    x-on:input="let v = $event.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); let p = v.split('.'); p[0] = (p[0] || '').slice(0, 6); if (p[1] !== undefined) p[1] = p[1].slice(0, 3); $event.target.value = p[1] !== undefined ? p[0] + '.' + p[1] : p[0];"
                                                     class="w-8 text-center bg-transparent border-0 p-0 text-xs font-bold focus:ring-0 focus:outline-none pos-text"
                                                 >
                                                 <button 
@@ -763,19 +848,22 @@
                                         <td class="py-2.5 text-right w-24">
                                              <div class="flex items-center justify-end">
                                                  <span class="text-xs font-semibold pos-text mr-1">S/</span>
-                                                 <input 
-                                                     type="number" 
-                                                     step="0.01" 
-                                                     wire:model.live.debounce.350ms="cartItems.{{ $index }}.precio"
-                                                     @keydown="if (['e', 'E', '+', '-'].includes($event.key)) $event.preventDefault();"
-                                                     class="w-20 text-right bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-blue-500 focus:outline-none pos-text"
-                                                 >
+                                                  <input 
+                                                      type="text" 
+                                                      inputmode="decimal"
+                                                      pattern="[0-9]*[.]?[0-9]*"
+                                                      step="0.01" 
+                                                      value="{{ number_format($precioItem, 2, '.', '') }}"
+                                                      wire:change="actualizarPrecio({{ $index }}, $event.target.value)"
+                                                      x-on:input="let v = $event.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); let p = v.split('.'); p[0] = (p[0] || '').slice(0, 6); if (p[1] !== undefined) p[1] = p[1].slice(0, 2); $event.target.value = p[1] !== undefined ? p[0] + '.' + p[1] : p[0];"
+                                                      class="w-20 text-right bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-blue-500 focus:outline-none pos-text"
+                                                  >
                                              </div>
                                         </td>
 
                                         <!-- Line Total -->
                                         <td class="py-2.5 text-right text-xs font-extrabold text-blue-600 dark:text-emerald-400">
-                                            S/{{ number_format($item['cantidad'] * $item['precio'], 2) }}
+                                            S/{{ number_format($cantidadItem * $precioItem, 2) }}
                                         </td>
 
                                         <!-- Remove item -->
@@ -1010,26 +1098,31 @@
             <!-- Column 4: Cajero image and Resumen (Col span: 3) -->
             <div class="col-span-12 lg:col-span-3 pos-column pos-scrollable pos-col-payment pr-1 relative z-10">
                  <!-- Comprobante Card -->
-                <div class="pos-card p-4 space-y-3 relative z-20">
-                    <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs uppercase tracking-wide">
-                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Comprobante</span>
-                    </div>
-                    <div>
-                        <label class="block font-semibold pos-text-muted text-xs mb-1">Tipo de comprobante</label>
-                        <select 
-                            wire:model.live="tipoComprobante" 
-                            wire:change="cambiarTipoComprobante($event.target.value)"
-                            class="w-full rounded-xl py-2.5 px-3 text-xs font-bold pos-select focus:outline-none"
-                        >
-                            <option value="TICKET">Ticket de Venta</option>
-                            <option value="BOLETA">Boleta de Venta</option>
-                            <option value="FACTURA">Factura de Venta</option>
-                        </select>
-                    </div>
-                </div>
+                 <div class="pos-card p-1.5 relative z-20 overflow-hidden border border-purple-500/15">
+                     <div class="absolute -right-8 -top-8 h-16 w-16 rounded-full bg-purple-500/10 blur-xl"></div>
+                     <div class="absolute -left-10 -bottom-10 h-16 w-16 rounded-full bg-blue-500/5 blur-xl"></div>
+                     
+                     <div class="relative grid grid-cols-3 gap-1 bg-slate-100/50 dark:bg-slate-950/40 rounded-xl p-1">
+                         @foreach([
+                             ['value' => 'TICKET', 'label' => 'Ticket', 'icon' => '🎫'],
+                             ['value' => 'BOLETA', 'label' => 'Boleta', 'icon' => '🧾'],
+                             ['value' => 'FACTURA', 'label' => 'Factura', 'icon' => '📄'],
+                         ] as $comp)
+                             <button
+                                 type="button"
+                                 wire:click="cambiarTipoComprobante('{{ $comp['value'] }}')"
+                                 @class([
+                                     'flex items-center justify-center gap-1.5 rounded-lg py-2 px-1 text-center transition-all duration-200 focus:outline-none',
+                                     'pos-comprobante-active font-black' => $tipoComprobante === $comp['value'],
+                                     'border-transparent text-slate-600 hover:text-purple-700 dark:text-slate-350 dark:hover:text-purple-300 hover:bg-white/40 dark:hover:bg-slate-900/40' => $tipoComprobante !== $comp['value'],
+                                 ])
+                             >
+                                 <span class="text-sm shrink-0">{{ $comp['icon'] }}</span>
+                                 <span class="text-[10px] font-black uppercase tracking-wide truncate">{{ $comp['label'] }}</span>
+                             </button>
+                         @endforeach
+                     </div>
+                 </div>
 
                 <!-- Resumen de Venta Card -->
                 <div class="pos-card p-5 space-y-4 border-l-4 border-l-amber-500">
@@ -1064,28 +1157,31 @@
                     </div>
 
                     <!-- Payment details -->
-                    <div class="border-t pos-border pt-3 space-y-2.5">
+                    <div class="border-t pos-border pt-3 space-y-3">
                         @if($medioPago === 'EFECTIVO')
-                            <div>
-                                <label class="block font-semibold pos-text-muted text-[10px] mb-1">Monto recibido</label>
-                                <div class="relative rounded-xl shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-xs font-bold">S/</div>
+                            <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 shadow-inner dark:bg-emerald-500/10">
+                                <label class="block font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300 text-[10px] mb-2">Monto recibido</label>
+                                <div class="relative rounded-2xl shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-500 text-sm font-black">S/</div>
                                     <input 
-                                        type="number" 
+                                        type="text"
+                                        inputmode="decimal"
+                                        pattern="[0-9]*[.]?[0-9]*"
                                         step="0.01" 
                                         wire:model.live.debounce.300ms="montoRecibido"
-                                        class="w-full pos-input rounded-xl py-2 pl-8 pr-3 text-xs font-bold focus:outline-none"
+                                        x-on:input="let v = $event.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); let p = v.split('.'); p[0] = (p[0] || '').slice(0, 6); if (p[1] !== undefined) p[1] = p[1].slice(0, 2); $event.target.value = p[1] !== undefined ? p[0] + '.' + p[1] : p[0];"
+                                        class="w-full pos-input rounded-2xl py-3.5 pl-10 pr-3 text-xl font-black font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                                         placeholder="0.00"
                                     >
                                 </div>
                             </div>
                             @php($vueltoCalculado = ((float) $montoRecibido) - $resumen['totales']['total_neto'])
-                            <div class="flex justify-between items-center text-xs font-bold pt-1">
+                            <div class="flex justify-between items-center text-xs font-bold rounded-xl bg-slate-100/70 dark:bg-slate-900/60 px-3 py-2">
                                 <span class="pos-text-muted">Vuelto</span>
                                 @if($vueltoCalculado >= 0)
-                                    <span class="text-emerald-500 font-mono text-sm">S/ {{ number_format($vueltoCalculado, 2) }}</span>
+                                    <span class="text-emerald-500 font-mono text-base font-black">S/ {{ number_format($vueltoCalculado, 2) }}</span>
                                 @else
-                                    <span class="text-rose-500 font-mono text-sm">Falta S/ {{ number_format(abs($vueltoCalculado), 2) }}</span>
+                                    <span class="text-rose-500 font-mono text-base font-black">Falta S/ {{ number_format(abs($vueltoCalculado), 2) }}</span>
                                 @endif
                             </div>
                         @else
@@ -1143,6 +1239,7 @@
             type="button"
             wire:click="guardarVenta"
             wire:loading.attr="disabled"
+            wire:target="guardarVenta"
             @disabled(!$this->canSave)
             :class="{'hidden lg:flex': activeTab === 'catalog', 'flex': activeTab !== 'catalog'}"
             class="px-8 py-3 rounded-xl font-extrabold text-sm items-center gap-2 transition shadow-md focus:outline-none {{ $this->canSave ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed' }}"

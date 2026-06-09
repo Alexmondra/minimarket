@@ -19,11 +19,11 @@ class Escritorio extends Page
 
     public function getHeading(): string
     {
-        return 'INICIO';
+        return '';
     }
 
     public function getSubheading(): ?string
     {
-        return 'Resumen general del negocio y estadísticas en tiempo real — ' . now()->format('d \d\e F, Y');
+        return null;
     }
 }

@@ -21,9 +21,6 @@
     // --- DATOS SUNAT DESDE LA TABLA SUNAT ---
     $sunat = $documento->sunat;
     $hash = $sunat?->hash ?? '';
-    $codigoSunat = $sunat?->codigo_respuesta_sunat ?? '';
-    $mensajeSunat = $sunat?->mensaje_sunat ?? '';
-    $sunatAceptado = $sunat && $sunat->estado_sunat;
     $numeroComprobante = str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT);
 
     // --- QR SUNAT ---
@@ -424,13 +421,6 @@
                         <span style="font-size: 7px;">Hash: {{ substr($hash, 0, 40) }}...</span><br>
                     @endif
                     Consulte en: <b>{{ $consultaUrl }}</b><br>
-                    @if($sunatAceptado)
-                        <span style="color: green; font-weight: bold;">Documento aceptado por SUNAT (Cód. {{ $codigoSunat }})</span>
-                    @elseif($codigoSunat === 'ERROR' || str_starts_with($codigoSunat, '2') || str_starts_with($codigoSunat, '3'))
-                        <span style="color: red; font-weight: bold;">Rechazado: {{ $mensajeSunat }}</span>
-                    @elseif($codigoSunat && $codigoSunat !== 'NO_APLICA')
-                        <span style="color: orange;">Pendiente SUNAT ({{ $codigoSunat }})</span>
-                    @endif
                 @else
                     <b>{{ $documento->serie }}-{{ $numeroComprobante }}</b><br>
                     Emitido: {{ now()->format('d/m/Y H:i') }}<br>
@@ -441,8 +431,7 @@
 
         {{-- PIE --}}
         <div class="text-center" style="margin-top: 8px; font-size: 9px;">
-            <div>Emitido por: {{ $documento->user?->name ?? 'Sistema' }}</div>
-            <div style="margin-top: 3px; font-weight: bold;">¡Gracias por su compra!</div>
+            <div style="font-weight: bold;">¡Gracias por su compra!</div>
         </div>
     </div>
 </body>

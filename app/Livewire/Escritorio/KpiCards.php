@@ -29,8 +29,8 @@ class KpiCards extends Component
     public function placeholder(): string
     {
         return <<<'HTML'
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-            @for ($i = 0; $i < 5; $i++)
+        <div class="kpi-strip-grid">
+            @for ($i = 0; $i < 3; $i++)
                 <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
                     <div class="skeleton h-8 w-8 rounded-xl"></div>
                     <div class="skeleton h-3 w-20"></div>

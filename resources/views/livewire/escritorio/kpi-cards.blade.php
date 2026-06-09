@@ -1,8 +1,8 @@
-<div>
+<div class="kpi-strip">
     {{-- Last updated indicator --}}
-    <div class="flex items-center justify-between mb-4">
-        <span class="text-[10.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Métricas de Control
+    <div class="mb-2 flex items-center justify-between gap-3 px-1">
+        <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+            Indicadores en tiempo real
         </span>
         @if($lastUpdated)
             <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500">
@@ -16,7 +16,7 @@
     </div>
 
     {{-- KPI Grid --}}
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div class="kpi-strip-grid">
         @php
             $iconMap = [
                 'heroicon-o-currency-dollar' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
@@ -35,11 +35,11 @@
             @php
                 $iconSvg = $iconMap[$kpi['icon']] ?? $iconMap['heroicon-o-currency-dollar'];
             @endphp
-            <div class="kpi-card kpi-{{ $kpi['color'] }}">
-                <div class="flex items-start justify-between mb-3.5">
+            <div class="kpi-card kpi-strip-card kpi-{{ $kpi['color'] }}">
+                <div class="flex items-start justify-between gap-2 mb-2">
                     {{-- Premium Squircle Icon Container --}}
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-{{ $kpi['color'] }}-500/10 text-{{ $kpi['color'] }}-600 dark:text-{{ $kpi['color'] }}-400 border border-{{ $kpi['color'] }}-500/15 transition-colors duration-300">
-                        <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">{!! $iconSvg !!}</svg>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-{{ $kpi['color'] }}-500/10 text-{{ $kpi['color'] }}-600 dark:text-{{ $kpi['color'] }}-400 border border-{{ $kpi['color'] }}-500/15 transition-colors duration-300">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">{!! $iconSvg !!}</svg>
                     </div>
                     @if($kpi['trend'] !== null)
                         <span @class([
@@ -58,12 +58,12 @@
                 </div>
                 
                 {{-- Metric Label --}}
-                <p class="text-[9.5px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 cursor-default">
+                <p class="mb-0.5 truncate text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider cursor-default">
                     {{ $kpi['label'] }}
                 </p>
 
                 {{-- Metric Value with Smaller/Subtle Currency Prefix --}}
-                <p class="text-xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tight flex items-baseline cursor-default">
+                <p class="flex items-baseline text-base font-extrabold text-slate-900 dark:text-white font-mono tracking-tight cursor-default">
                     @if($kpi['prefix'])
                         <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 mr-0.5 self-center">{{ $kpi['prefix'] }}</span>
                     @endif
@@ -79,4 +79,3 @@
     {{-- Auto-refresh every 60 seconds --}}
     <div wire:poll.60s="loadKpis"></div>
 </div>
-

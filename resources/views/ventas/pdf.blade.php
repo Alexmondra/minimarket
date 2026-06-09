@@ -21,9 +21,6 @@
 
     $sunat = $documento->sunat;
     $hash = $sunat?->hash ?? '';
-    $codigoSunat = $sunat?->codigo_respuesta_sunat ?? '';
-    $mensajeSunat = $sunat?->mensaje_sunat ?? '';
-    $sunatAceptado = $sunat && $sunat->estado_sunat;
     $numeroComprobante = str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT);
 
     $tipoDoc = match($documento->tipo_comprobante) {
@@ -153,23 +150,6 @@
         'NOTA_DEBITO' => 'NOTA DE DÉBITO ELECTRÓNICA',
         default => 'TICKET DE VENTA',
     };
-
-    $mostrarEstadoSunat = false;
-    $estadoSunatTexto = '';
-    $estadoSunatClase = '';
-    if (! $esTicket && in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA', 'NOTA_CREDITO', 'NOTA_DEBITO'], true) && $codigoSunat !== '') {
-        $mostrarEstadoSunat = true;
-        if ($sunatAceptado) {
-            $estadoSunatTexto = 'Aceptado por SUNAT';
-            $estadoSunatClase = 'status-ok';
-        } elseif ($codigoSunat === 'ERROR' || str_starts_with((string) $codigoSunat, '2') || str_starts_with((string) $codigoSunat, '3')) {
-            $estadoSunatTexto = 'Rechazado por SUNAT';
-            $estadoSunatClase = 'status-danger';
-        } else {
-            $estadoSunatTexto = 'Respuesta SUNAT registrada';
-            $estadoSunatClase = 'status-warn';
-        }
-    }
 
     $esAnulado = $documento->estado === false || $documento->estado === 'ANULADO';
 @endphp
@@ -637,17 +617,6 @@
             <table class="footer-table">
                 <tr>
                     <td>
-                        @if($mostrarEstadoSunat)
-                            <div>
-                                <span class="status-badge {{ $estadoSunatClase }}">{{ $estadoSunatTexto }}</span>
-                            </div>
-                        @endif
-                        @if(! $esTicket && $codigoSunat)
-                            <div style="margin-top: 8px;"><span class="strong">Código SUNAT:</span> {{ $codigoSunat }}</div>
-                        @endif
-                        @if(! $esTicket && $mensajeSunat && $codigoSunat)
-                            <div><span class="strong">Mensaje:</span> {{ $mensajeSunat }}</div>
-                        @endif
                         @if(! $esTicket && $hash)
                             <div class="hash"><span class="strong">Hash:</span> {{ $hash }}</div>
                         @endif

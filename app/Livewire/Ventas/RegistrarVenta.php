@@ -34,6 +34,8 @@ trait RegistrarVentaBehavior
 
     public bool $showSuccessModal = false;
 
+    public bool $isSaving = false;
+
     public ?int $selectedCategoriaId = null;
 
     public array $categorias = [];
@@ -689,6 +691,7 @@ trait RegistrarVentaBehavior
                 'nombre' => $producto->nombre,
                 'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
                 'presentacion' => $presentacion->tipo_presentacion ?: 'Presentacion',
+                'imagen_url' => $presentacion->imagen_url,
                 'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
                 'cantidad_presentacion' => $presentacion->cantidad ?? 1,
                 'stock' => $stock,
@@ -760,6 +763,7 @@ trait RegistrarVentaBehavior
                     'nombre' => $producto?->nombre ?? 'Producto',
                     'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto?->codigo_interno,
                     'presentacion' => $presentacion->tipo_presentacion ?: 'Presentacion',
+                    'imagen_url' => $presentacion->imagen_url,
                     'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
                 ];
             })
@@ -816,6 +820,7 @@ trait RegistrarVentaBehavior
             'nombre' => $producto->nombre,
             'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
             'presentacion' => $presentacion->tipo_presentacion ?: 'Presentación',
+            'imagen_url' => $presentacion->imagen_url,
             'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
             'cantidad_presentacion' => $presentacion->cantidad ?? 1,
             'stock' => $stock,
@@ -1205,17 +1210,14 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        $cantidad = max((float) $cantidad, 0.001);
+        $cantidad = $this->normalizarNumero($cantidad);
+        if ($cantidad === null) {
+            $cantidad = 1.0;
+        }
+
+        $cantidad = max($cantidad, 0.001);
         $this->cartItems[$index]['cantidad'] = round($cantidad, 3);
         $this->recalcularPrecio($index);
-
-        if ($cantidad > (float) ($this->cartItems[$index]['stock'] ?? 0)) {
-            Notification::make()
-                ->title('Stock insuficiente')
-                ->body('Estas sobregirando el stock. La venta se permitira y el inventario quedara en 0.')
-                ->warning()
-                ->send();
-        }
     }
 
     public function quitarItem(int $index): void
@@ -1261,42 +1263,62 @@ trait RegistrarVentaBehavior
 
     public function guardarVenta(): void
     {
+        if ($this->isSaving || $this->showSuccessModal) {
+            return;
+        }
+
+        $this->isSaving = true;
+
         if (! $this->sucursalId) {
             Notification::make()->title('Selecciona una sucursal')->warning()->send();
+            $this->isSaving = false;
 
             return;
         }
 
         if (empty($this->cartItems)) {
             Notification::make()->title('Agrega al menos un producto')->warning()->send();
+            $this->isSaving = false;
 
             return;
         }
 
         if (! $this->cajaAbierta) {
             Notification::make()->title('No hay una caja abierta para esta sucursal')->danger()->send();
+            $this->isSaving = false;
 
             return;
         }
 
+        $resumen = $this->getResumenProperty();
+        $totalNeto = (float) ($resumen['totales']['total_neto'] ?? 0.0);
+
         if ($this->tipoComprobante === 'FACTURA' && strlen(trim($this->clienteDocumento)) !== 11) {
             Notification::make()->title('La factura requiere RUC del cliente')->danger()->send();
+            $this->isSaving = false;
+
+            return;
+        }
+
+        if ($this->tipoComprobante === 'BOLETA' && $totalNeto > 700 && trim($this->clienteDocumento) === '') {
+            Notification::make()->title('La boleta mayor a S/ 700 requiere cliente')->warning()->send();
+            $this->isSaving = false;
 
             return;
         }
 
         if ($this->usarPuntos && $this->puntosCanjear > $this->puntosDisponibles) {
             Notification::make()->title('Los puntos canjeados superan el saldo disponible')->danger()->send();
+            $this->isSaving = false;
 
             return;
         }
-
-        $resumen = $this->getResumenProperty();
 
         if ($this->medioPago !== 'EFECTIVO') {
             $this->montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
         } elseif ((float) $this->montoRecibido < (float) $resumen['totales']['total_neto']) {
             Notification::make()->title('El monto recibido no cubre el total de la venta')->danger()->send();
+            $this->isSaving = false;
 
             return;
         }
@@ -1343,6 +1365,8 @@ trait RegistrarVentaBehavior
                 ->title($e->getMessage() ?: 'No se pudo registrar la venta.')
                 ->danger()
                 ->send();
+        } finally {
+            $this->isSaving = false;
         }
     }
 
@@ -1357,6 +1381,10 @@ trait RegistrarVentaBehavior
 
     public function getCanSaveProperty(): bool
     {
+        if ($this->isSaving || $this->showSuccessModal) {
+            return false;
+        }
+
         if (! $this->sucursalId) {
             return false;
         }
@@ -1375,6 +1403,10 @@ trait RegistrarVentaBehavior
 
         $resumen = $this->resumen;
         $totalNeto = (float) ($resumen['totales']['total_neto'] ?? 0.0);
+
+        if ($this->tipoComprobante === 'BOLETA' && $totalNeto > 700 && trim($this->clienteDocumento) === '') {
+            return false;
+        }
 
         if ($this->medioPago === 'EFECTIVO' && ((float) $this->montoRecibido) < $totalNeto) {
             return false;
@@ -1408,7 +1440,12 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        $precio = max((float) $precio, 0.0);
+        $precio = $this->normalizarNumero($precio);
+        if ($precio === null) {
+            $precio = (float) ($this->cartItems[$index]['precio'] ?? $this->cartItems[$index]['precio_regular'] ?? 0);
+        }
+
+        $precio = min(max($precio, 0.0), 999999.99);
         $this->cartItems[$index]['precio'] = round($precio, 2);
         $this->cartItems[$index]['precio_manual'] = true;
     }
@@ -1479,9 +1516,46 @@ trait RegistrarVentaBehavior
             $parts = explode('.', $key);
             $index = (int) $parts[0];
             if (isset($this->cartItems[$index])) {
-                $this->cartItems[$index]['precio_manual'] = true;
+                $this->actualizarPrecio($index, $value);
+            }
+
+            return;
+        }
+
+        if (str_contains($key, '.cantidad')) {
+            $parts = explode('.', $key);
+            $index = (int) $parts[0];
+            if (isset($this->cartItems[$index])) {
+                $this->actualizarCantidad($index, $value);
             }
         }
+    }
+
+    public function updatedMontoRecibido($value): void
+    {
+        $monto = $this->normalizarNumero($value);
+        $this->montoRecibido = $monto === null ? 0.0 : round(min($monto, 999999.99), 2);
+    }
+
+    protected function normalizarNumero($value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace(',', '.', trim((string) $value));
+        $value = preg_replace('/[^0-9.]/', '', $value);
+
+        if ($value === null || $value === '' || $value === '.') {
+            return null;
+        }
+
+        $parts = explode('.', $value);
+        if (count($parts) > 2) {
+            $value = array_shift($parts) . '.' . implode('', $parts);
+        }
+
+        return is_numeric($value) ? min((float) $value, 999999.999) : null;
     }
 
     public function rendering(): void
@@ -1667,6 +1741,7 @@ trait RegistrarVentaBehavior
                 'nombre' => $producto->nombre,
                 'codigo' => $presentacion->barras->first()?->codigo_barra ?: $producto->codigo_interno,
                 'presentacion' => $presentacion->tipo_presentacion ?: 'Presentación',
+                'imagen_url' => $presentacion->imagen_url,
                 'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
                 'cantidad_presentacion' => $presentacion->cantidad ?? 1,
                 'stock' => $stock,

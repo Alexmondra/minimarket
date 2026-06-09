@@ -233,12 +233,6 @@ class MetricCalculator
                 'ventas_dia' => $this->ventasDelDia(),
                 'ganancia_neta' => $this->gananciaNeta(),
                 'tickets_vendidos' => $this->ticketsVendidos(),
-                'productos_vendidos' => $this->productosVendidos(),
-                'productos_bajo_stock' => $this->productosBajoStock(),
-                'productos_por_vencer' => $this->productosPorVencer(),
-                'total_clientes' => $this->totalClientes(),
-                'total_ingresos' => $this->totalIngresos(),
-                'cajas_abiertas' => $this->cajasAbiertasCount(),
             ];
         });
     }
