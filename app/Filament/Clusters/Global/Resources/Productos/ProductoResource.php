@@ -119,11 +119,7 @@ class ProductoResource extends Resource
                 ->maxLength(65535)
                 ->default(null)
                 ->columnSpanFull(),
-            Toggle::make('afecto_igv')
-                ->label('¿Afecto a IGV?')
-                ->default(true),
-            Toggle::make('activo')
-                ->default(true),
+
         ];
 
         if ($isCreate) {

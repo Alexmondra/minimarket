@@ -75,13 +75,6 @@
                                class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
                     </div>
 
-                    {{-- Afecto IGV --}}
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" wire:model="afectoIgv" id="afectoIgv"
-                               class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
-                        <label for="afectoIgv" class="text-xs text-gray-700 dark:text-gray-300">Afecto a IGV</label>
-                    </div>
-
                     <hr class="border-gray-200 dark:border-gray-600">
 
                     <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Presentación Básica</h4>

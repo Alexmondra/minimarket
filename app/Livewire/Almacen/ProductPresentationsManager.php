@@ -70,9 +70,7 @@ class ProductPresentationsManager extends Component
 
     public ?string $product_descripcion = null;
 
-    public bool $product_afecto_igv = true;
 
-    public bool $product_activo = true;
 
     // Búsqueda de autocompletado
     public string $searchBaseTerm = '';
@@ -400,9 +398,6 @@ class ProductPresentationsManager extends Component
         $this->product_marca_id = $this->record->marca_id;
         $this->product_codigo_interno = $this->record->codigo_interno;
         $this->product_descripcion = $this->record->descripcion;
-        $this->product_afecto_igv = (bool) $this->record->afecto_igv;
-        $this->product_activo = (bool) $this->record->activo;
-
         $this->showProductModal = true;
     }
 
@@ -417,8 +412,7 @@ class ProductPresentationsManager extends Component
             'product_marca_id' => 'required|exists:marcas,id',
             'product_codigo_interno' => 'nullable|string|max:255|unique:productos,codigo_interno,'.$this->record->id,
             'product_descripcion' => 'nullable|string',
-            'product_afecto_igv' => 'boolean',
-            'product_activo' => 'boolean',
+
         ], [
             'product_nombre.required' => 'El nombre del producto es requerido.',
             'product_categoria_id.required' => 'La categoría es requerida.',
@@ -432,8 +426,8 @@ class ProductPresentationsManager extends Component
                 'marca_id' => $this->product_marca_id,
                 'codigo_interno' => $this->product_codigo_interno,
                 'descripcion' => $this->product_descripcion,
-                'afecto_igv' => $this->product_afecto_igv,
-                'activo' => $this->product_activo,
+                'afecto_igv' => true,
+                'activo' => true,
             ]);
 
             Notification::make()

@@ -453,8 +453,8 @@
                                     class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Email</label>
-                                <input type="email" wire:model="nuevoProveedorEmail" placeholder="Email"
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Correo electrónico</label>
+                                <input type="email" wire:model="nuevoProveedorEmail" placeholder="Correo electrónico"
                                     class="w-full px-3 py-2 rounded-xl border text-sm transition-all duration-200 shadow-sm border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-700/80 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
                             </div>
                             <div>

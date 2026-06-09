@@ -1391,7 +1391,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
                     </div>
 
                     <div>
-                        <label class="block font-semibold pos-text-muted mb-1">Email (Opcional)</label>
+                        <label class="block font-semibold pos-text-muted mb-1">Correo electrónico (Opcional)</label>
                         <input 
                             type="email" 
                             wire:model="clienteEmail" 
@@ -1473,7 +1473,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
                     </div>
 
                     <div>
-                        <label class="block font-semibold pos-text-muted mb-1">Email</label>
+                        <label class="block font-semibold pos-text-muted mb-1">Correo electrónico</label>
                         <input 
                             type="email" 
                             wire:model="clienteEmail" 

@@ -112,7 +112,7 @@
                     <div class="relative flex justify-center mb-4">
                         <div class="relative w-24 h-24 lg:w-28 lg:h-28">
                             <img src="{{ asset('images/landing/shopping-basket.png') }}" 
-                                 alt="Welcome basket" 
+                                 alt="Canasta de bienvenida" 
                                  class="w-full h-full object-contain hover:scale-105 transition-transform duration-300">
                             
                             <!-- Green Checkmark Badge -->

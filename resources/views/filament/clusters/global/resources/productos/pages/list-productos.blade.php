@@ -725,26 +725,7 @@
                         @error('codigo_interno') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Afecto IGV y Estado Activo -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- Afecto IGV -->
-                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Afecto IGV</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" wire:model="afecto_igv" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
-                        </div>
-                        
-                        <!-- Activo -->
-                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Activo</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" wire:model="activo" class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                            </label>
-                        </div>
-                    </div>
+
 
                     <!-- Descripción -->
                     <div class="space-y-1.5 md:col-span-2">

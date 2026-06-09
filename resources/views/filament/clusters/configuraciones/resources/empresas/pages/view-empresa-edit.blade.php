@@ -14,7 +14,7 @@
                 <div x-data="{ logoPreview: '{{ $this->record->logo ? asset("storage/" . $this->record->logo) : "" }}' }" class="relative shrink-0">
                     <div class="flex h-24 w-24 items-center justify-center rounded-2xl bg-white p-2 shadow-lg border border-slate-200 dark:border-slate-700/50 overflow-hidden">
                         <template x-if="logoPreview">
-                            <img :src="logoPreview" alt="Logo preview" class="max-h-full max-w-full object-contain rounded-xl">
+                            <img :src="logoPreview" alt="Vista previa del logo" class="max-h-full max-w-full object-contain rounded-xl">
                         </template>
                         <template x-if="!logoPreview">
                             <div class="flex h-full w-full items-center justify-center rounded-xl bg-slate-100 text-slate-800 font-black text-3xl">

@@ -27,8 +27,6 @@ class ModalCrearProducto extends Component
 
     public ?string $codigoInterno = null;
 
-    public bool $afectoIgv = true;
-
     // Datos de presentación
     public ?int $unidadMedidaId = null;
 
@@ -66,7 +64,7 @@ class ModalCrearProducto extends Component
     {
         $this->reset([
             'nombre', 'categoriaId', 'marcaId', 'codigoInterno',
-            'afectoIgv', 'unidadMedidaId', 'cantidadPorEmpaque',
+            'unidadMedidaId', 'cantidadPorEmpaque',
             'tipoPresentacion', 'codigoBarra', 'showCrearCategoria',
             'nuevaCategoria', 'showCrearMarca', 'nuevaMarca',
         ]);
@@ -142,7 +140,7 @@ class ModalCrearProducto extends Component
                 'codigo_interno' => $this->codigoInterno ?? 'PROD-'.strtoupper(substr(md5(uniqid()), 0, 8)),
                 'nombre' => $this->nombre,
                 'slug' => str($this->nombre)->slug(),
-                'afecto_igv' => $this->afectoIgv,
+                'afecto_igv' => true,
                 'activo' => true,
             ]);
 

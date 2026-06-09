@@ -42,8 +42,7 @@ class ListProductos extends Page
     public $marcaId = null;
     public $codigo_interno = '';
     public $descripcion = '';
-    public $afecto_igv = true;
-    public $activo = true;
+
 
     // Modal visibilities
     public $showModal = false;
@@ -207,8 +206,6 @@ class ListProductos extends Page
         $this->marcaId = $this->marcas->first()?->id ?? null;
         $this->codigo_interno = '';
         $this->descripcion = '';
-        $this->afecto_igv = true;
-        $this->activo = true;
         $this->showModal = true;
     }
 
@@ -225,8 +222,6 @@ class ListProductos extends Page
         $this->marcaId = $producto->marca_id;
         $this->codigo_interno = $producto->codigo_interno;
         $this->descripcion = $producto->descripcion;
-        $this->afecto_igv = (bool) $producto->afecto_igv;
-        $this->activo = (bool) $producto->activo;
         $this->showModal = true;
     }
 
@@ -238,11 +233,11 @@ class ListProductos extends Page
             'marcaId' => 'required|exists:marcas,id',
             'codigo_interno' => 'nullable|string|max:255',
             'descripcion' => 'nullable|string|max:65535',
-            'afecto_igv' => 'required|boolean',
-            'activo' => 'required|boolean',
         ];
 
-        $this->validate($rules);
+        $this->validate($rules, [
+            'nombre.required' => 'El nombre del producto es obligatorio.',
+        ]);
 
         DB::transaction(function () {
             $empresaId = auth()->user()->empresa_id;
@@ -291,8 +286,8 @@ class ListProductos extends Page
                     'marca_id' => $this->marcaId,
                     'codigo_interno' => $codigo,
                     'descripcion' => $this->descripcion,
-                    'afecto_igv' => $this->afecto_igv,
-                    'activo' => $this->activo,
+                    'afecto_igv' => true,
+                    'activo' => true,
                 ]);
 
                 Notification::make()
@@ -308,8 +303,8 @@ class ListProductos extends Page
                     'marca_id' => $this->marcaId,
                     'codigo_interno' => $codigo,
                     'descripcion' => $this->descripcion,
-                    'afecto_igv' => $this->afecto_igv,
-                    'activo' => $this->activo,
+                    'afecto_igv' => true,
+                    'activo' => true,
                 ]);
 
                 Notification::make()

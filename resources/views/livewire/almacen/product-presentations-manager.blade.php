@@ -303,26 +303,7 @@
                              @error('product_codigo_interno') <span class="text-xs text-rose-500 font-medium">{{ $message }}</span> @enderror
                          </div>
     
-                         <!-- Toggles: Afecto IGV / Activo -->
-                         <div class="grid grid-cols-2 gap-4">
-                             <!-- Afecto IGV -->
-                             <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/20 border border-slate-100 dark:border-[#1d2745]/30 rounded-2xl">
-                                 <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Afecto IGV</span>
-                                 <label class="relative inline-flex items-center cursor-pointer">
-                                     <input type="checkbox" wire:model="product_afecto_igv" class="sr-only peer">
-                                     <div class="w-9 h-5 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                 </label>
-                             </div>
-                             
-                             <!-- Activo -->
-                             <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/20 border border-slate-100 dark:border-[#1d2745]/30 rounded-2xl">
-                                 <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Activo</span>
-                                 <label class="relative inline-flex items-center cursor-pointer">
-                                     <input type="checkbox" wire:model="product_activo" class="sr-only peer">
-                                     <div class="w-9 h-5 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                 </label>
-                             </div>
-                         </div>
+
     
                          <!-- Descripción -->
                          <div class="space-y-1.5 md:col-span-2">
@@ -438,7 +419,7 @@
                              <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/20 border border-slate-100 dark:border-[#1d2745]/30 rounded-2xl">
                                  <div class="flex flex-col">
                                      <span class="text-xs font-bold text-slate-700 dark:text-slate-300">¿Es pesable?</span>
-                                     <span class="text-[10px] text-slate-400 dark:text-slate-500">Active si el producto se vende al peso</span>
+                                     <span class="text-[10px] text-slate-400 dark:text-slate-500">Activo si el producto se vende al peso</span>
                                  </div>
                                  <label class="relative inline-flex items-center cursor-pointer">
                                      <input type="checkbox" wire:model="es_pesable" class="sr-only peer">

@@ -209,8 +209,7 @@
                             </div>
                             @error('precioVenta') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror
                         </div>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Oferta</label><input type="number" min="0" step="0.01" wire:model="precioOferta" placeholder="Opcional" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white">@error('precioOferta') <p class="mt-1 text-xs font-bold text-rose-500">{{ $message }}</p> @enderror</div>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Mayorista</label><input type="number" min="0" step="0.01" wire:model="precioMayorista" placeholder="Opcional" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
                             <div><label class="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Min. mayorista</label><input type="number" min="1" wire:model="minimoMayorista" class="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:border-slate-700 dark:bg-slate-950/50 dark:text-white"></div>
                         </div>

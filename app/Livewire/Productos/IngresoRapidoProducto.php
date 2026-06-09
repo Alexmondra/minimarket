@@ -868,7 +868,7 @@ class IngresoRapidoProducto extends Component
     protected function generarCodigoLote(): string
     {
         $sucursalId = $this->sucursalId() ?: 0;
-        $base = 'ING-'.now()->format('Ymd').'-';
+        $base = 'FOOD-'.now()->format('Ymd').'-';
         $next = str_pad((string) (Lote::where('sucursal_id', $sucursalId)->where('codigo_lote', 'like', $base.'%')->count() + 1), 4, '0', STR_PAD_LEFT);
         $codigo = $base.$next;
 
