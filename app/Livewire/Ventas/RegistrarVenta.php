@@ -128,9 +128,11 @@ trait RegistrarVentaBehavior
 
     public bool $usarPuntos = false;
 
-    public int $puntosCanjear = 0;
+    public int|string|null $puntosCanjear = 0;
 
     public int $puntosDisponibles = 0;
+
+    public bool $showPuntosInfoModal = false;
 
     public bool $showVencidoWarningModal = false;
 
@@ -312,6 +314,7 @@ trait RegistrarVentaBehavior
         $this->clienteEmail = $cliente->email;
         $this->clienteDireccion = $cliente->direccion;
         $this->puntosDisponibles = app(PuntosService::class)->puntosDisponibles($cliente, Auth::user()->empresa_id);
+        $this->normalizarPuntosCanje();
         $this->searchCliente = '';
         $this->clientesResultados = [];
         $this->showClienteDropdown = false;
@@ -582,6 +585,7 @@ trait RegistrarVentaBehavior
             $this->clienteApellido = null;
             $this->clienteRazonSocial = null;
             $this->puntosDisponibles = 0;
+            $this->normalizarPuntosCanje();
 
             return;
         }
@@ -594,11 +598,46 @@ trait RegistrarVentaBehavior
         $this->clienteEmail = $cliente->email;
         $this->clienteDireccion = $cliente->direccion;
         $this->puntosDisponibles = app(PuntosService::class)->puntosDisponibles($cliente, Auth::user()->empresa_id);
+        $this->normalizarPuntosCanje();
     }
 
     public function updatedPuntosCanjear($value): void
     {
-        $this->puntosCanjear = max(min((int) $value, $this->puntosDisponibles), 0);
+        $this->normalizarPuntosCanje($value);
+    }
+
+    public function toggleDescuentoPuntos(): void
+    {
+        if ($this->usarPuntos) {
+            $this->usarPuntos = false;
+            $this->puntosCanjear = 0;
+
+            return;
+        }
+
+        $this->normalizarPuntosCanje($this->puntosCanjear);
+
+        if ((int) $this->puntosCanjear <= 0) {
+            Notification::make()
+                ->title('Ingresa la cantidad de puntos a descontar')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->usarPuntos = true;
+    }
+
+    public function updatedUsarPuntos(bool $value): void
+    {
+        if (! $value) {
+            $this->puntosCanjear = 0;
+
+            return;
+        }
+
+        $this->normalizarPuntosCanje($this->puntosCanjear);
     }
 
     public function updatedSearchProducto(): void
@@ -904,6 +943,7 @@ trait RegistrarVentaBehavior
         $this->productosResultados = [];
         $this->productosSinStockResultados = [];
         $this->showProductoDropdown = false;
+        $this->normalizarPuntosCanje();
     }
 
     public function abrirIngresoRapido(?int $presentacionId = null): void
@@ -1218,12 +1258,14 @@ trait RegistrarVentaBehavior
         $cantidad = max($cantidad, 0.001);
         $this->cartItems[$index]['cantidad'] = round($cantidad, 3);
         $this->recalcularPrecio($index);
+        $this->normalizarPuntosCanje();
     }
 
     public function quitarItem(int $index): void
     {
         unset($this->cartItems[$index]);
         $this->cartItems = array_values($this->cartItems);
+        $this->normalizarPuntosCanje();
     }
 
     public function incrementarCantidad(int $index): void
@@ -1290,6 +1332,7 @@ trait RegistrarVentaBehavior
             return;
         }
 
+        $this->normalizarPuntosCanje($this->puntosCanjear);
         $resumen = $this->getResumenProperty();
         $totalNeto = (float) ($resumen['totales']['total_neto'] ?? 0.0);
 
@@ -1308,7 +1351,7 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        if ($this->usarPuntos && $this->puntosCanjear > $this->puntosDisponibles) {
+        if ($this->usarPuntos && (int) $this->puntosCanjear > $this->puntosDisponibles) {
             Notification::make()->title('Los puntos canjeados superan el saldo disponible')->danger()->send();
             $this->isSaving = false;
 
@@ -1334,7 +1377,7 @@ trait RegistrarVentaBehavior
                 'referencia_pago' => $this->referenciaPago,
                 'observaciones' => $this->observaciones,
                 'porcentaje_igv' => $this->porcentajeIgv,
-                'puntos_canjeados' => $this->usarPuntos ? $this->puntosCanjear : 0,
+                'puntos_canjeados' => $this->usarPuntos ? (int) $this->puntosCanjear : 0,
                 'cliente' => [
                     'tipo_documento' => $this->clienteTipoDocumento,
                     'documento' => $this->clienteDocumento,
@@ -1432,7 +1475,7 @@ trait RegistrarVentaBehavior
             ])->all(),
             $this->preciosIncluyenImpuesto,
             $this->porcentajeIgv,
-            $this->usarPuntos ? app(PuntosService::class)->descuentoPorPuntos($this->puntosCanjear) : 0
+            $this->usarPuntos ? app(PuntosService::class)->descuentoPorPuntos((int) $this->puntosCanjear) : 0
         );
     }
 
@@ -1450,6 +1493,7 @@ trait RegistrarVentaBehavior
         $precio = min(max($precio, 0.0), 999999.99);
         $this->cartItems[$index]['precio'] = round($precio, 2);
         $this->cartItems[$index]['precio_manual'] = true;
+        $this->normalizarPuntosCanje();
     }
 
     public function procesarEnterBuscador(): void
@@ -1626,6 +1670,35 @@ trait RegistrarVentaBehavior
         $this->usarPuntos = false;
     }
 
+    protected function normalizarPuntosCanje($value = null): void
+    {
+        $puntos = is_numeric($value)
+            ? (int) $value
+            : (int) preg_replace('/\D+/', '', (string) ($value ?? $this->puntosCanjear));
+
+        $maxPorVenta = (int) floor($this->totalBrutoCarrito() / PuntosService::VALOR_DESCUENTO_POR_PUNTO);
+        $maximoPermitido = min($this->puntosDisponibles, $maxPorVenta);
+
+        $this->puntosCanjear = max(min($puntos, $maximoPermitido), 0);
+
+        if ($maximoPermitido <= 0 || ! $this->clienteId) {
+            $this->puntosCanjear = 0;
+            $this->usarPuntos = false;
+        }
+
+        if ((int) $this->puntosCanjear <= 0) {
+            $this->usarPuntos = false;
+        }
+    }
+
+    protected function totalBrutoCarrito(): float
+    {
+        return round(array_sum(array_map(
+            fn (array $item): float => max((float) ($item['cantidad'] ?? 0), 0) * max((float) ($item['precio'] ?? 0), 0),
+            $this->cartItems
+        )), 2);
+    }
+
     public function toggleTheme(): void
     {
         $this->posTheme = $this->posTheme === 'light' ? 'dark' : 'light';
@@ -1640,6 +1713,7 @@ trait RegistrarVentaBehavior
     {
         $this->cartItems = [];
         $this->montoRecibido = 0;
+        $this->normalizarPuntosCanje();
         Notification::make()->title('Carrito vaciado')->info()->send();
     }
 
@@ -1683,6 +1757,7 @@ trait RegistrarVentaBehavior
 
             $this->clienteId = $cliente->id;
             $this->puntosDisponibles = app(PuntosService::class)->puntosDisponibles($cliente, Auth::user()->empresa_id);
+            $this->normalizarPuntosCanje();
 
             Notification::make()->title('Cliente registrado con éxito')->success()->send();
         } catch (\Exception $e) {

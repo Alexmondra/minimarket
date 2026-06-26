@@ -9,9 +9,9 @@ use App\Models\Documento;
 
 class PuntosService
 {
-    public const SOLES_POR_PUNTO_GANADO = 10;
+    public const SOLES_POR_PUNTO_GANADO = 1;
 
-    public const VALOR_DESCUENTO_POR_PUNTO = 0.10;
+    public const VALOR_DESCUENTO_POR_PUNTO = 0.02;
 
     public function puntosDisponibles(?Cliente $cliente, int $empresaId): int
     {

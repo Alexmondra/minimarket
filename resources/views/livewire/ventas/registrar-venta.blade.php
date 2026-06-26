@@ -1013,6 +1013,56 @@
                                 </button>
                             </div>
                         </div>
+
+                        @if($puntosDisponibles > 0)
+                            @php($descuentoPuntosPreview = app(\App\Support\Ventas\PuntosService::class)->descuentoPorPuntos((int) $puntosCanjear))
+                            <div class="rounded-xl border border-amber-400/30 bg-amber-400/10 p-2.5 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-300">
+                                        {{ number_format($puntosDisponibles) }} pts disponibles
+                                    </span>
+                                    <button
+                                        type="button"
+                                        wire:click="$set('showPuntosInfoModal', true)"
+                                        class="h-6 w-6 rounded-lg border border-amber-400/40 bg-amber-400/10 text-[11px] font-black text-amber-600 dark:text-amber-300 hover:bg-amber-400/20"
+                                        title="Ver regla de puntos"
+                                    >
+                                        !
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-[1fr_auto] gap-2 items-end">
+                                    <div>
+                                        <label class="block text-[10px] font-bold pos-text-muted mb-1">Puntos a descontar</label>
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            pattern="[0-9]*"
+                                            wire:model.live.debounce.250ms="puntosCanjear"
+                                            x-on:input="$event.target.value = $event.target.value.replace(/[^0-9]/g, '')"
+                                            class="w-full pos-input rounded-xl py-2 px-3 text-sm font-black font-mono focus:outline-none"
+                                            placeholder="0"
+                                        >
+                                    </div>
+                                    <div class="rounded-xl bg-white/60 dark:bg-slate-950/50 border pos-border px-3 py-2 min-w-[92px] text-right">
+                                        <span class="block text-[9px] font-bold pos-text-muted uppercase">Descuento</span>
+                                        <span class="block text-sm font-black font-mono {{ $usarPuntos ? 'text-emerald-500' : 'text-amber-600 dark:text-amber-300' }}">S/ {{ number_format($descuentoPuntosPreview, 2) }}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    wire:click="toggleDescuentoPuntos"
+                                    class="w-full rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-wide transition {{ $usarPuntos ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white' }}"
+                                >
+                                    {{ $usarPuntos ? 'Quitar descuento' : 'Aplicar descuento' }}
+                                </button>
+                            </div>
+                        @else
+                            <div class="rounded-xl border pos-border bg-slate-100/40 dark:bg-slate-900/40 px-3 py-2 text-[10px] font-bold pos-text-muted">
+                                Este cliente aún no tiene puntos disponibles.
+                            </div>
+                        @endif
                     @endif
                 </div>
 
@@ -1252,6 +1302,33 @@
             </span>
         </button>
     </div>
+
+    @if ($showPuntosInfoModal)
+        <div
+            @click.self="$wire.set('showPuntosInfoModal', false)"
+            class="fixed inset-0 flex items-center justify-center bg-slate-950/70 backdrop-blur-md transition-all duration-350"
+            style="z-index: 99999 !important;"
+        >
+            <div class="pos-card p-5 max-w-sm w-full mx-4 space-y-4 shadow-2xl border pos-border bg-white/90 dark:bg-slate-900/90 rounded-2xl">
+                <div class="flex items-center justify-between border-b pos-border pb-2">
+                    <h3 class="text-sm font-black pos-text">Regla de puntos</h3>
+                    <button type="button" wire:click="$set('showPuntosInfoModal', false)" class="pos-text-muted hover:text-rose-500 transition font-bold text-lg">&times;</button>
+                </div>
+                <div class="space-y-2 text-xs pos-text-muted leading-relaxed">
+                    <p>El cliente gana 1 punto por cada S/ 1.00 de compra.</p>
+                    <p>Cada punto equivale a S/ {{ number_format(\App\Support\Ventas\PuntosService::VALOR_DESCUENTO_POR_PUNTO, 2) }} de descuento.</p>
+                    <p>Si ingresas más puntos de los disponibles o más de lo permitido por el total de la venta, el sistema lo ajusta automáticamente al máximo posible.</p>
+                </div>
+                <button
+                    type="button"
+                    wire:click="$set('showPuntosInfoModal', false)"
+                    class="w-full rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-black text-white transition"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    @endif
 
     <!-- 4. Modal de Impresión / Éxito -->
     @if ($showSuccessModal && $createdDocumentoId)

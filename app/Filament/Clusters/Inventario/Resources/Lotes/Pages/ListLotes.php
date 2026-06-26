@@ -448,7 +448,69 @@ class ListLotes extends ListRecords
                             ->success()
                             ->send();
                     })
-                    ->label('Acciones'),
+                    ->label('Merma'),
+                \Filament\Actions\Action::make('cambiarFechas')
+                    ->label('Cambiar fechas')
+                    ->icon('heroicon-m-calendar-days')
+                    ->color('warning')
+                    ->button()
+                    ->size('sm')
+                    ->modalHeading(fn (\App\Models\Lote $record): string => "Cambiar fechas del lote {$record->codigo_lote}")
+                    ->modalSubmitActionLabel('Guardar fechas')
+                    ->fillForm(fn (\App\Models\Lote $record): array => [
+                        'fecha_fabricacion' => $record->fecha_fabricacion?->format('Y-m-d'),
+                        'fecha_vencimiento' => $record->fecha_vencimiento?->format('Y-m-d'),
+                    ])
+                    ->form(fn (\App\Models\Lote $record): array => [
+                        \Filament\Forms\Components\Placeholder::make('advertencia_cambio_fechas')
+                            ->label('Advertencia')
+                            ->content(new \Illuminate\Support\HtmlString(
+                                "Este producto <strong>{$record->producto_nombre}</strong> del lote <strong>{$record->codigo_lote}</strong> puede estar vencido o próximo a vencer.<br>" .
+                                'Cambie la fecha de fabricación o vencimiento solo si hubo un error al registrar el lote. Verifique físicamente el producto antes de guardar los cambios.'
+                            )),
+                        DatePicker::make('fecha_fabricacion')
+                            ->label('Fecha de fabricación')
+                            ->displayFormat('d/m/Y')
+                            ->native(false),
+                        DatePicker::make('fecha_vencimiento')
+                            ->label('Fecha de vencimiento')
+                            ->displayFormat('d/m/Y')
+                            ->native(false),
+                    ])
+                    ->action(function (\App\Models\Lote $record, array $data): void {
+                        $fechaFabricacion = filled($data['fecha_fabricacion'] ?? null)
+                            ? \Carbon\Carbon::parse($data['fecha_fabricacion'])->startOfDay()
+                            : null;
+                        $fechaVencimiento = filled($data['fecha_vencimiento'] ?? null)
+                            ? \Carbon\Carbon::parse($data['fecha_vencimiento'])->startOfDay()
+                            : null;
+
+                        if ($fechaFabricacion && $fechaVencimiento && $fechaVencimiento->lt($fechaFabricacion)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('La fecha de vencimiento no puede ser anterior a la fecha de fabricación')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        $estadoLote = match (true) {
+                            $record->stock_total <= 0 => 'agotado',
+                            $fechaVencimiento && $fechaVencimiento->lte(now()->startOfDay()) => 'por_confirmar',
+                            default => 'activo',
+                        };
+
+                        $record->update([
+                            'fecha_fabricacion' => $fechaFabricacion?->toDateString(),
+                            'fecha_vencimiento' => $fechaVencimiento?->toDateString(),
+                            'estado_lote' => $estadoLote,
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Fechas del lote actualizadas correctamente')
+                            ->success()
+                            ->send();
+                    }),
             ]);
     }
 

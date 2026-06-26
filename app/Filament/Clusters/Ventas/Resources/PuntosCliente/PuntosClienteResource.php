@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Ventas\Resources\PuntosCliente;
 
 use App\Filament\Clusters\Ventas\Resources\PuntosCliente\Pages\ListPuntosCliente;
+use App\Models\Cliente;
 use App\Models\ClientePunto;
 use App\Support\SucursalContext;
 use BackedEnum;
@@ -37,10 +38,17 @@ class PuntosClienteResource extends Resource
                 TextColumn::make('cliente.documento')
                     ->label('Documento')
                     ->searchable(),
-                TextColumn::make('cliente.razon_social')
+                TextColumn::make('cliente_nombre')
                     ->label('Cliente')
-                    ->formatStateUsing(fn ($state, ClientePunto $record) => $state ?: trim(($record->cliente?->nombre ?? '').' '.($record->cliente?->apellido ?? '')))
-                    ->searchable(),
+                    ->state(fn (ClientePunto $record): string => $record->cliente ? self::nombreCliente($record->cliente) : 'Cliente sin nombre')
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
+                        ->whereHas('cliente', fn (Builder $q): Builder => $q
+                            ->where('razon_social', 'like', "%{$search}%")
+                            ->orWhere('nombre', 'like', "%{$search}%")
+                            ->orWhere('apellido', 'like', "%{$search}%")
+                            ->orWhere('documento', 'like', "%{$search}%")
+                        )
+                    ),
                 TextColumn::make('sucursal.nombre_sucursal')
                     ->label('Sucursal'),
                 TextColumn::make('puntos')
@@ -52,6 +60,13 @@ class PuntosClienteResource extends Resource
                     ->dateTime('d/m/Y H:i'),
             ])
             ->defaultSort('updated_at', 'desc');
+    }
+
+    protected static function nombreCliente(Cliente $cliente): string
+    {
+        $nombre = trim((string) ($cliente->razon_social ?: trim(($cliente->nombre ?? '').' '.($cliente->apellido ?? ''))));
+
+        return $nombre !== '' ? $nombre : 'Cliente sin nombre';
     }
 
     public static function getEloquentQuery(): Builder

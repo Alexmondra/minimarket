@@ -4,17 +4,12 @@ namespace App\Filament\Clusters\Ventas\Resources\Documentos\Pages;
 
 use App\Filament\Clusters\Ventas\Resources\Documentos\DocumentoResource;
 use App\Models\Cliente;
-use App\Models\Serie;
-use App\Support\Facturacion\FacturacionService;
 use App\Support\Ventas\AnulacionService;
-use App\Support\Ventas\VentaFileService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\Ventas\ConvertirTicketService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ViewDocumento extends ViewRecord
 {
@@ -92,69 +87,29 @@ class ViewDocumento extends ViewRecord
                         ->required(fn (callable $get) => $get('tipo_comprobante') === 'FACTURA'),
                 ])
                 ->action(function (array $data) use ($documento): void {
-                    DB::transaction(function () use ($documento, $data): void {
-                        $tipoComprobante = $data['tipo_comprobante'];
-                        $clienteId = $data['cliente_id'];
+                    try {
+                        $convertido = app(ConvertirTicketService::class)->convertir(
+                            documento: $documento,
+                            tipoComprobante: $data['tipo_comprobante'],
+                            clienteId: $data['cliente_id'] ?? null,
+                        );
 
-                        $serie = Serie::query()
-                            ->where('sucursal_id', $documento->sucursal_id)
-                            ->where('tipo_comprobante', $tipoComprobante)
-                            ->lockForUpdate()
-                            ->first();
+                        Notification::make()
+                            ->title('Comprobante convertido')
+                            ->body('El XML y PDF fueron generados. El envío a SUNAT quedó en cola.')
+                            ->success()
+                            ->send();
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('No se pudo convertir el ticket')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
 
-                        if (! $serie) {
-                            $serie = Serie::create([
-                                'sucursal_id' => $documento->sucursal_id,
-                                'tipo_comprobante' => $tipoComprobante,
-                                'serie' => $tipoComprobante === 'FACTURA' ? 'F001' : 'B001',
-                                'correlativo' => 1,
-                            ]);
-                        }
-
-                        $numero = str_pad((string) $serie->correlativo, 8, '0', STR_PAD_LEFT);
-                        $serie->increment('correlativo');
-
-                        $documento->update([
-                            'tipo_comprobante' => $tipoComprobante,
-                            'serie' => $serie->serie,
-                            'numero' => $numero,
-                            'cliente_id' => $clienteId ?: $documento->cliente_id,
-                        ]);
-                    });
-
-                    // Delete old pdf files
-                    $oldArchivos = $documento->archivos()->where('tipo_archivo', 'pdf')->get();
-                    foreach ($oldArchivos as $old) {
-                        if ($old->ruta_archivo && Storage::disk('local')->exists($old->ruta_archivo)) {
-                            Storage::disk('local')->delete($old->ruta_archivo);
-                        }
-                        $old->forceDelete();
+                        return;
                     }
 
-                    // Load missing relations
-                    $documento->load([
-                        'empresa',
-                        'sucursal.ubigeoRel',
-                        'cliente',
-                        'sunat',
-                        'detalles.presentacion.unidadMedida',
-                    ]);
-
-
-
-                    // Render and save PDF
-                    $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-                    $ventaFileService->guardarPdf($documento, $pdf->output());
-
-                    // Send to SUNAT
-                    app(FacturacionService::class)->procesar($documento);
-
-                    Notification::make()
-                        ->title('Comprobante convertido y enviado a SUNAT con éxito')
-                        ->success()
-                        ->send();
-
-                    $this->redirect(static::$resource::getUrl('view', ['record' => $documento]));
+                    $this->redirect(static::$resource::getUrl('view', ['record' => $convertido]));
                 }),
             Action::make('anular')
                 ->label('Anular')

@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
@@ -49,12 +50,17 @@ class ClienteResource extends Resource
                     ->formatStateUsing(fn (?string $state): ?string => blank($state) || $state === '00000000' ? null : $state)
                     ->placeholder('-')
                     ->searchable(),
-                TextColumn::make('razon_social')
+                TextColumn::make('cliente_nombre')
                     ->label('Cliente')
                     ->icon('heroicon-o-user-circle')
                     ->weight('bold')
-                    ->searchable()
-                    ->formatStateUsing(fn ($state, Cliente $record) => $state ?: trim(($record->nombre ?? '').' '.($record->apellido ?? ''))),
+                    ->state(fn (Cliente $record): string => self::nombreCliente($record))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
+                        ->where('razon_social', 'like', "%{$search}%")
+                        ->orWhere('nombre', 'like', "%{$search}%")
+                        ->orWhere('apellido', 'like', "%{$search}%")
+                        ->orWhere('documento', 'like', "%{$search}%")
+                    ),
                 TextColumn::make('telefono')
                     ->label('Telefono')
                     ->icon('heroicon-o-phone')
@@ -65,6 +71,13 @@ class ClienteResource extends Resource
                     ->placeholder('-'),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    protected static function nombreCliente(Cliente $cliente): string
+    {
+        $nombre = trim((string) ($cliente->razon_social ?: trim(($cliente->nombre ?? '').' '.($cliente->apellido ?? ''))));
+
+        return $nombre !== '' ? $nombre : 'Cliente sin nombre';
     }
 
     public static function canViewAny(): bool

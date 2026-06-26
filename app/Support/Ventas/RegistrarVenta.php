@@ -64,8 +64,16 @@ class RegistrarVenta
                 clienteData: $payload['cliente'] ?? [],
             );
 
-            $puntosCanjeados = (int) ($payload['puntos_canjeados'] ?? 0);
+            $puntosCanjeados = max((int) ($payload['puntos_canjeados'] ?? 0), 0);
             $descuentoPuntos = $this->puntosService->descuentoPorPuntos($puntosCanjeados);
+
+            if (! $cliente && $puntosCanjeados > 0) {
+                throw new \RuntimeException('Selecciona un cliente para canjear puntos.');
+            }
+
+            if ($cliente && $puntosCanjeados > $this->puntosService->puntosDisponibles($cliente, $empresa->id)) {
+                throw new \RuntimeException('Los puntos canjeados superan el saldo disponible del cliente.');
+            }
 
             $serie = Serie::query()
                 ->where('sucursal_id', $sucursalId)
@@ -114,6 +122,16 @@ class RegistrarVenta
                 if ($lineaVenta['precio_unitario'] < 0) {
                     throw new \RuntimeException("El precio de {$lineaVenta['producto_nombre']} no puede ser negativo.");
                 }
+            }
+
+            $totalBrutoVenta = array_sum(array_map(
+                fn (array $lineaVenta): float => round((float) $lineaVenta['cantidad'] * (float) $lineaVenta['precio_unitario'], 2),
+                $lineasVenta
+            ));
+            $maxPuntosPorVenta = (int) floor($totalBrutoVenta / PuntosService::VALOR_DESCUENTO_POR_PUNTO);
+
+            if ($puntosCanjeados > $maxPuntosPorVenta) {
+                throw new \RuntimeException('Los puntos canjeados superan el descuento máximo permitido para esta venta.');
             }
 
             $porcentajeIgv = (float) ($payload['porcentaje_igv'] ?? 18);
