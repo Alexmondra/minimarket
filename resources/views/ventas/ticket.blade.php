@@ -312,7 +312,7 @@
             <div><b>Fecha:</b> {{ $fechaEmision instanceof \Carbon\Carbon ? $fechaEmision->format('d/m/Y H:i') : date('d/m/Y H:i', strtotime($fechaEmision)) }}</div>
             <div>
                 <b>Cliente:</b>
-                {{ $documento->cliente?->razon_social ?: trim(($documento->cliente?->nombre ?? '') . ' ' . ($documento->cliente?->apellido ?? '')) ?: 'PÚBLICO EN GENERAL' }}
+                {{ $documento->cliente && $documento->cliente->documento !== '00000000' ? ($documento->cliente->razon_social ?: trim(($documento->cliente->nombre ?? '') . ' ' . ($documento->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL' }}
             </div>
             @if($documento->cliente && $documento->cliente->documento != '00000000')
                 <div><b>{{ $documento->cliente->tipo_documento }}:</b> {{ $documento->cliente->documento }}</div>
@@ -393,7 +393,7 @@
         @endif
 
         {{-- PUNTOS --}}
-        @if($puntosGanados > 0 || $puntosCanjeados < 0)
+        @if($documento->cliente && $documento->cliente->documento !== '00000000' && ($puntosGanados > 0 || $puntosCanjeados < 0))
             <div class="points-box">
                 <div style="font-weight: bold; font-size: 10px; background: #eee; text-align: center;">MONEDERO PUNTOS</div>
                 @if($puntosGanados > 0)

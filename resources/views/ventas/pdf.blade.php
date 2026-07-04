@@ -139,8 +139,10 @@
     $ubigeo = $sucursal?->ubigeoRel;
     $ubicacion = collect([$ubigeo?->distrito, $ubigeo?->provincia, $ubigeo?->departamento])->filter()->implode(' - ');
 
-    $clienteNombre = $documento->cliente?->razon_social
-        ?: trim(($documento->cliente?->nombre ?? '') . ' ' . ($documento->cliente?->apellido ?? ''));
+    $clienteNombre = $documento->cliente && $documento->cliente->documento !== '00000000'
+        ? ($documento->cliente->razon_social
+            ?: trim(($documento->cliente->nombre ?? '') . ' ' . ($documento->cliente->apellido ?? '')))
+        : 'PÚBLICO EN GENERAL';
     $clienteNombre = $clienteNombre !== '' ? $clienteNombre : 'PÚBLICO EN GENERAL';
 
     $tipoComprobanteLegible = match($documento->tipo_comprobante) {

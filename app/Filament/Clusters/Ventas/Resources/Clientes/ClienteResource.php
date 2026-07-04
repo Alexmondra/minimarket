@@ -70,7 +70,8 @@ class ClienteResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->placeholder('-'),
             ])
-            ->defaultSort('id', 'desc');
+            ->defaultSort('id', 'desc')
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('documento', '!=', '00000000'));
     }
 
     protected static function nombreCliente(Cliente $cliente): string

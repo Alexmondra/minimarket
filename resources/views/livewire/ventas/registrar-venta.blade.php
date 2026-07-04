@@ -572,7 +572,7 @@
                             </svg>
                         </div>
                         <input 
-                            type="text" 
+                            type="text"
                             id="search-producto-input"
                             wire:model.live.debounce.250ms="searchProducto"
                             placeholder="Buscar producto por código, nombre... (F2)"
@@ -1207,32 +1207,30 @@
                     </div>
 
                     <!-- Payment details -->
-                    <div class="border-t pos-border pt-3 space-y-3">
+                    <div class="border-t pos-border pt-3 space-y-3" x-data="{ montoLocal: @entangle('montoRecibido'), totalNeto: {{ $resumen['totales']['total_neto'] }}, get montoNum() { let v = String(this.montoLocal ?? '').replace(/,/g, '.').replace(/[^0-9.]/g, ''); if (v === '' || v === '.') return 0; let p = v.split('.'); if (p.length > 2) v = p[0] + '.' + p.slice(1).join(''); return parseFloat(v) || 0; }, get vueltoLocal() { return this.montoNum - this.totalNeto; } }">
                         @if($medioPago === 'EFECTIVO')
                             <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 shadow-inner dark:bg-emerald-500/10">
                                 <label class="block font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300 text-[10px] mb-2">Monto recibido</label>
                                 <div class="relative rounded-2xl shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-500 text-sm font-black">S/</div>
-                                    <input 
+                                    <input
                                         type="text"
                                         inputmode="decimal"
-                                        pattern="[0-9]*[.]?[0-9]*"
-                                        step="0.01" 
-                                        wire:model.live.debounce.300ms="montoRecibido"
-                                        x-on:input="let v = $event.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); let p = v.split('.'); p[0] = (p[0] || '').slice(0, 6); if (p[1] !== undefined) p[1] = p[1].slice(0, 2); $event.target.value = p[1] !== undefined ? p[0] + '.' + p[1] : p[0];"
+                                        pattern="[0-9]*[.,]?[0-9]*"
+                                        x-model="montoLocal"
                                         class="w-full pos-input rounded-2xl py-3.5 pl-10 pr-3 text-xl font-black font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                                         placeholder="0.00"
                                     >
                                 </div>
                             </div>
-                            @php($vueltoCalculado = ((float) $montoRecibido) - $resumen['totales']['total_neto'])
                             <div class="flex justify-between items-center text-xs font-bold rounded-xl bg-slate-100/70 dark:bg-slate-900/60 px-3 py-2">
                                 <span class="pos-text-muted">Vuelto</span>
-                                @if($vueltoCalculado >= 0)
-                                    <span class="text-emerald-500 font-mono text-base font-black">S/ {{ number_format($vueltoCalculado, 2) }}</span>
-                                @else
-                                    <span class="text-rose-500 font-mono text-base font-black">Falta S/ {{ number_format(abs($vueltoCalculado), 2) }}</span>
-                                @endif
+                                <template x-if="vueltoLocal >= 0">
+                                    <span class="text-emerald-500 font-mono text-base font-black" x-text="'S/ ' + vueltoLocal.toFixed(2)"></span>
+                                </template>
+                                <template x-if="vueltoLocal < 0">
+                                    <span class="text-rose-500 font-mono text-base font-black" x-text="'Falta S/ ' + Math.abs(vueltoLocal).toFixed(2)"></span>
+                                </template>
                             </div>
                         @else
                             <div class="py-2.5 rounded-xl text-center border pos-border bg-slate-50 dark:bg-slate-900/60">
@@ -1459,8 +1457,8 @@ wire:model.live.debounce.300ms="clienteDocumento"
 
                     <div>
                         <label class="block font-semibold pos-text-muted mb-1">Teléfono (Opcional)</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             wire:model="clienteTelefono" 
                             class="w-full pos-input rounded-xl py-2 px-3 focus:outline-none" 
                             placeholder="Teléfono"
@@ -1951,16 +1949,16 @@ wire:model.live.debounce.300ms="clienteDocumento"
                 </div>
 
                 <!-- Input de Dinero Físico -->
-                <div class="space-y-1.5">
+                <div class="space-y-1.5" x-data="{ saldoLocal: @entangle('cerrarCajaSaldoReal'), saldoEsperado: {{ $this->expectedCajaBalance }}, get saldoNum() { let v = String(this.saldoLocal ?? '').replace(/,/g, '.').replace(/[^0-9.]/g, ''); if (v === '' || v === '.') return NaN; let p = v.split('.'); if (p.length > 2) v = p[0] + '.' + p.slice(1).join(''); let n = parseFloat(v); return isNaN(n) ? NaN : n; }, get difLocal() { if (this.saldoLocal === '' || this.saldoLocal === null) return null; if (isNaN(this.saldoNum)) return null; return parseFloat((this.saldoNum - this.saldoEsperado).toFixed(2)); } }">
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dinero físico en caja (Efectivo)</label>
                     <div class="relative flex items-center">
                         <span class="absolute left-4 text-sm font-extrabold text-slate-400 dark:text-slate-500">S/</span>
-                        <input 
-                            type="number" 
-                            step="0.01" 
-                            min="0"
-                            wire:model.live="cerrarCajaSaldoReal"
-                            class="w-full text-sm font-black tracking-tight text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-xl py-2.5 pl-10 pr-4 transition shadow-inner" 
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            pattern="[0-9]*[.,]?[0-9]*"
+                            x-model="saldoLocal"
+                            class="w-full text-sm font-black tracking-tight text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-xl py-2.5 pl-10 pr-4 transition shadow-inner"
                             placeholder="0.00"
                         >
                     </div>
@@ -1971,14 +1969,15 @@ wire:model.live.debounce.300ms="clienteDocumento"
 
                 <!-- Panel Dinámico de Diferencia -->
                 <div>
-                    @if ($cerrarCajaSaldoReal === null || $cerrarCajaSaldoReal === '')
+                    <template x-if="difLocal === null">
                         <div class="flex items-center gap-2.5 p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 dark:text-slate-500 justify-center text-[11px] font-semibold py-4">
                             <svg class="h-4 w-4 animate-pulse text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             <span>Ingrese el dinero físico para calcular la diferencia</span>
                         </div>
-                    @elseif ($this->cerrarCajaDiferencia > 0)
+                    </template>
+                    <template x-if="difLocal !== null && difLocal > 0">
                         <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 dark:bg-amber-500/5 dark:border-amber-500/20 flex items-start gap-3 shadow-sm">
                             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1988,12 +1987,13 @@ wire:model.live.debounce.300ms="clienteDocumento"
                             <div class="space-y-0.5">
                                 <h4 class="text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">Sobrante Detectado</h4>
                                 <div class="flex items-baseline gap-1.5">
-                                    <span class="text-lg font-black text-amber-700 dark:text-amber-300">+ S/ {{ number_format($this->cerrarCajaDiferencia, 2) }}</span>
+                                    <span class="text-lg font-black text-amber-700 dark:text-amber-300" x-text="'+ S/ ' + difLocal.toFixed(2)"></span>
                                 </div>
                                 <p class="text-[9px] text-amber-605 dark:text-amber-400/90 pt-0.5 leading-normal">El dinero real supera el esperado. Explique la diferencia en observaciones.</p>
                             </div>
                         </div>
-                    @elseif ($this->cerrarCajaDiferencia < 0)
+                    </template>
+                    <template x-if="difLocal !== null && difLocal < 0">
                         <div class="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 dark:bg-rose-500/5 dark:border-rose-500/20 flex items-start gap-3 shadow-sm">
                             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500 text-white">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2003,12 +2003,13 @@ wire:model.live.debounce.300ms="clienteDocumento"
                             <div class="space-y-0.5">
                                 <h4 class="text-[11px] font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">Faltante Detectado</h4>
                                 <div class="flex items-baseline gap-1.5">
-                                    <span class="text-lg font-black text-rose-700 dark:text-rose-300">S/ {{ number_format(abs($this->cerrarCajaDiferencia), 2) }}</span>
+                                    <span class="text-lg font-black text-rose-700 dark:text-rose-300" x-text="'S/ ' + Math.abs(difLocal).toFixed(2)"></span>
                                 </div>
                                 <p class="text-[9px] text-rose-605 dark:text-rose-400/90 pt-0.5 leading-normal">El dinero real es menor que el esperado. La diferencia quedará registrada.</p>
                             </div>
                         </div>
-                    @else
+                    </template>
+                    <template x-if="difLocal !== null && difLocal === 0">
                         <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 dark:bg-emerald-500/5 dark:border-emerald-500/20 flex items-start gap-3 shadow-sm">
                             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2023,7 +2024,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
                                 <p class="text-[9px] text-emerald-605 dark:text-emerald-400/90 pt-0.5 leading-normal">El saldo coincide exactamente con el teórico.</p>
                             </div>
                         </div>
-                    @endif
+                    </template>
                 </div>
 
                 <!-- Observaciones -->

@@ -50,7 +50,7 @@ trait RegistrarVentaBehavior
 
     public float $porcentajeIgv = 18.0;
 
-    public ?float $montoRecibido = null;
+    public ?string $montoRecibido = null;
 
     public ?string $referenciaPago = null;
 
@@ -144,7 +144,7 @@ trait RegistrarVentaBehavior
 
     public bool $showCerrarCajaModal = false;
 
-    public ?float $cerrarCajaSaldoReal = null;
+    public ?string $cerrarCajaSaldoReal = null;
 
     public string $cerrarCajaObservaciones = '';
 
@@ -195,7 +195,7 @@ trait RegistrarVentaBehavior
         } else {
             $this->porcentajeIgv = 18.0;
         }
-        $this->montoRecibido = 0;
+        $this->montoRecibido = '';
 
         $this->categorias = Categoria::query()
             ->where('empresa_id', Auth::user()->empresa_id)
@@ -246,9 +246,9 @@ trait RegistrarVentaBehavior
 
         if ($value !== 'EFECTIVO') {
             $resumen = $this->getResumenProperty();
-            $this->montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
+            $this->montoRecibido = $this->formatearImporte($resumen['totales']['total_neto']);
         } else {
-            $this->montoRecibido = 0.0;
+            $this->montoRecibido = '';
         }
     }
 
@@ -1294,13 +1294,14 @@ trait RegistrarVentaBehavior
 
     public function agregarMontoEfectivo(float $monto): void
     {
-        $this->montoRecibido = round(((float) $this->montoRecibido) + $monto, 2);
+        $actual = $this->normalizarNumero($this->montoRecibido) ?? 0.0;
+        $this->montoRecibido = $this->formatearImporte($actual + $monto);
     }
 
     public function establecerPagoExacto(): void
     {
         $resumen = $this->getResumenProperty();
-        $this->montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
+        $this->montoRecibido = $this->formatearImporte($resumen['totales']['total_neto']);
     }
 
     public function guardarVenta(): void
@@ -1358,9 +1359,12 @@ trait RegistrarVentaBehavior
             return;
         }
 
+        $montoRecibido = $this->normalizarNumero($this->montoRecibido) ?? 0.0;
+
         if ($this->medioPago !== 'EFECTIVO') {
-            $this->montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
-        } elseif ((float) $this->montoRecibido < (float) $resumen['totales']['total_neto']) {
+            $montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
+            $this->montoRecibido = $this->formatearImporte($montoRecibido);
+        } elseif ($montoRecibido < (float) $resumen['totales']['total_neto']) {
             Notification::make()->title('El monto recibido no cubre el total de la venta')->danger()->send();
             $this->isSaving = false;
 
@@ -1373,7 +1377,7 @@ trait RegistrarVentaBehavior
                 'tipo_comprobante' => $this->tipoComprobante,
                 'medio_pago' => $this->medioPago,
                 'tipo_moneda' => $this->tipoMoneda,
-                'monto_recibido' => $this->montoRecibido,
+                'monto_recibido' => $montoRecibido,
                 'referencia_pago' => $this->referenciaPago,
                 'observaciones' => $this->observaciones,
                 'porcentaje_igv' => $this->porcentajeIgv,
@@ -1450,10 +1454,6 @@ trait RegistrarVentaBehavior
 
         $doc = trim($this->clienteDocumento);
         if ($this->tipoComprobante === 'BOLETA' && $totalNeto >= 700 && ($doc === '' || $doc === '00000000')) {
-            return false;
-        }
-
-        if ($this->medioPago === 'EFECTIVO' && ((float) $this->montoRecibido) < $totalNeto) {
             return false;
         }
 
@@ -1577,10 +1577,14 @@ trait RegistrarVentaBehavior
         }
     }
 
-    public function updatedMontoRecibido($value): void
+    protected function formatearImporte(mixed $value): string
     {
-        $monto = $this->normalizarNumero($value);
-        $this->montoRecibido = $monto === null ? 0.0 : round(min($monto, 999999.99), 2);
+        return number_format((float) $value, 2, '.', '');
+    }
+
+    public function getMontoRecibidoCalculadoProperty(): float
+    {
+        return $this->normalizarNumero($this->montoRecibido) ?? 0.0;
     }
 
     protected function normalizarNumero($value): ?float
@@ -1712,7 +1716,7 @@ trait RegistrarVentaBehavior
     public function vaciarCarrito(): void
     {
         $this->cartItems = [];
-        $this->montoRecibido = 0;
+        $this->montoRecibido = '';
         $this->normalizarPuntosCanje();
         Notification::make()->title('Carrito vaciado')->info()->send();
     }
@@ -1721,7 +1725,7 @@ trait RegistrarVentaBehavior
     {
         $this->cartItems = [];
         $this->resetClienteData();
-        $this->montoRecibido = 0;
+        $this->montoRecibido = '';
         $this->clienteDocumento = '';
         $this->searchProducto = '';
         $this->selectedCategoriaId = null;
@@ -1856,7 +1860,7 @@ trait RegistrarVentaBehavior
     {
         $this->cartItems = [];
         $this->resetClienteData();
-        $this->montoRecibido = 0;
+        $this->montoRecibido = '';
         $this->clienteDocumento = '';
         $this->searchProducto = '';
         $this->selectedCategoriaId = null;
@@ -1887,7 +1891,7 @@ trait RegistrarVentaBehavior
 
     public function getCerrarCajaDiferenciaProperty(): float
     {
-        $real = (float) $this->cerrarCajaSaldoReal;
+        $real = $this->normalizarNumero($this->cerrarCajaSaldoReal) ?? 0.0;
         $teorico = $this->expectedCajaBalance;
         return round($real - $teorico, 2);
     }
@@ -1902,9 +1906,17 @@ trait RegistrarVentaBehavior
     public function closeCerrarCaja(): void
     {
         $this->validate([
-            'cerrarCajaSaldoReal' => 'required|numeric|min:0',
             'cerrarCajaObservaciones' => 'nullable|string|max:500',
         ]);
+
+        $real = $this->normalizarNumero($this->cerrarCajaSaldoReal);
+        $this->resetErrorBag('cerrarCajaSaldoReal');
+
+        if ($real === null || $real < 0) {
+            $this->addError('cerrarCajaSaldoReal', 'Ingresa un monto valido mayor o igual a 0.');
+
+            return;
+        }
 
         if (! $this->cajaActivaId) {
             Notification::make()
@@ -1924,7 +1936,7 @@ trait RegistrarVentaBehavior
         }
 
         $teorico = (float) app(CajaService::class)->saldoTeorico($caja);
-        $real = round((float) $this->cerrarCajaSaldoReal, 2);
+        $real = round($real, 2);
 
         $caja->update([
             'fecha_cierre' => now(),
@@ -1997,8 +2009,8 @@ trait RegistrarVentaBehavior
             ->map(fn (\App\Models\Documento $doc): array => [
                 'id' => $doc->id,
                 'comprobante' => "{$doc->tipo_comprobante} {$doc->serie}-{$doc->numero}",
-                'cliente' => $doc->cliente ? ($doc->cliente->razon_social ?: trim(($doc->cliente->nombre ?? '') . ' ' . ($doc->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
-                'cliente_documento' => $doc->cliente ? "{$doc->cliente->tipo_documento} {$doc->cliente->documento}" : null,
+                'cliente' => $doc->cliente && $doc->cliente->documento !== '00000000' ? ($doc->cliente->razon_social ?: trim(($doc->cliente->nombre ?? '') . ' ' . ($doc->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
+                'cliente_documento' => $doc->cliente && $doc->cliente->documento !== '00000000' ? "{$doc->cliente->tipo_documento} {$doc->cliente->documento}" : null,
                 'fecha' => $doc->fecha_emision ? $doc->fecha_emision->format('d/m/Y') : $doc->created_at->format('d/m/Y'),
                 'total' => (float) $doc->total_neto,
                 'estado' => $doc->estado,
@@ -2032,8 +2044,8 @@ trait RegistrarVentaBehavior
             'id' => $venta->id,
             'estado' => $venta->estado,
             'comprobante' => "{$venta->tipo_comprobante} {$venta->serie}-{$venta->numero}",
-            'cliente' => $venta->cliente ? ($venta->cliente->razon_social ?: trim(($venta->cliente->nombre ?? '') . ' ' . ($venta->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
-            'cliente_documento' => $venta->cliente ? "{$venta->cliente->tipo_documento} {$venta->cliente->documento}" : null,
+            'cliente' => $venta->cliente && $venta->cliente->documento !== '00000000' ? ($venta->cliente->razon_social ?: trim(($venta->cliente->nombre ?? '') . ' ' . ($venta->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL',
+            'cliente_documento' => $venta->cliente && $venta->cliente->documento !== '00000000' ? "{$venta->cliente->tipo_documento} {$venta->cliente->documento}" : null,
             'cliente_direccion' => $venta->cliente?->direccion,
             'fecha' => $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y') : $venta->created_at->format('d/m/Y'),
             'hora' => $venta->created_at->format('H:i A'),

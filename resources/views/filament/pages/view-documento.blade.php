@@ -29,8 +29,10 @@
                     </div>
                     <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
                         <p class="text-xs font-black uppercase tracking-[0.24em] text-stone-500">Cliente</p>
-                        <p class="mt-2 text-lg font-black text-stone-900">{{ $documento->cliente?->razon_social ?: trim(($documento->cliente?->nombre ?? '') . ' ' . ($documento->cliente?->apellido ?? '')) }}</p>
-                        <p class="text-sm text-stone-600">{{ $documento->cliente?->tipo_documento }} {{ $documento->cliente?->documento }}</p>
+                        <p class="mt-2 text-lg font-black text-stone-900">{{ $documento->cliente && $documento->cliente->documento !== '00000000' ? ($documento->cliente->razon_social ?: trim(($documento->cliente->nombre ?? '') . ' ' . ($documento->cliente->apellido ?? ''))) : 'PÚBLICO EN GENERAL' }}</p>
+                        @if($documento->cliente && $documento->cliente->documento !== '00000000')
+                            <p class="text-sm text-stone-600">{{ $documento->cliente->tipo_documento }} {{ $documento->cliente->documento }}</p>
+                        @endif
                     </div>
                     <div class="rounded-2xl border border-stone-200 bg-stone-50 p-4">
                         <p class="text-xs font-black uppercase tracking-[0.24em] text-stone-500">Caja</p>

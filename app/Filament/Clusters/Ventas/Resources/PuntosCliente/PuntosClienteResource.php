@@ -72,7 +72,7 @@ class PuntosClienteResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return app(SucursalContext::class)->applyToQuery(
-            parent::getEloquentQuery()->where('empresa_id', Auth::user()->empresa_id)->with(['cliente', 'sucursal'])
+            parent::getEloquentQuery()->where('empresa_id', Auth::user()->empresa_id)->whereHas('cliente', fn ($q) => $q->where('documento', '!=', '00000000'))->with(['cliente', 'sucursal'])
         );
     }
 

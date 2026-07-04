@@ -216,7 +216,7 @@ class RegistrarVenta
                 );
             }
 
-            if ($cliente) {
+            if ($cliente && $cliente->documento !== '00000000') {
                 $puntosGanados = $this->puntosService->puntosGanados($documento->total_neto);
 
                 $this->puntosService->registrarAcumulacion(

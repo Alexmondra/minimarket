@@ -83,7 +83,7 @@ class DocumentoResource extends Resource
                         'TICKET' => 'Ticket',
                         default => $state,
                     }),
-                TextColumn::make('cliente.razon_social')
+                TextColumn::make('cliente_id')
                     ->label('Cliente')
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query
                         ->whereHas('cliente', fn (Builder $q) => $q
@@ -93,9 +93,10 @@ class DocumentoResource extends Resource
                             ->orWhere('documento', 'like', "%{$search}%")
                         )
                     )
-                    ->formatStateUsing(fn ($state, Documento $record) => $state
-                        ?: trim(($record->cliente?->nombre ?? '') . ' ' . ($record->cliente?->apellido ?? ''))
-                        ?: 'Público general'
+                    ->state(fn (Documento $record): string => $record->cliente && $record->cliente->documento !== '00000000'
+                        ? ($record->cliente->razon_social
+                            ?: trim(($record->cliente->nombre ?? '') . ' ' . ($record->cliente->apellido ?? '')))
+                        : 'Público general'
                     )
                     ->placeholder('Público general'),
                 TextColumn::make('medio_pago')
@@ -117,12 +118,7 @@ class DocumentoResource extends Resource
                     ->color('success')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('estado')
-                    ->label('Estado')
-                    ->badge()
-                    ->color(fn ($state) => $state ? 'success' : 'danger')
-                    ->formatStateUsing(fn ($state) => $state ? 'Activo' : 'Anulado')
-                    ->sortable(),
+              
                 TextColumn::make('fecha_emision')
                     ->label('Emisión')
                     ->date('d/m/Y')
@@ -154,17 +150,7 @@ class DocumentoResource extends Resource
                         'TRANSFERENCIA' => 'Transferencia',
                         'OTRO' => 'Otro',
                     ]),
-                TernaryFilter::make('estado')
-                    ->label('Estado')
-                    ->placeholder('Todos')
-                    ->trueLabel('Activos')
-                    ->falseLabel('Anulados')
-                    ->default(true)
-                    ->queries(
-                        true: fn (Builder $query) => $query->where('estado', true),
-                        false: fn (Builder $query) => $query->where('estado', false),
-                        blank: fn (Builder $query) => $query,
-                    ),
+           
                 Filter::make('fecha_emision')
                     ->label('Rango de fecha')
                     ->form([
