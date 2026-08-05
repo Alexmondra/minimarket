@@ -169,7 +169,7 @@
                         $isAgotado = $item->total_stock == 0;
                         $isBajo = !$isAgotado && $item->total_stock <= $item->max_stock_minimo;
                     @endphp
-                    <div class="glass-card hover:-translate-y-1 transition duration-300 p-5 flex flex-col justify-between h-76 group">
+                    <div class="glass-card hover:-translate-y-1 transition duration-300 p-5 flex flex-col justify-between h-76 group {{ request('highlight_stock') == $item->producto_presentacion_id ? 'bg-amber-500/20 dark:bg-amber-900/30 border-2 border-amber-500 dark:border-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse font-bold' : '' }}">
                         <div class="space-y-4">
                             <!-- Imagen & Badges -->
                             <div class="flex justify-between items-start gap-3">
@@ -289,7 +289,7 @@
                                     $isAgotado = $item->total_stock == 0;
                                     $isBajo = !$isAgotado && $item->total_stock <= $item->max_stock_minimo;
                                 @endphp
-                                <tr class="hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition duration-150">
+                                <tr class="hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition duration-150 {{ request('highlight_stock') == $item->producto_presentacion_id ? 'bg-amber-500/20 dark:bg-amber-900/30 border-2 border-amber-500 dark:border-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse font-bold' : '' }}">
                                     <td class="px-6 py-4 flex items-center gap-3.5">
                                         <div class="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border dark:border-slate-700/40 flex items-center justify-center shrink-0">
                                             @if ($item->imagen)

@@ -65,6 +65,7 @@ class AlertasBell extends Component
         $this->productosStockBajo = $stockBajo->map(function ($ps) {
             return [
                 'id' => $ps->id,
+                'producto_presentacion_id' => $ps->lotePresentacion?->producto_presentacion_id,
                 'producto_nombre' => $ps->producto?->nombre ?? 'Producto',
                 'presentacion' => $ps->lotePresentacion?->productoPresentacion?->tipo_presentacion ?? '',
                 'stock' => $ps->stock,

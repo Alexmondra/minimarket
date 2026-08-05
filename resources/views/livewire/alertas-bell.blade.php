@@ -50,7 +50,7 @@
             <!-- Tab: Vencimiento -->
             <div x-show="tab === 'vence'">
                 @forelse($lotesPorVencer as $lote)
-                    <div class="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition flex gap-3 items-start">
+                    <a href="{{ \App\Filament\Clusters\Inventario\Resources\Lotes\LoteResource::getUrl('index') }}?highlight_lote={{ $lote['id'] }}" class="block p-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition flex gap-3 items-start">
                         <div class="p-1.5 rounded-lg bg-danger-50 dark:bg-danger-950/20 text-danger-600 dark:text-danger-400 mt-0.5">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -73,7 +73,7 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-xs">
                         <svg class="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -87,7 +87,7 @@
             <!-- Tab: Stock Bajo -->
             <div x-show="tab === 'stock'">
                 @forelse($productosStockBajo as $item)
-                    <div class="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition flex gap-3 items-start">
+                    <a href="{{ \App\Filament\Clusters\Almacen\Resources\StockSucursal\StockSucursalResource::getUrl('index') }}?highlight_stock={{ $item['producto_presentacion_id'] }}" class="block p-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition flex gap-3 items-start">
                         <div class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 mt-0.5">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.2411.177 11.177 0 012.007-1.24l.885-1.77a2.25 2.25 0 002.007-1.241h3.886m-19.5 0A2.25 2.25 0 002.25 15.75V18.75A2.25 2.25 0 004.5 21h15a2.25 2.25 0 002.25-2.25V15.75a2.25 2.25 0 00-2.25-2.25h-3.86a2.25 2.25 0 01-2.008-1.24l-.885-1.77a2.25 2.25 0 00-2.007-1.2411.177 11.177 0 01-2.007 1.24l-.885 1.77a2.25 2.25 0 00-2.007 1.24H2.25z" />
@@ -107,7 +107,7 @@
                                 <span class="text-gray-500">Mínimo: {{ $item['stock_minimo'] }}</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="p-8 text-center text-gray-500 dark:text-gray-400 text-xs">
                         <svg class="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

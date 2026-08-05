@@ -121,6 +121,9 @@ class ListLotes extends ListRecords
             ->modifyQueryUsing(fn ($query) =>
                 $query->with(['lotePresentaciones.productoPresentacion.unidadMedida'])
                     ->whereHas('lotePresentaciones', fn ($q) => $q->where('stock', '>', 0))
+                    ->when(request('highlight_lote'), function ($q, $highlightId) {
+                        $q->orderByRaw("CASE WHEN id = ? THEN 0 ELSE 1 END ASC", [$highlightId]);
+                    })
                     ->orderByRaw("CASE
                         WHEN estado_lote = 'por_confirmar' THEN 0
                         WHEN estado_lote = 'stock_bajo' THEN 1
@@ -129,13 +132,15 @@ class ListLotes extends ListRecords
                     END ASC")
             )
             ->recordClasses(fn (\App\Models\Lote $record): ?string =>
-                match (self::lotVisualState($record)) {
-                    'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 border-l-4 border-l-rose-500',
-                    'stock_bajo' => 'alert-pulse-amber bg-amber-50/80 dark:bg-amber-950/20 border-l-4 border-l-amber-500',
-                    'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
-                    'por_vencer' => 'bg-amber-50/40 dark:bg-amber-950/5 border-l-4 border-l-amber-400',
-                    default => null,
-                }
+                request('highlight_lote') == $record->id
+                    ? 'bg-red-500/20 dark:bg-red-900/40 border-2 border-red-500 dark:border-red-600 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse font-bold'
+                    : match (self::lotVisualState($record)) {
+                        'por_confirmar' => 'alert-pulse bg-rose-100/80 dark:bg-rose-950/30 border-l-4 border-l-rose-500',
+                        'stock_bajo' => 'alert-pulse-amber bg-amber-50/80 dark:bg-amber-950/20 border-l-4 border-l-amber-500',
+                        'vencido' => 'bg-rose-50/60 dark:bg-rose-950/10 border-l-4 border-l-rose-500',
+                        'por_vencer' => 'bg-amber-50/40 dark:bg-amber-950/5 border-l-4 border-l-amber-400',
+                        default => null,
+                    }
             )
             ->striped()
             ->stackedOnMobile()

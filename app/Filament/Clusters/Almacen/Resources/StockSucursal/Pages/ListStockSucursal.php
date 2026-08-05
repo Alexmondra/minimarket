@@ -234,7 +234,17 @@ class ListStockSucursal extends Page
             'categorias.nombre'
         );
 
-        // Sorting priority: Agotados (stock = 0) first, then Bajo Stock (stock <= min_stock), then Normal.
+        // Sorting priority: If highlight_stock is provided, put that presentation first, then Agotados, then Bajo Stock, then Normal.
+        $highlightId = request('highlight_stock');
+        if ($highlightId && is_numeric($highlightId)) {
+            $query->orderByRaw('
+                CASE 
+                    WHEN lote_presentacion.producto_presentacion_id = ? THEN 0
+                    ELSE 1
+                END ASC
+            ', [(int) $highlightId]);
+        }
+
         $query->orderByRaw('
             CASE 
                 WHEN SUM(lote_presentacion.stock) = 0 THEN 0
