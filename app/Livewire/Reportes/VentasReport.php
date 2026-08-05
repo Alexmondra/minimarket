@@ -24,6 +24,10 @@ class VentasReport extends Component
 
     public bool $loaded = false;
 
+    public string $tipoReporte = 'resumen';
+
+    public string $tipoComprobanteFiltro = '';
+
     public function mount(): void
     {
         $this->fechaDesde = today()->startOfMonth()->format('Y-m-d');
@@ -54,12 +58,27 @@ class VentasReport extends Component
         $this->resetPage();
     }
 
+    public function updatedTipoReporte(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTipoComprobanteFiltro(): void
+    {
+        $this->resetPage();
+        $this->loadStats();
+    }
+
     public function loadStats(): void
     {
         $qb = app(ReporteQueryBuilder::class);
-        $query = $this->applyFilters($qb->ventasBase());
+        $query = $this->applyFilters($qb->ventasYNotasBase());
 
-        $agg = (clone $query)->selectRaw('COALESCE(SUM(total_neto), 0) as total, COUNT(*) as cant, COALESCE(AVG(total_neto), 0) as prom')->first();
+        $agg = (clone $query)->selectRaw("
+            COALESCE(SUM(CASE WHEN tipo_comprobante LIKE 'NOTA_CREDITO%' THEN -total_neto ELSE total_neto END), 0) as total,
+            COUNT(*) as cant,
+            COALESCE(AVG(CASE WHEN tipo_comprobante LIKE 'NOTA_CREDITO%' THEN -total_neto ELSE total_neto END), 0) as prom
+        ")->first();
 
         $this->stats = [
             'total_ventas' => number_format((float) $agg->total, 2),
@@ -80,6 +99,7 @@ class VentasReport extends Component
                 'alcance' => $this->etiquetaAlcance($alcance),
                 'filtros' => $this->filtrosExportacion(),
                 'resumen' => $this->resumenExportacion($ventas),
+                'tipoReporte' => $this->tipoReporte,
             ])->render();
         }, $filename, [
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
@@ -96,6 +116,7 @@ class VentasReport extends Component
             'alcance' => $this->etiquetaAlcance($alcance),
             'filtros' => $this->filtrosExportacion(),
             'resumen' => $this->resumenExportacion($ventas),
+            'tipoReporte' => $this->tipoReporte,
         ])->setPaper('a4', 'landscape');
 
         return response()->streamDownload(fn () => print ($pdf->output()), $filename, [
@@ -121,6 +142,17 @@ class VentasReport extends Component
                     ->orWhere('numero', 'like', "%{$this->search}%");
             });
         }
+        if ($this->tipoComprobanteFiltro === 'VENTA') {
+            $query->whereNotIn('tipo_comprobante', [
+                'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                'NOTA_CREDITO_FACTURA', 'NOTA_DEBITO',
+            ]);
+        } elseif ($this->tipoComprobanteFiltro === 'NOTA_CREDITO') {
+            $query->whereIn('tipo_comprobante', [
+                'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                'NOTA_CREDITO_FACTURA',
+            ]);
+        }
 
         return $query;
     }
@@ -129,14 +161,22 @@ class VentasReport extends Component
     {
         $qb = app(ReporteQueryBuilder::class);
 
-        $query = $this->applyFilters($qb->ventasBase())
-            ->with(['cliente', 'user', 'sucursal'])
+        $relations = ['cliente', 'user', 'sucursal', 'documentoReferencia'];
+        if ($this->tipoReporte === 'detalle') {
+            $relations[] = 'detalles';
+        }
+
+        $query = $this->applyFilters($qb->ventasYNotasBase())
+            ->with($relations)
             ->orderBy('fecha_emision')
             ->orderBy('serie')
             ->orderBy('numero');
 
         if ($alcance !== 'todo') {
-            $query->whereIn('tipo_comprobante', ['BOLETA', 'FACTURA']);
+            $query->whereIn('tipo_comprobante', [
+                'BOLETA', 'FACTURA', 'NOTA_CREDITO',
+                'NOTA_CREDITO_BOLETA', 'NOTA_CREDITO_FACTURA'
+            ]);
         }
 
         return $query;
@@ -149,12 +189,18 @@ class VentasReport extends Component
             'hasta' => $this->fechaHasta ?: 'Hoy',
             'medio_pago' => $this->medioPago ?: 'Todos',
             'busqueda' => $this->search ?: 'Sin busqueda',
+            'tipo_reporte' => $this->tipoReporte === 'detalle' ? 'Detallado' : 'Resumido',
+            'filtro_comprobante' => $this->tipoComprobanteFiltro ?: 'Todos',
         ];
     }
 
     private function resumenExportacion($ventas): array
     {
-        $total = $ventas->sum(fn (Documento $venta) => (float) $venta->total_neto);
+        $total = $ventas->sum(fn (Documento $venta) => 
+            str_starts_with($venta->tipo_comprobante, 'NOTA_CREDITO')
+                ? -(float)$venta->total_neto 
+                : (float)$venta->total_neto
+        );
         $cantidad = $ventas->count();
 
         return [
@@ -176,15 +222,16 @@ class VentasReport extends Component
         $desde = $this->fechaDesde ?: 'inicio';
         $hasta = $this->fechaHasta ?: now()->format('Y-m-d');
         $sufijo = $alcance === 'todo' ? 'con-tickets' : 'boletas-facturas';
+        $tipo = $this->tipoReporte;
 
-        return "{$base}-{$sufijo}-{$desde}-{$hasta}.{$extension}";
+        return "{$base}-{$tipo}-{$sufijo}-{$desde}-{$hasta}.{$extension}";
     }
 
     public function render()
     {
         $qb = app(ReporteQueryBuilder::class);
-        $query = $this->applyFilters($qb->ventasBase())
-            ->with(['cliente', 'user', 'sucursal'])
+        $query = $this->applyFilters($qb->ventasYNotasBase())
+            ->with(['cliente', 'user', 'sucursal', 'documentoReferencia'])
             ->latest('fecha_emision');
 
         $ventas = $query->paginate(15);

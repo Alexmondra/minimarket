@@ -45,6 +45,43 @@ class ReporteQueryBuilder
     }
 
     /**
+     * Query for reports: includes BOLETA, FACTURA, TICKET (active or annulled by active NC),
+     * and NOTA_CREDITO (active).
+     */
+    public function ventasYNotasBase(): Builder
+    {
+        return $this->context->applyToQuery(
+            Documento::query()
+                ->where(function ($q) {
+                    // Sales: BOLETA, FACTURA, TICKET (active, or annulled by active NC)
+                    $q->where(function ($sub) {
+                        $sub->whereNotIn('tipo_comprobante', [
+                            'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                            'NOTA_CREDITO_FACTURA', 'NOTA_DEBITO',
+                        ])
+                        ->where(function ($sub2) {
+                            $sub2->where('estado', true)
+                                 ->orWhere(function ($sub3) {
+                                     $sub3->where('estado', false)
+                                          ->whereHas('referenciadoPor.documento', function ($query) {
+                                              $query->where('estado', true);
+                                          });
+                                 });
+                        });
+                    })
+                    // Credit Notes: active NOTA_CREDITO
+                    ->orWhere(function ($sub) {
+                        $sub->whereIn('tipo_comprobante', [
+                            'NOTA_CREDITO', 'NOTA_CREDITO_BOLETA',
+                            'NOTA_CREDITO_FACTURA',
+                        ])
+                        ->where('estado', true);
+                    });
+                })
+        );
+    }
+
+    /**
      * Base query for cancelled/voided documents.
      */
     public function ventasAnuladasBase(): Builder

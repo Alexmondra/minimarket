@@ -7,7 +7,7 @@
 
     {{-- Filter Bar --}}
     <div class="glass-card p-4 mb-6">
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div>
                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Desde</label>
                 <input type="date" wire:model.live="fechaDesde"
@@ -32,6 +32,23 @@
                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Buscar</label>
                 <input type="search" wire:model.live.debounce.300ms="search" placeholder="Cliente, comprobante..."
                     class="w-full mt-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tipo Comprobante</label>
+                <select wire:model.live="tipoComprobanteFiltro"
+                    class="w-full mt-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition">
+                    <option value="">Todos</option>
+                    <option value="VENTA">Solo Ventas</option>
+                    <option value="NOTA_CREDITO">Solo Notas de Crédito</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Formato Reporte</label>
+                <select wire:model.live="tipoReporte"
+                    class="w-full mt-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition">
+                    <option value="resumen">Resumido</option>
+                    <option value="detalle">Detallado (Productos)</option>
+                </select>
             </div>
         </div>
     </div>
@@ -108,7 +125,21 @@
                     @forelse($ventas as $venta)
                         <tr class="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td class="px-4 py-3 text-xs text-slate-700 dark:text-slate-300 font-mono">{{ $venta->fecha_emision?->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200">{{ $venta->serie }}-{{ $venta->numero }}</td>
+                            <td class="px-4 py-3 text-xs text-slate-800 dark:text-slate-200">
+                                <span class="font-semibold">{{ $venta->serie }}-{{ $venta->numero }}</span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ml-1 uppercase
+                                    @if(str_starts_with($venta->tipo_comprobante, 'NOTA_CREDITO')) bg-amber-500/10 text-amber-600 dark:text-amber-400
+                                    @elseif($venta->tipo_comprobante === 'TICKET') bg-slate-500/10 text-slate-600 dark:text-slate-400
+                                    @else bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 @endif">
+                                    {{ str_replace('NOTA_CREDITO_', 'N.C. ', $venta->tipo_comprobante) }}
+                                </span>
+                                @if(str_starts_with($venta->tipo_comprobante, 'NOTA_CREDITO') && $venta->documentoReferencia)
+                                    <div class="text-[10px] text-amber-600 dark:text-amber-400 font-normal mt-1 leading-none">
+                                        Modifica a: {{ $venta->documentoReferencia->serie_ref }}-{{ $venta->documentoReferencia->numero_ref }}
+                                        <span class="text-slate-400 dark:text-slate-500 text-[9px]">({{ $venta->documentoReferencia->motivo_descripcion }})</span>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">{{ $venta->cliente?->nombre ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex rounded-lg px-2 py-0.5 text-[10px] font-bold
@@ -119,7 +150,9 @@
                                     {{ $venta->medio_pago ?? '—' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-xs font-bold text-slate-800 dark:text-slate-200 font-mono">S/ {{ number_format($venta->total_neto, 2) }}</td>
+                            <td class="px-4 py-3 text-xs font-bold @if(str_starts_with($venta->tipo_comprobante, 'NOTA_CREDITO')) text-rose-600 dark:text-rose-400 @else text-slate-800 dark:text-slate-200 @endif font-mono">
+                                {{ str_starts_with($venta->tipo_comprobante, 'NOTA_CREDITO') ? '-' : '' }}S/ {{ number_format($venta->total_neto, 2) }}
+                            </td>
                             <td class="px-4 py-3">
                                 <span @class([
                                     'inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold',
