@@ -220,4 +220,28 @@ class RegistrarVentaSearchTest extends TestCase
             ->assertSet('selectedVentaDetalles.items.0.producto_nombre', 'Gaseosa Inka Cola 1L')
             ->assertSet('selectedVentaDetalles.items.0.presentacion', 'Botella');
     }
+
+    public function test_ingreso_rapido_permite_vaciar_y_tipear_numeros_como_string(): void
+    {
+        $this->actingAs($this->user);
+
+        Livewire::test(RegistrarVenta::class)
+            ->call('abrirIngresoRapido')
+            ->assertSet('showIngresoRapidoModal', true)
+            ->assertSet('ingresoRapidoCantidad', 1.0)
+            // Permite borrar a vacío ("") sin que falle por tipado estricto
+            ->set('ingresoRapidoCantidad', '')
+            ->assertSet('ingresoRapidoCantidad', '')
+            ->set('ingresoRapidoPrecioVenta', '')
+            ->assertSet('ingresoRapidoPrecioVenta', '')
+            ->set('ingresoRapidoPresentacionCantidad', '')
+            ->assertSet('ingresoRapidoPresentacionCantidad', '')
+            // Permite colocar valores nuevos
+            ->set('ingresoRapidoCantidad', '15')
+            ->set('ingresoRapidoPrecioVenta', '3.50')
+            ->set('ingresoRapidoPresentacionCantidad', '6')
+            ->assertSet('ingresoRapidoCantidad', '15')
+            ->assertSet('ingresoRapidoPrecioVenta', '3.50')
+            ->assertSet('ingresoRapidoPresentacionCantidad', '6');
+    }
 }

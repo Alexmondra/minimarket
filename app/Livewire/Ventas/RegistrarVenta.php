@@ -21,6 +21,7 @@ use App\Support\Ventas\RegistrarVenta as RegistrarVentaAction;
 use App\Support\Ventas\VentaCalculator;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -42,7 +43,7 @@ trait RegistrarVentaBehavior
 
     public ?int $sucursalId = null;
 
-    public string $tipoComprobante = 'TICKET';
+    public string $tipoComprobante = 'BOLETA';
 
     public string $medioPago = 'EFECTIVO';
 
@@ -84,17 +85,17 @@ trait RegistrarVentaBehavior
 
     public string $ingresoRapidoPresentacionNombre = 'Unidad';
 
-    public int $ingresoRapidoPresentacionCantidad = 1;
+    public int|string|null $ingresoRapidoPresentacionCantidad = 1;
 
     public ?int $ingresoRapidoPresentacionBaseId = null;
 
     public array $ingresoRapidoPresentacionesBase = [];
 
-    public ?float $ingresoRapidoCantidad = 1.0;
+    public float|string|null $ingresoRapidoCantidad = 1.0;
 
-    public ?float $ingresoRapidoPrecioVenta = null;
+    public float|string|null $ingresoRapidoPrecioVenta = null;
 
-    public ?float $ingresoRapidoCosto = null;
+    public float|string|null $ingresoRapidoCosto = null;
 
     public array $cartItems = [];
 
@@ -203,15 +204,23 @@ trait RegistrarVentaBehavior
             ->get()
             ->toArray();
 
-        // Cargar estado guardado en sesión
+        // Cargar estado guardado en sesión y preferencia por usuario
+        $userId = Auth::id();
+        $tipoGuardado = null;
+        if ($userId) {
+            $tipoGuardado = Cache::get("pos_tipo_comprobante_user_{$userId}")
+                ?? session()->get("pos_tipo_comprobante_{$userId}");
+        }
+
+        $this->tipoComprobante = in_array($tipoGuardado, ['BOLETA', 'FACTURA', 'TICKET'], true)
+            ? $tipoGuardado
+            : 'BOLETA';
+
         if (session()->has('pos_cart_items')) {
             $this->cartItems = session()->get('pos_cart_items', []);
         }
         if (session()->has('pos_medio_pago')) {
             $this->medioPago = session()->get('pos_medio_pago', 'EFECTIVO');
-        }
-        if (session()->has('pos_tipo_comprobante')) {
-            $this->tipoComprobante = session()->get('pos_tipo_comprobante', 'TICKET');
         }
         if (session()->has('pos_cliente_id')) {
             $clienteId = session()->get('pos_cliente_id');
@@ -223,6 +232,8 @@ trait RegistrarVentaBehavior
 
     public function updatedTipoComprobante(string $value): void
     {
+        $this->persistirTipoComprobanteUsuario($value);
+
         if ($value === 'FACTURA') {
             $this->clienteTipoDocumento = 'RUC';
         } elseif ($this->clienteTipoDocumento === 'RUC') {
@@ -232,8 +243,27 @@ trait RegistrarVentaBehavior
 
     public function cambiarTipoComprobante(string $tipo): void
     {
+        if (! in_array($tipo, ['BOLETA', 'FACTURA', 'TICKET'], true)) {
+            $tipo = 'BOLETA';
+        }
+
         $this->tipoComprobante = $tipo;
+        $this->persistirTipoComprobanteUsuario($tipo);
         $this->updatedTipoComprobante($tipo);
+    }
+
+    protected function persistirTipoComprobanteUsuario(string $tipo): void
+    {
+        if (! in_array($tipo, ['BOLETA', 'FACTURA', 'TICKET'], true)) {
+            return;
+        }
+
+        if ($userId = Auth::id()) {
+            session()->put("pos_tipo_comprobante_{$userId}", $tipo);
+            Cache::forever("pos_tipo_comprobante_user_{$userId}", $tipo);
+        } else {
+            session()->put('pos_tipo_comprobante', $tipo);
+        }
     }
 
     public function updatedMedioPago(string $value): void
@@ -769,6 +799,37 @@ trait RegistrarVentaBehavior
 
     protected function buscarPresentacionesSinStock(string $term): array
     {
+        // Si hay productos existentes en el catálogo de la empresa que no tienen presentación creada,
+        // les creamos automáticamente la presentación base 'Unidad' para que puedan ser reconocidos y recibir stock.
+        $productosSinPresentacion = Producto::query()
+            ->where('empresa_id', Auth::user()->empresa_id)
+            ->where('activo', true)
+            ->whereDoesntHave('presentaciones')
+            ->where(function ($query) use ($term) {
+                $query->where('nombre', 'like', "%{$term}%")
+                    ->orWhere('codigo_interno', 'like', "%{$term}%");
+            })
+            ->limit(5)
+            ->get();
+
+        foreach ($productosSinPresentacion as $prod) {
+            $unidadId = UniMedida::query()->where('abreviatura', 'und')->value('id')
+                ?: UniMedida::query()->value('id');
+
+            $pres = $prod->presentaciones()->create([
+                'unidad_medida_id' => $unidadId,
+                'cantidad' => 1,
+                'tipo_presentacion' => 'Unidad',
+                'es_pesable' => false,
+            ]);
+
+            if (filled($prod->codigo_interno)) {
+                $pres->barras()->firstOrCreate([
+                    'codigo_barra' => trim($prod->codigo_interno),
+                ]);
+            }
+        }
+
         return ProductoPresentacion::query()
             ->with(['producto', 'unidadMedida', 'barras'])
             ->whereHas('producto', function ($query) {
@@ -912,7 +973,7 @@ trait RegistrarVentaBehavior
         $this->showVencidoWarningModal = false;
     }
 
-    public function agregarProductoDirecto(int $presentacionId): void
+    public function agregarProductoDirecto(int $presentacionId, float $cantidad = 1.0): void
     {
         $producto = $this->obtenerDetalleProducto($presentacionId);
 
@@ -922,19 +983,21 @@ trait RegistrarVentaBehavior
             return;
         }
 
+        $cantidad = max($cantidad, 0.001);
+
         $index = collect($this->cartItems)
             ->search(fn (array $item): bool => $item['producto_presentacion_id'] === $presentacionId);
 
         if ($index !== false) {
             $this->cartItems[$index]['cantidad'] = min(
-                round((float) $this->cartItems[$index]['cantidad'] + 1, 3),
+                round((float) $this->cartItems[$index]['cantidad'] + $cantidad, 3),
                 (float) $this->cartItems[$index]['stock']
             );
             $this->recalcularPrecio($index);
         } else {
             $this->cartItems[] = [
                 ...$producto,
-                'cantidad' => 1,
+                'cantidad' => min($cantidad, (float) $producto['stock']),
             ];
             $this->recalcularPrecio(array_key_last($this->cartItems));
         }
@@ -995,7 +1058,9 @@ trait RegistrarVentaBehavior
 
     protected function pareceCodigoBarra(string $value): bool
     {
-        return ctype_digit($value) && strlen($value) >= 5;
+        $value = trim($value);
+
+        return strlen($value) >= 3 && ! str_contains($value, ' ') && preg_match('/^[A-Za-z0-9\-_]+$/', $value) === 1;
     }
 
     public function cerrarIngresoRapido(): void
@@ -1241,7 +1306,8 @@ trait RegistrarVentaBehavior
             ->success()
             ->send();
 
-        $this->agregarProductoDirecto($presentacionId);
+        $cantidadIngresada = max((float) ($this->ingresoRapidoCantidad ?: 1.0), 0.001);
+        $this->agregarProductoDirecto($presentacionId, $cantidadIngresada);
     }
 
     public function actualizarCantidad(int $index, $cantidad): void
@@ -1623,7 +1689,6 @@ trait RegistrarVentaBehavior
             session()->put('pos_cart_items', $this->cartItems);
             session()->put('pos_cliente_id', $this->clienteId);
             session()->put('pos_medio_pago', $this->medioPago);
-            session()->put('pos_tipo_comprobante', $this->tipoComprobante);
         } else {
             $this->limpiarSesionPOS();
         }
@@ -1635,7 +1700,6 @@ trait RegistrarVentaBehavior
             'pos_cart_items',
             'pos_cliente_id',
             'pos_medio_pago',
-            'pos_tipo_comprobante',
         ]);
     }
 

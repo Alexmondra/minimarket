@@ -269,7 +269,9 @@ class MermaResource extends Resource
                         $record->lotePresentacion?->productoPresentacion?->tipo_presentacion,
                         $record->lotePresentacion?->lote?->codigo_lote ? 'Lote ' . $record->lotePresentacion->lote->codigo_lote : null,
                     ])->filter()->implode(' • '))
-                    ->modalWidth('4xl')
+                    ->modalWidth('3xl')
+                    ->stickyModalHeader()
+                    ->stickyModalFooter(),
             ])
             ->recordAction(ViewAction::class)
             ->filters([

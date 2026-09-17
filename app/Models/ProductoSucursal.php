@@ -41,8 +41,8 @@ class ProductoSucursal extends Model
      * Get the current stock for this product-sucursal-presentation.
      * Calculated from the last movement's stock_final.
      */
-    public function getStockAttribute(): int
+    public function getStockAttribute(): float
     {
-        return (int) ($this->lotePresentacion?->stock ?? 0);
+        return (float) ($this->lotePresentacion?->stock ?? 0.0);
     }
 }

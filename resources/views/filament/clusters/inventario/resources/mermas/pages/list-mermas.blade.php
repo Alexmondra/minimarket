@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-6">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div class="kpi-card kpi-rose p-5">
                 <div class="flex items-start justify-between gap-3">
@@ -54,8 +54,6 @@
             </div>
         </div>
 
-        <div class="glass-card overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-sm p-3 lg:p-4">
-            {{ $this->table }}
-        </div>
+        {{ $this->table }}
     </div>
 </x-filament-panels::page>

@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Global\Resources\Productos\Pages;
 
 use App\Filament\Clusters\Global\Resources\Productos\ProductoResource;
 use App\Models\Producto;
+use App\Models\UniMedida;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
 
@@ -58,6 +59,30 @@ class CreateProducto extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        /** @var Producto $producto */
+        $producto = $this->record;
+
+        if ($producto && $producto->presentaciones()->doesntExist()) {
+            $unidadId = UniMedida::where('abreviatura', 'und')->value('id')
+                ?: UniMedida::value('id');
+
+            $presentacion = $producto->presentaciones()->create([
+                'unidad_medida_id' => $unidadId,
+                'cantidad' => 1,
+                'tipo_presentacion' => 'Unidad',
+                'es_pesable' => false,
+            ]);
+
+            if (filled($producto->codigo_interno)) {
+                $presentacion->barras()->firstOrCreate([
+                    'codigo_barra' => trim($producto->codigo_interno),
+                ]);
+            }
+        }
     }
 
     protected function getRedirectUrl(): string

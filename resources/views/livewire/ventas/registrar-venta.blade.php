@@ -1754,10 +1754,12 @@ wire:model.live.debounce.300ms="clienteDocumento"
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Unidades por presentacion</label>
                                 <input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    wire:model.live="ingresoRapidoPresentacionCantidad"
+                                    type="text"
+                                    inputmode="numeric"
+                                    wire:model.blur="ingresoRapidoPresentacionCantidad"
+                                    @focus="$event.target.select()"
+                                    @keydown="if(!/[0-9]/.test($event.key) && !['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Enter'].includes($event.key)) $event.preventDefault()"
+                                    @input="$event.target.value = $event.target.value.replace(/[^0-9]/g, '')"
                                     class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
                                 >
                                 @error('ingresoRapidoPresentacionCantidad')
@@ -1801,10 +1803,12 @@ wire:model.live.debounce.300ms="clienteDocumento"
                             <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Cantidad</label>
                             <input
                                 x-ref="cantidadInput"
-                                type="number"
-                                min="0.001"
-                                step="0.001"
-                                wire:model.live="ingresoRapidoCantidad"
+                                type="text"
+                                inputmode="decimal"
+                                wire:model.blur="ingresoRapidoCantidad"
+                                @focus="$event.target.select()"
+                                @keydown="if(!/[0-9.]/.test($event.key) && !['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Enter'].includes($event.key)) $event.preventDefault(); if($event.key === '.' && $event.target.value.includes('.')) $event.preventDefault();"
+                                @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1')"
                                 class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
                             >
                             @error('ingresoRapidoCantidad')
@@ -1814,10 +1818,12 @@ wire:model.live.debounce.300ms="clienteDocumento"
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Precio venta</label>
                             <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                wire:model.live="ingresoRapidoPrecioVenta"
+                                type="text"
+                                inputmode="decimal"
+                                wire:model.blur="ingresoRapidoPrecioVenta"
+                                @focus="$event.target.select()"
+                                @keydown="if(!/[0-9.]/.test($event.key) && !['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Enter'].includes($event.key)) $event.preventDefault(); if($event.key === '.' && $event.target.value.includes('.')) $event.preventDefault();"
+                                @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1')"
                                 class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
                             >
                             @error('ingresoRapidoPrecioVenta')
@@ -1827,10 +1833,12 @@ wire:model.live.debounce.300ms="clienteDocumento"
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider pos-text-muted mb-1.5">Costo opcional</label>
                             <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                wire:model.live="ingresoRapidoCosto"
+                                type="text"
+                                inputmode="decimal"
+                                wire:model.blur="ingresoRapidoCosto"
+                                @focus="$event.target.select()"
+                                @keydown="if(!/[0-9.]/.test($event.key) && !['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Enter'].includes($event.key)) $event.preventDefault(); if($event.key === '.' && $event.target.value.includes('.')) $event.preventDefault();"
+                                @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1')"
                                 class="w-full pos-input rounded-xl py-2.5 px-3 text-sm font-black focus:outline-none"
                                 placeholder="0.00"
                             >
