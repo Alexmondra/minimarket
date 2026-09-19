@@ -11,12 +11,46 @@ use Illuminate\Support\Facades\DB;
 
 class LimpiarCodigosInternosCommand extends Command
 {
-    protected $signature = 'minimarket:limpiar-codigos-internos {--dry-run : Solo mostrar qué cambios se realizarían sin modificar la base de datos}';
+    protected $signature = 'minimarket:limpiar-codigos-internos {--dry-run : Solo mostrar qué cambios se realizarían sin modificar la base de datos} {--rollback : Revertir los cambios y restaurar los códigos numéricos anteriores}';
 
     protected $description = 'Normaliza los códigos internos de los productos que tengan códigos de barra numéricos y los convierte a formato SKU (4 letras + 4 caracteres)';
 
+    /**
+     * Registro histórico exacto de los códigos numéricos que tenían los productos antes de la normalización.
+     */
+    protected array $historialAnterior = [
+        6 => '9780201379624',
+        7 => '7752286000061',
+        196 => '7758574006722',
+        208 => '7896004009612',
+        281 => '7622202394799',
+        286 => '9334980006372',
+        287 => '7751493010269',
+        288 => '7750182006088',
+        289 => '7590002008898',
+        296 => '7702010102660',
+        368 => '650240051029',
+        369 => '7702031338574',
+        370 => '7702031338260',
+        427 => '7756847127495',
+        428 => '7568471274403',
+        429 => '7622201776633',
+        430 => '7622201776664',
+        431 => '7622202272172',
+        444 => '7750670013437',
+        453 => '7750670013413',
+        454 => '7750670013420',
+        455 => '7750670014892',
+        456 => '7750670016735',
+        467 => '4891228530136',
+    ];
+
     public function handle(): int
     {
+        if ($this->option('rollback')) {
+            return $this->ejecutarRollback();
+        }
+
         $dryRun = (bool) $this->option('dry-run');
 
         $this->info('Iniciando inspección de códigos internos numéricos en productos...');
@@ -60,9 +94,10 @@ class LimpiarCodigosInternosCommand extends Command
                 }
 
                 if ($tieneBarra) {
-                    $this->line("  -> La presentación ya tenía este código de barra. Solo se limpiará el código interno del producto padre.");
+                    $this->line("  -> La presentación ya tenía este código de barra. Se limpiará el código interno a SKU.");
                 } else {
-                    $this->line("  -> Este código no estaba en ninguna presentación (código desvinculado o empaque diferente). Se libera para evitar cruces.");
+                    $this->warn("  -> Este código NO está en ninguna presentación. SE MANTIENE INTACTO para resolver en el POS (vincular o crear nueva presentación).");
+                    continue;
                 }
             }
 
@@ -98,6 +133,31 @@ class LimpiarCodigosInternosCommand extends Command
         } else {
             $this->info("Proceso completado exitosamente. {$actualizados} productos actualizados con SKU limpio.");
         }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Revierte los cambios y restaura los códigos anteriores de cada producto.
+     */
+    protected function ejecutarRollback(): int
+    {
+        $this->warn('Iniciando ROLLBACK: Restaurando los códigos internos numéricos anteriores...');
+
+        $restaurados = 0;
+
+        DB::transaction(function () use (&$restaurados) {
+            foreach ($this->historialAnterior as $id => $codigoAnterior) {
+                $producto = Producto::find($id);
+                if ($producto) {
+                    $producto->update(['codigo_interno' => $codigoAnterior]);
+                    $this->line("Producto ID {$id} ({$producto->nombre}): Código interno restaurado a <info>{$codigoAnterior}</info>");
+                    $restaurados++;
+                }
+            }
+        });
+
+        $this->info("ROLLBACK completado. Se restauraron los códigos internos de {$restaurados} productos a su estado original.");
 
         return self::SUCCESS;
     }

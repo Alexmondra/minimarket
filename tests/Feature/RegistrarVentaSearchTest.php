@@ -394,4 +394,51 @@ class RegistrarVentaSearchTest extends TestCase
         $this->assertNotSame('7758574006722', $producto->codigo_interno);
         $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
     }
+
+    public function test_it_creates_new_presentation_and_links_barcode(): void
+    {
+        $this->actingAs($this->user);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PIQUEO SNAX 110G',
+            'slug' => 'piqueo-snax-110g',
+            'codigo_interno' => '7758574006722',
+            'activo' => true,
+        ]);
+
+        $unidad = UniMedida::firstOrCreate(
+            ['abreviatura' => 'und'],
+            ['nombre' => 'Unidad', 'activo' => true]
+        );
+
+        Livewire::test(RegistrarVenta::class)
+            ->set('vincularProductoId', $producto->id)
+            ->set('vincularCodigoBarra', '7758574006722')
+            ->set('showVincularCodigoModal', true)
+            ->call('toggleFormularioNuevaPresentacion')
+            ->assertSet('mostrarFormularioNuevaPresentacion', true)
+            ->set('vincularNuevaPresentacionNombre', 'Bolsaza 110g')
+            ->set('vincularNuevaPresentacionCantidad', 1)
+            ->call('crearYVincularNuevaPresentacion')
+            ->assertSet('showVincularCodigoModal', false);
+
+        // Verificar que se creó la nueva presentación con ese nombre
+        $nuevaPres = ProductoPresentacion::where('producto_id', $producto->id)
+            ->where('tipo_presentacion', 'Bolsaza 110g')
+            ->first();
+        $this->assertNotNull($nuevaPres);
+
+        // Verificar que el código de barra ahora pertenece a esa nueva presentación
+        $this->assertDatabaseHas('producto_presentacion_barras', [
+            'producto_presentacion_id' => $nuevaPres->id,
+            'codigo_barra' => '7758574006722',
+        ]);
+
+        // Verificar que el producto ya no tiene el código de barra en codigo_interno
+        $producto->refresh();
+        $this->assertNotSame('7758574006722', $producto->codigo_interno);
+        $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
+    }
 }
+

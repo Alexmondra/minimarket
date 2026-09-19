@@ -47,10 +47,10 @@
                     </p>
                 </div>
 
-                {{-- Lista de presentaciones --}}
+                {{-- Lista de presentaciones existentes --}}
                 <div class="space-y-2.5">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                        Presentaciones disponibles
+                        1. Vincular a una presentación existente:
                     </label>
 
                     @foreach ($vincularPresentaciones as $pres)
@@ -83,6 +83,66 @@
                             </button>
                         </div>
                     @endforeach
+                </div>
+
+                {{-- Opción: Crear una nueva presentación para este producto --}}
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-4">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                            2. ¿Es otra presentación distinta?
+                        </label>
+                        <button
+                            type="button"
+                            wire:click="toggleFormularioNuevaPresentacion"
+                            class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                            <span>{{ $mostrarFormularioNuevaPresentacion ? 'Ocultar formulario' : '+ Crear nueva presentación' }}</span>
+                        </button>
+                    </div>
+
+                    @if ($mostrarFormularioNuevaPresentacion)
+                        <div class="mt-3 p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+                            <p class="text-xs text-blue-800 dark:text-blue-300">
+                                Crea una nueva presentación para <strong>{{ $vincularProductoNombre }}</strong> y asígnale el código de barras <strong class="font-mono">{{ $vincularCodigoBarra }}</strong>:
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                        Nombre de presentación *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        wire:model="vincularNuevaPresentacionNombre"
+                                        placeholder="Ej. Bolsaza 110g, Pack x6, etc."
+                                        class="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                        Contenido (Unidades)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        wire:model="vincularNuevaPresentacionCantidad"
+                                        class="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-1">
+                                <button
+                                    type="button"
+                                    wire:click="crearYVincularNuevaPresentacion"
+                                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    <span>Crear Presentación y Vincular</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 

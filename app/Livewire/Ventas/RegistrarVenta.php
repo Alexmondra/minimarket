@@ -75,6 +75,14 @@ trait RegistrarVentaBehavior
 
     public array $vincularPresentaciones = [];
 
+    public bool $mostrarFormularioNuevaPresentacion = false;
+
+    public string $vincularNuevaPresentacionNombre = '';
+
+    public int|string|null $vincularNuevaPresentacionCantidad = 1;
+
+    public ?int $vincularNuevaPresentacionUnidadId = null;
+
     public bool $showIngresoRapidoModal = false;
 
     public bool $ingresoRapidoCrearProducto = false;
@@ -1800,6 +1808,78 @@ trait RegistrarVentaBehavior
         $this->cerrarVincularCodigoModal();
     }
 
+    public function toggleFormularioNuevaPresentacion(): void
+    {
+        $this->mostrarFormularioNuevaPresentacion = ! $this->mostrarFormularioNuevaPresentacion;
+    }
+
+    public function crearYVincularNuevaPresentacion(): void
+    {
+        if (! $this->vincularProductoId || ! $this->vincularCodigoBarra) {
+            $this->cerrarVincularCodigoModal();
+
+            return;
+        }
+
+        $nombre = trim($this->vincularNuevaPresentacionNombre);
+        if ($nombre === '') {
+            Notification::make()
+                ->title('Nombre requerido')
+                ->body('Ingresa el nombre de la nueva presentación (ej. Bolsaza 110g).')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $producto = Producto::find($this->vincularProductoId);
+        if (! $producto) {
+            $this->cerrarVincularCodigoModal();
+
+            return;
+        }
+
+        $codigoBarra = $this->vincularCodigoBarra;
+        $unidadId = $this->vincularNuevaPresentacionUnidadId
+            ?: (UniMedida::where('abreviatura', 'und')->value('id') ?? UniMedida::value('id') ?? 1);
+        $cantidad = max((int) $this->vincularNuevaPresentacionCantidad, 1);
+
+        $presentacionCreada = null;
+
+        DB::transaction(function () use ($producto, $codigoBarra, $nombre, $unidadId, $cantidad, &$presentacionCreada) {
+            // 1. Crear la nueva presentación para este producto
+            $presentacionCreada = ProductoPresentacion::create([
+                'producto_id' => $producto->id,
+                'unidad_medida_id' => $unidadId,
+                'cantidad' => $cantidad,
+                'tipo_presentacion' => $nombre,
+                'es_pesable' => false,
+            ]);
+
+            // 2. Asignarle el código de barra
+            ProductoPresentacionBarra::firstOrCreate(
+                ['codigo_barra' => $codigoBarra],
+                ['producto_presentacion_id' => $presentacionCreada->id]
+            );
+
+            // 3. Limpiar el código interno del producto padre a su nuevo SKU
+            $nuevoSku = Producto::generarCodigoInterno($producto->nombre);
+            $producto->update(['codigo_interno' => $nuevoSku]);
+        });
+
+        if ($presentacionCreada) {
+            $this->agregarProducto($presentacionCreada->id);
+
+            Notification::make()
+                ->title('Nueva presentación creada y vinculada')
+                ->body("Se creó la presentación '{$nombre}' con el código {$codigoBarra} y se actualizó el SKU del producto a {$producto->fresh()->codigo_interno}.")
+                ->success()
+                ->send();
+        }
+
+        $this->cerrarVincularCodigoModal();
+    }
+
     public function cerrarVincularCodigoModal(): void
     {
         $this->showVincularCodigoModal = false;
@@ -1807,6 +1887,10 @@ trait RegistrarVentaBehavior
         $this->vincularProductoId = null;
         $this->vincularProductoNombre = null;
         $this->vincularPresentaciones = [];
+        $this->mostrarFormularioNuevaPresentacion = false;
+        $this->vincularNuevaPresentacionNombre = '';
+        $this->vincularNuevaPresentacionCantidad = 1;
+        $this->vincularNuevaPresentacionUnidadId = null;
     }
 
     public function updatedCartItems($value, $key): void
