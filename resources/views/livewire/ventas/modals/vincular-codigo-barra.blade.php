@@ -144,6 +144,31 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Opción: Crear un producto completamente nuevo --}}
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-4">
+                    <div class="p-3.5 rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/20 flex items-center justify-between gap-3">
+                        <div class="space-y-0.5 min-w-0 flex-1">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                                3. ¿Es un producto totalmente diferente?
+                            </h4>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                                Desvincula este código del producto anterior y abre el registro rápido para crearlo como un nuevo producto.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="crearNuevoProductoDesdeVincularModal"
+                            class="shrink-0 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1.5"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span>Crear Nuevo Producto</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {{-- FOOTER --}}

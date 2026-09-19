@@ -440,5 +440,36 @@ class RegistrarVentaSearchTest extends TestCase
         $this->assertNotSame('7758574006722', $producto->codigo_interno);
         $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
     }
+
+    public function test_it_opens_quick_entry_modal_for_new_product_and_frees_barcode_from_old_product(): void
+    {
+        $this->actingAs($this->user);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PIQUEO SNAX 110G',
+            'slug' => 'piqueo-snax-110g',
+            'codigo_interno' => '7758574006722',
+            'activo' => true,
+        ]);
+
+        Livewire::test(RegistrarVenta::class)
+            ->set('vincularProductoId', $producto->id)
+            ->set('vincularCodigoBarra', '7758574006722')
+            ->set('showVincularCodigoModal', true)
+            ->call('crearNuevoProductoDesdeVincularModal')
+            ->assertSet('showVincularCodigoModal', false)
+            ->assertSet('showIngresoRapidoModal', true)
+            ->assertSet('ingresoRapidoCrearProducto', true)
+            ->assertSet('ingresoRapidoCodigoBarra', '7758574006722')
+            ->assertSet('ingresoRapidoPresentacionNombre', 'Unidad')
+            ->assertSet('ingresoRapidoPresentacionCantidad', 1);
+
+        // El producto anterior debe tener su nuevo SKU generado y su código de barra liberado
+        $producto->refresh();
+        $this->assertNotSame('7758574006722', $producto->codigo_interno);
+        $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
+    }
 }
+
 

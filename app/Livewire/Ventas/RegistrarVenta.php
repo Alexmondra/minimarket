@@ -1808,6 +1808,50 @@ trait RegistrarVentaBehavior
         $this->cerrarVincularCodigoModal();
     }
 
+    public function crearNuevoProductoDesdeVincularModal(): void
+    {
+        $codigoBarra = $this->vincularCodigoBarra;
+        $productoId = $this->vincularProductoId;
+
+        if ($productoId) {
+            $producto = Producto::find($productoId);
+            if ($producto) {
+                $nuevoSku = Producto::generarCodigoInterno($producto->nombre);
+                $producto->update([
+                    'codigo_interno' => $nuevoSku,
+                ]);
+            }
+        }
+
+        $this->cerrarVincularCodigoModal();
+
+        // Configurar y abrir el modal de ingreso rápido para crear el nuevo producto
+        $this->resetValidation();
+        $this->ingresoRapidoSearchTerm = '';
+        $this->ingresoRapidoCodigoBarra = $codigoBarra ?? '';
+        $this->ingresoRapidoPresentacionId = null;
+        $this->ingresoRapidoCrearProducto = true;
+        $this->ingresoRapidoProductoId = null;
+        $this->ingresoRapidoProductoNombre = '';
+        $this->ingresoRapidoProductoSearch = '';
+        $this->ingresoRapidoProductosResultados = [];
+        $this->ingresoRapidoPresentacionNombre = 'Unidad';
+        $this->ingresoRapidoPresentacionCantidad = 1;
+        $this->ingresoRapidoPresentacionBaseId = null;
+        $this->ingresoRapidoPresentacionesBase = [];
+        $this->ingresoRapidoCantidad = 1.0;
+        $this->ingresoRapidoCosto = null;
+        $this->ingresoRapidoPrecioVenta = 1.0;
+        $this->showProductoDropdown = false;
+        $this->showIngresoRapidoModal = true;
+
+        Notification::make()
+            ->title('Código liberado para nuevo producto')
+            ->body("El código {$codigoBarra} se desvinculó del producto anterior y está listo para registrarse en el nuevo producto.")
+            ->info()
+            ->send();
+    }
+
     public function toggleFormularioNuevaPresentacion(): void
     {
         $this->mostrarFormularioNuevaPresentacion = ! $this->mostrarFormularioNuevaPresentacion;

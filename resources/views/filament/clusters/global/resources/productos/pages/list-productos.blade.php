@@ -717,12 +717,13 @@
 
                     <!-- Cód. Interno -->
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Código Interno</label>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Código Interno (SKU)</label>
                         <input type="text" 
                                wire:model="codigo_interno" 
-                               placeholder="Opcional: Dejar vacío para autogenerar"
-                               class="w-full rounded-xl border-slate-200 bg-white dark:bg-slate-900/60 dark:border-slate-800 text-slate-800 dark:text-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition">
-                        @error('codigo_interno') <span class="text-xs text-rose-500 font-medium mt-1 block">{{ $message }}</span> @enderror
+                               disabled
+                               placeholder="Autogenerado por el sistema"
+                               class="w-full rounded-xl border-slate-200 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-4 py-2.5 text-sm cursor-not-allowed shadow-sm transition">
+                        <span class="text-[11px] text-slate-400">Autogenerado por el sistema (los códigos de barra se ingresan en las presentaciones).</span>
                     </div>
 
 

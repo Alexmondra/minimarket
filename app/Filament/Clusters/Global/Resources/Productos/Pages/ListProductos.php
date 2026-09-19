@@ -251,27 +251,11 @@ class ListProductos extends Page
                 $counter++;
             }
 
-            // Generate unique internal code if empty
-            $codigo = $this->codigo_interno;
-            if (empty($codigo)) {
-                $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $this->nombre);
-                $length = strlen($cleanName);
-                $halfLength = max(1, (int) ceil($length / 2));
-                $halfName = strtoupper(substr($cleanName, 0, $halfLength));
-
-                if (strlen($halfName) > 8) {
-                    $halfName = substr($halfName, 0, 8);
-                }
-
-                $randomDigits = str_pad((string) rand(0, 999), 3, '0', STR_PAD_LEFT);
-                $codigo = $halfName . $randomDigits;
-
-                $baseCodigo = $codigo;
-                $counter = 1;
-                while (Producto::where('codigo_interno', $codigo)->exists()) {
-                    $codigo = $baseCodigo . '-' . $counter;
-                    $counter++;
-                }
+            // Generate unique internal code if empty or creating
+            if (! $this->productoId || empty($this->codigo_interno)) {
+                $codigo = Producto::generarCodigoInterno($this->nombre);
+            } else {
+                $codigo = $this->codigo_interno;
             }
 
             if ($this->productoId) {
@@ -295,7 +279,7 @@ class ListProductos extends Page
                     ->success()
                     ->send();
             } else {
-                Producto::create([
+                $nuevoProducto = Producto::create([
                     'empresa_id' => $empresaId,
                     'nombre' => $this->nombre,
                     'slug' => $slug,
@@ -305,6 +289,16 @@ class ListProductos extends Page
                     'descripcion' => $this->descripcion,
                     'afecto_igv' => true,
                     'activo' => true,
+                ]);
+
+                $unidadId = UniMedida::where('abreviatura', 'und')->value('id')
+                    ?: UniMedida::value('id');
+
+                $nuevoProducto->presentaciones()->create([
+                    'unidad_medida_id' => $unidadId,
+                    'cantidad' => 1,
+                    'tipo_presentacion' => 'Unidad',
+                    'es_pesable' => false,
                 ]);
 
                 Notification::make()

@@ -30,33 +30,8 @@ class CreateProducto extends CreateRecord
         }
         $data['slug'] = $slug;
 
-        // Auto-generar código interno si está vacío (mitad del nombre del producto + 3 números aleatorios)
-        if (empty($data['codigo_interno'])) {
-            // Sanitizar nombre: remover caracteres especiales y espacios
-            $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $data['nombre']);
-            $length = strlen($cleanName);
-            $halfLength = max(1, (int) ceil($length / 2));
-            $halfName = strtoupper(substr($cleanName, 0, $halfLength));
-
-            // Limitar a máximo 8 caracteres la porción del nombre
-            if (strlen($halfName) > 8) {
-                $halfName = substr($halfName, 0, 8);
-            }
-
-            // Generar 3 dígitos aleatorios
-            $randomDigits = str_pad((string) rand(0, 999), 3, '0', STR_PAD_LEFT);
-            $codigo = $halfName.$randomDigits;
-
-            // Asegurar unicidad del código interno en la base de datos
-            $baseCodigo = $codigo;
-            $counter = 1;
-            while (Producto::where('codigo_interno', $codigo)->exists()) {
-                $codigo = $baseCodigo.'-'.$counter;
-                $counter++;
-            }
-
-            $data['codigo_interno'] = $codigo;
-        }
+        // Generar siempre código interno (SKU) limpio de forma automática
+        $data['codigo_interno'] = Producto::generarCodigoInterno($data['nombre']);
 
         return $data;
     }
@@ -66,22 +41,17 @@ class CreateProducto extends CreateRecord
         /** @var Producto $producto */
         $producto = $this->record;
 
+        // Asegurar que el producto siempre nazca con al menos su presentación básica (Unidad)
         if ($producto && $producto->presentaciones()->doesntExist()) {
             $unidadId = UniMedida::where('abreviatura', 'und')->value('id')
                 ?: UniMedida::value('id');
 
-            $presentacion = $producto->presentaciones()->create([
+            $producto->presentaciones()->create([
                 'unidad_medida_id' => $unidadId,
                 'cantidad' => 1,
                 'tipo_presentacion' => 'Unidad',
                 'es_pesable' => false,
             ]);
-
-            if (filled($producto->codigo_interno)) {
-                $presentacion->barras()->firstOrCreate([
-                    'codigo_barra' => trim($producto->codigo_interno),
-                ]);
-            }
         }
     }
 

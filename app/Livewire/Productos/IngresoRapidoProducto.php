@@ -840,17 +840,7 @@ class IngresoRapidoProducto extends Component
 
     protected function generarCodigoInterno(): string
     {
-        $cleanName = preg_replace('/[^A-Za-z0-9]/', '', (string) $this->nombre) ?: 'PROD';
-        $base = strtoupper(substr($cleanName, 0, 8));
-        $codigo = $base.str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT);
-        $counter = 1;
-
-        while (Producto::where('codigo_interno', $codigo)->exists()) {
-            $codigo = $base.str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT).'-'.$counter;
-            $counter++;
-        }
-
-        return $codigo;
+        return Producto::generarCodigoInterno((string) $this->nombre);
     }
 
     protected function generarCodigoLote(): string

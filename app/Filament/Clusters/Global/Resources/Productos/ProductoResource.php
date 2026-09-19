@@ -113,8 +113,11 @@ class ProductoResource extends Resource
                     return $marca->id;
                 }),
             TextInput::make('codigo_interno')
-                ->maxLength(255)
-                ->default(null),
+                ->label('Código Interno (SKU)')
+                ->placeholder('Autogenerado por el sistema')
+                ->disabled()
+                ->dehydrated(false)
+                ->helperText('Identificador único autogenerado. Los códigos de barra se gestionan en las Presentaciones.'),
             Textarea::make('descripcion')
                 ->maxLength(65535)
                 ->default(null)

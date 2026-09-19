@@ -22,6 +22,15 @@ class Producto extends Model
         'activo',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (Producto $producto) {
+            if (empty($producto->codigo_interno)) {
+                $producto->codigo_interno = static::generarCodigoInterno($producto->nombre ?? 'PROD');
+            }
+        });
+    }
+
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
