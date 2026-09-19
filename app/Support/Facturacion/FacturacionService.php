@@ -77,8 +77,11 @@ class FacturacionService
     /**
      * Envía un comprobante preparado a SUNAT y guarda el CDR.
      */
-    public function enviarSunat(Documento $documento): ?Sunat
-    {
+    public function enviarSunat(
+        Documento $documento,
+        bool $throwOnConnectionError = false,
+        int $intento = 1
+    ): ?Sunat {
         if (! in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
             return null;
         }
@@ -99,16 +102,28 @@ class FacturacionService
                 $this->fileService->guardarCdrZip($documento, $result->getCdrZip());
             }
 
-            return $this->guardarRespuesta($sunat, $result);
+            return $this->guardarRespuesta($sunat, $result, $throwOnConnectionError, $intento);
         } catch (Throwable $exception) {
             Log::error('Error al enviar documento a SUNAT.', [
                 'documento_id' => $documento->id,
                 'message' => $exception->getMessage(),
+                'intento' => $intento,
             ]);
+
+            if ($throwOnConnectionError) {
+                $sunat->update([
+                    'estado_sunat' => false,
+                    'codigo_respuesta_sunat' => null,
+                    'mensaje_sunat' => "Error temporal de conexión con SUNAT (Intento {$intento} de 3): {$exception->getMessage()}. Reintentando...",
+                    'fecha_respuesta' => now(),
+                ]);
+
+                throw $exception;
+            }
 
             $sunat->update([
                 'estado_sunat' => false,
-                'codigo_respuesta_sunat' => 'ERROR',
+                'codigo_respuesta_sunat' => 'ERROR_CONEXION',
                 'mensaje_sunat' => $exception->getMessage(),
                 'fecha_respuesta' => now(),
             ]);
@@ -129,7 +144,7 @@ class FacturacionService
 
         $this->preparar($documento);
 
-        return $this->enviarSunat($documento);
+        return $this->enviarSunat($documento, throwOnConnectionError: false);
     }
 
     /**
@@ -188,8 +203,12 @@ class FacturacionService
     /**
      * Envía una Nota de Crédito preparada a SUNAT y guarda el CDR.
      */
-    public function enviarNotaSunat(Documento $nota, Documento $documentoAfectado): Sunat
-    {
+    public function enviarNotaSunat(
+        Documento $nota,
+        Documento $documentoAfectado,
+        bool $throwOnConnectionError = false,
+        int $intento = 1
+    ): Sunat {
         $nota->loadMissing(['empresa.empresaConfig', 'documentoReferencia', 'detalles.presentacion.unidadMedida']);
         $documentoAfectado->loadMissing(['empresa.empresaConfig', 'sucursal.ubigeoRel', 'cliente', 'detalles.presentacion.unidadMedida']);
 
@@ -207,16 +226,28 @@ class FacturacionService
                 $this->fileService->guardarCdrZip($nota, $result->getCdrZip());
             }
 
-            return $this->guardarRespuesta($sunat, $result);
+            return $this->guardarRespuesta($sunat, $result, $throwOnConnectionError, $intento);
         } catch (Throwable $exception) {
             Log::error('Error al enviar Nota a SUNAT.', [
                 'documento_id' => $nota->id,
                 'message' => $exception->getMessage(),
+                'intento' => $intento,
             ]);
+
+            if ($throwOnConnectionError) {
+                $sunat->update([
+                    'estado_sunat' => false,
+                    'codigo_respuesta_sunat' => null,
+                    'mensaje_sunat' => "Error temporal de conexión con SUNAT (Intento {$intento} de 3): {$exception->getMessage()}. Reintentando...",
+                    'fecha_respuesta' => now(),
+                ]);
+
+                throw $exception;
+            }
 
             $sunat->update([
                 'estado_sunat' => false,
-                'codigo_respuesta_sunat' => 'ERROR',
+                'codigo_respuesta_sunat' => 'ERROR_CONEXION',
                 'mensaje_sunat' => $exception->getMessage(),
                 'fecha_respuesta' => now(),
             ]);
@@ -233,7 +264,7 @@ class FacturacionService
     {
         $this->prepararNota($nota, $documentoAfectado);
 
-        return $this->enviarNotaSunat($nota, $documentoAfectado);
+        return $this->enviarNotaSunat($nota, $documentoAfectado, throwOnConnectionError: false);
     }
 
     /**
@@ -248,9 +279,17 @@ class FacturacionService
         return $digestValue ? $digestValue->nodeValue : null;
     }
 
-    protected function guardarRespuesta(Sunat $sunat, mixed $result): Sunat
-    {
+    protected function guardarRespuesta(
+        Sunat $sunat,
+        mixed $result,
+        bool $throwOnConnectionError = false,
+        int $intento = 1
+    ): Sunat {
         if (! $result) {
+            if ($throwOnConnectionError) {
+                throw new \RuntimeException('SUNAT no retornó respuesta (posible tiempo de espera agotado).');
+            }
+
             $sunat->update([
                 'estado_sunat' => false,
                 'codigo_respuesta_sunat' => 'SIN_RESPUESTA',
@@ -273,13 +312,30 @@ class FacturacionService
 
             if (! $code || ! $message) {
                 $error = $result->getError();
-                $code = $code ?: ($error?->getCode() ?: 'ERROR');
-                $message = $message ?: ($error?->getMessage() ?: 'SUNAT rechazo el envio.');
+                $code = $code ?: ($error?->getCode() ?: null);
+                $message = $message ?: ($error?->getMessage() ?: 'Error al comunicar con SUNAT.');
+            }
+
+            // Si es un rechazo formal de SUNAT (códigos 2000 a 3999)
+            if ($this->esRechazoFormal($code)) {
+                $sunat->update([
+                    'estado_sunat' => false,
+                    'codigo_respuesta_sunat' => $code,
+                    'mensaje_sunat' => $message,
+                    'fecha_respuesta' => now(),
+                ]);
+
+                return $sunat->fresh();
+            }
+
+            // Si es un error de conexión, timeout o indisponibilidad transitoria
+            if ($throwOnConnectionError) {
+                throw new \RuntimeException($message ?: 'Error de conexión con SUNAT.');
             }
 
             $sunat->update([
                 'estado_sunat' => false,
-                'codigo_respuesta_sunat' => $code,
+                'codigo_respuesta_sunat' => $code ?: 'ERROR_CONEXION',
                 'mensaje_sunat' => $message,
                 'fecha_respuesta' => now(),
             ]);
@@ -299,6 +355,17 @@ class FacturacionService
         ]);
 
         return $sunat->fresh();
+    }
+
+    public function esRechazoFormal(?string $code): bool
+    {
+        if ($code === null || ! is_numeric($code)) {
+            return false;
+        }
+
+        $numericCode = (int) $code;
+
+        return $numericCode >= 2000 && $numericCode <= 3999;
     }
 
     protected function codigoAceptado(string $code): bool

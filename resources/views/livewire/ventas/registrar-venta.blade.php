@@ -2155,4 +2155,5 @@ wire:model.live.debounce.300ms="clienteDocumento"
     </script>
     {{-- Modal incluido dentro del div raíz de Livewire para asegurar el correcto renderizado y reactividad --}}
     @include('livewire.ventas.modals.buscar-venta')
+    @include('livewire.ventas.modals.vincular-codigo-barra')
 </div>

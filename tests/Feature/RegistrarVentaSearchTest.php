@@ -13,6 +13,10 @@ use App\Models\Ubigeo;
 use App\Models\User;
 use App\Models\Producto;
 use App\Models\ProductoPresentacion;
+use App\Models\ProductoPresentacionBarra;
+use App\Models\ProductoSucursal;
+use App\Models\Lote;
+use App\Models\LotePresentacion;
 use App\Models\UniMedida;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -243,5 +247,151 @@ class RegistrarVentaSearchTest extends TestCase
             ->assertSet('ingresoRapidoCantidad', '15')
             ->assertSet('ingresoRapidoPrecioVenta', '3.50')
             ->assertSet('ingresoRapidoPresentacionCantidad', '6');
+    }
+
+    public function test_it_generates_clean_sku_codigo_interno(): void
+    {
+        $codigo1 = Producto::generarCodigoInterno('PIQUEO SNAX 110G');
+        $this->assertStringStartsWith('PIQU-', $codigo1);
+        $this->assertSame(9, strlen($codigo1)); // 4 letras + '-' + 4 caracteres
+
+        $codigo2 = Producto::generarCodigoInterno('A');
+        $this->assertStringStartsWith('AXXX-', $codigo2);
+    }
+
+    public function test_it_opens_vincular_codigo_modal_when_barcode_was_in_codigo_interno(): void
+    {
+        $this->actingAs($this->user);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PIQUEO SNAX 110G',
+            'slug' => 'piqueo-snax-110g',
+            'codigo_interno' => '7758574006722',
+            'activo' => true,
+        ]);
+
+        $unidad = UniMedida::firstOrCreate(
+            ['abreviatura' => 'und'],
+            ['nombre' => 'Unidad', 'activo' => true]
+        );
+
+        $pres1 = ProductoPresentacion::create([
+            'producto_id' => $producto->id,
+            'unidad_medida_id' => $unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Bolsa 55g',
+        ]);
+        ProductoPresentacionBarra::create([
+            'producto_presentacion_id' => $pres1->id,
+            'codigo_barra' => '7758574004230',
+        ]);
+
+        $pres2 = ProductoPresentacion::create([
+            'producto_id' => $producto->id,
+            'unidad_medida_id' => $unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Bolsa 110g',
+        ]);
+
+        // Simular escaneo de 7758574006722
+        Livewire::test(RegistrarVenta::class)
+            ->set('searchProducto', '7758574006722')
+            ->call('procesarEnterBuscador')
+            ->assertSet('showVincularCodigoModal', true)
+            ->assertSet('vincularCodigoBarra', '7758574006722')
+            ->assertSet('vincularProductoId', $producto->id)
+            ->assertCount('vincularPresentaciones', 2);
+    }
+
+    public function test_it_links_barcode_to_presentation_and_updates_codigo_interno_to_sku(): void
+    {
+        $this->actingAs($this->user);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PIQUEO SNAX 110G',
+            'slug' => 'piqueo-snax-110g',
+            'codigo_interno' => '7758574006722',
+            'activo' => true,
+        ]);
+
+        $unidad = UniMedida::firstOrCreate(
+            ['abreviatura' => 'und'],
+            ['nombre' => 'Unidad', 'activo' => true]
+        );
+
+        $pres = ProductoPresentacion::create([
+            'producto_id' => $producto->id,
+            'unidad_medida_id' => $unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Bolsa 110g',
+        ]);
+
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-001',
+            'producto_nombre' => $producto->nombre,
+            'precio_compra' => 2.00,
+            'estado_lote' => 'activo',
+        ]);
+
+        $lotePres = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $pres->id,
+            'stock' => 10,
+            'estado' => 'activo',
+        ]);
+
+        ProductoSucursal::create([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $this->sucursal->id,
+            'lote_presentacion_id' => $lotePres->id,
+            'precio' => 3.50,
+            'activo' => true,
+        ]);
+
+        Livewire::test(RegistrarVenta::class)
+            ->set('vincularProductoId', $producto->id)
+            ->set('vincularCodigoBarra', '7758574006722')
+            ->set('showVincularCodigoModal', true)
+            ->call('seleccionarPresentacionParaVincular', $pres->id)
+            ->assertSet('showVincularCodigoModal', false)
+            ->assertCount('cartItems', 1);
+
+        // Verificar que el código de barra ahora pertenece a la presentación
+        $this->assertDatabaseHas('producto_presentacion_barras', [
+            'producto_presentacion_id' => $pres->id,
+            'codigo_barra' => '7758574006722',
+        ]);
+
+        // Verificar que el producto ya no tiene el código de barra en codigo_interno
+        $producto->refresh();
+        $this->assertNotSame('7758574006722', $producto->codigo_interno);
+        $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
+    }
+
+    public function test_it_frees_barcode_when_desvincular_codigo_sin_asignar_is_called(): void
+    {
+        $this->actingAs($this->user);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'PIQUEO SNAX 110G',
+            'slug' => 'piqueo-snax-110g',
+            'codigo_interno' => '7758574006722',
+            'activo' => true,
+        ]);
+
+        Livewire::test(RegistrarVenta::class)
+            ->set('vincularProductoId', $producto->id)
+            ->set('vincularCodigoBarra', '7758574006722')
+            ->set('showVincularCodigoModal', true)
+            ->call('desvincularCodigoSinAsignar')
+            ->assertSet('showVincularCodigoModal', false);
+
+        $producto->refresh();
+        $this->assertNotSame('7758574006722', $producto->codigo_interno);
+        $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
     }
 }

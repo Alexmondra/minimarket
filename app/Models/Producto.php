@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Producto extends Model
 {
@@ -117,5 +118,25 @@ class Producto extends Model
         return $this->presentaciones
             ->whereNotNull('imagen')
             ->where('imagen', '!=', '');
+    }
+
+    /**
+     * Genera un código interno (SKU) único para el producto basado en 4 letras del nombre + 4 caracteres aleatorios.
+     * Ejemplo: "PIQUEO SNAX" -> "PIQU-8492"
+     */
+    public static function generarCodigoInterno(string $nombre): string
+    {
+        $clean = preg_replace('/[^A-Za-z0-9]/', '', $nombre) ?: 'PROD';
+        $prefix = strtoupper(substr($clean, 0, 4));
+        if (strlen($prefix) < 4) {
+            $prefix = str_pad($prefix, 4, 'X');
+        }
+
+        do {
+            $random = strtoupper(Str::random(4));
+            $codigo = "{$prefix}-{$random}";
+        } while (static::where('codigo_interno', $codigo)->exists());
+
+        return $codigo;
     }
 }

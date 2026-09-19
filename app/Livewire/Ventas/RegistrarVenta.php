@@ -65,6 +65,16 @@ trait RegistrarVentaBehavior
 
     public bool $showProductoDropdown = false;
 
+    public bool $showVincularCodigoModal = false;
+
+    public ?string $vincularCodigoBarra = null;
+
+    public ?int $vincularProductoId = null;
+
+    public ?string $vincularProductoNombre = null;
+
+    public array $vincularPresentaciones = [];
+
     public bool $showIngresoRapidoModal = false;
 
     public bool $ingresoRapidoCrearProducto = false;
@@ -682,29 +692,7 @@ trait RegistrarVentaBehavior
 
         // Búsqueda de coincidencia exacta por código de barra o código interno
         if (strlen($term) >= 3) {
-            $exactMatch = ProductoSucursal::query()
-                ->where('sucursal_id', $this->sucursalId)
-                ->where('activo', true)
-                ->whereHas('producto', function ($query) {
-                    $query->where('empresa_id', Auth::user()->empresa_id)
-                        ->where('activo', true);
-                })
-                ->where(function ($query) use ($term) {
-                    $query->whereHas('producto', function ($q) use ($term) {
-                        $q->where('codigo_interno', $term);
-                    })->orWhereHas('lotePresentacion.productoPresentacion', function ($q) use ($term) {
-                        $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
-                    });
-                })
-                ->whereHas('lotePresentacion', fn ($q) => $q
-                    ->where('stock', '>', 0)
-                    ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
-                )
-                ->first();
-
-            if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
-                $this->agregarProducto($exactMatch->lotePresentacion->producto_presentacion_id);
-
+            if ($this->buscarCoincidenciaExacta($term)) {
                 return;
             }
         }
@@ -1212,7 +1200,7 @@ trait RegistrarVentaBehavior
                 } else {
                     $producto = Producto::create([
                         'empresa_id' => Auth::user()->empresa_id,
-                        'codigo_interno' => $this->ingresoRapidoCodigoBarra !== '' ? trim($this->ingresoRapidoCodigoBarra) : null,
+                        'codigo_interno' => Producto::generarCodigoInterno($this->ingresoRapidoProductoNombre),
                         'nombre' => trim($this->ingresoRapidoProductoNombre),
                         'slug' => Str::slug($this->ingresoRapidoProductoNombre) . '-' . Str::lower(Str::random(6)),
                         'afecto_igv' => true,
@@ -1569,44 +1557,15 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        if ($this->sucursalId) {
-            $exactMatch = ProductoSucursal::query()
-                ->where('sucursal_id', $this->sucursalId)
-                ->where('activo', true)
-                ->whereHas('producto', function ($query) {
-                    $query->where('empresa_id', Auth::user()->empresa_id)
-                        ->where('activo', true);
-                })
-                ->where(function ($query) use ($term) {
-                    $query->whereHas('producto', function ($q) use ($term) {
-                        $q->where('codigo_interno', $term);
-                    })->orWhereHas('lotePresentacion.productoPresentacion', function ($q) use ($term) {
-                        $q->whereHas('barras', fn ($b) => $b->where('codigo_barra', $term));
-                    });
-                })
-                ->whereHas('lotePresentacion', fn ($q) => $q
-                    ->where('stock', '>', 0)
-                    ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
-                )
-                ->first();
-
-            if ($exactMatch && $exactMatch->lotePresentacion?->producto_presentacion_id) {
-                $this->agregarProducto($exactMatch->lotePresentacion->producto_presentacion_id);
-                $this->searchProducto = '';
-                $this->productosResultados = [];
-                $this->productosSinStockResultados = [];
-                $this->showProductoDropdown = false;
-                return;
-            }
+        if ($this->buscarCoincidenciaExacta($term)) {
+            return;
         }
 
         if (! empty($this->productosResultados)) {
             $first = $this->productosResultados[0];
             $this->agregarProducto($first['producto_presentacion_id']);
             $this->searchProducto = '';
-            $this->productosResultados = [];
-            $this->productosSinStockResultados = [];
-            $this->showProductoDropdown = false;
+            $this->limpiarResultadosBusquedaProducto();
 
             return;
         }
@@ -1620,6 +1579,234 @@ trait RegistrarVentaBehavior
         if (strlen($term) >= 2) {
             $this->abrirIngresoRapido();
         }
+    }
+
+    protected function esCodigoBarra(string $term): bool
+    {
+        return ctype_digit($term) && strlen($term) >= 8 && strlen($term) <= 14;
+    }
+
+    protected function buscarCoincidenciaExacta(string $term): bool
+    {
+        if (strlen($term) < 3 || ! $this->sucursalId) {
+            return false;
+        }
+
+        // 1. Prioridad máxima: Búsqueda exacta por CÓDIGO DE BARRA de la presentación
+        $exactBarcodeMatch = ProductoSucursal::query()
+            ->where('sucursal_id', $this->sucursalId)
+            ->where('activo', true)
+            ->whereHas('producto', function ($query) {
+                $query->where('empresa_id', Auth::user()->empresa_id)
+                    ->where('activo', true);
+            })
+            ->whereHas('lotePresentacion.productoPresentacion.barras', function ($q) use ($term) {
+                $q->where('codigo_barra', $term);
+            })
+            ->whereHas('lotePresentacion', fn ($q) => $q
+                ->where('stock', '>', 0)
+                ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+            )
+            ->first();
+
+        if ($exactBarcodeMatch && $exactBarcodeMatch->lotePresentacion?->producto_presentacion_id) {
+            $this->agregarProducto($exactBarcodeMatch->lotePresentacion->producto_presentacion_id);
+            $this->searchProducto = '';
+            $this->limpiarResultadosBusquedaProducto();
+
+            return true;
+        }
+
+        // 2. Si el término parece un código de barras numérico (8 a 14 dígitos), comprobar si quedó atrapado en productos.codigo_interno
+        if ($this->esCodigoBarra($term)) {
+            $productoConCodigoInternoBarra = Producto::query()
+                ->where('empresa_id', Auth::user()->empresa_id)
+                ->where('activo', true)
+                ->where('codigo_interno', $term)
+                ->with(['presentaciones.unidadMedida', 'presentaciones.barras'])
+                ->first();
+
+            if ($productoConCodigoInternoBarra) {
+                $this->procesarProductoConCodigoInternoBarra($productoConCodigoInternoBarra, $term);
+
+                return true;
+            }
+        }
+
+        // 3. Coincidencia exacta por CÓDIGO INTERNO normal (SKU de producto)
+        $exactSkuMatch = ProductoSucursal::query()
+            ->where('sucursal_id', $this->sucursalId)
+            ->where('activo', true)
+            ->whereHas('producto', function ($query) use ($term) {
+                $query->where('empresa_id', Auth::user()->empresa_id)
+                    ->where('activo', true)
+                    ->where('codigo_interno', $term);
+            })
+            ->whereHas('lotePresentacion', fn ($q) => $q
+                ->where('stock', '>', 0)
+                ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+            )
+            ->first();
+
+        if ($exactSkuMatch && $exactSkuMatch->lotePresentacion?->producto_presentacion_id) {
+            $this->agregarProducto($exactSkuMatch->lotePresentacion->producto_presentacion_id);
+            $this->searchProducto = '';
+            $this->limpiarResultadosBusquedaProducto();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function procesarProductoConCodigoInternoBarra(Producto $producto, string $codigoBarra): void
+    {
+        $presentaciones = $producto->presentaciones;
+
+        // Caso 1: El producto NO tiene presentaciones
+        if ($presentaciones->isEmpty()) {
+            DB::transaction(function () use ($producto, $codigoBarra) {
+                $unidad = UniMedida::where('abreviatura', 'und')->first() ?? UniMedida::first();
+                $presentacion = ProductoPresentacion::create([
+                    'producto_id' => $producto->id,
+                    'unidad_medida_id' => $unidad?->id ?? 1,
+                    'cantidad' => 1,
+                    'tipo_presentacion' => 'Unidad',
+                    'es_pesable' => false,
+                ]);
+
+                ProductoPresentacionBarra::firstOrCreate(
+                    ['codigo_barra' => $codigoBarra],
+                    ['producto_presentacion_id' => $presentacion->id]
+                );
+
+                $nuevoCodigo = Producto::generarCodigoInterno($producto->nombre);
+                $producto->update(['codigo_interno' => $nuevoCodigo]);
+
+                Notification::make()
+                    ->title('Presentación creada y código asignado')
+                    ->body("Se creó la presentación 'Unidad' para {$producto->nombre} con el código de barra {$codigoBarra} y SKU {$nuevoCodigo}.")
+                    ->success()
+                    ->send();
+            });
+
+            $this->searchProducto = '';
+            $this->limpiarResultadosBusquedaProducto();
+
+            return;
+        }
+
+        // Caso 2: El producto tiene presentaciones -> mostrar modal para elegir
+        $this->vincularProductoId = $producto->id;
+        $this->vincularProductoNombre = $producto->nombre;
+        $this->vincularCodigoBarra = $codigoBarra;
+
+        $sucursalId = $this->sucursalId;
+
+        $this->vincularPresentaciones = $presentaciones->map(function (ProductoPresentacion $pres) use ($sucursalId) {
+            $stock = (float) ProductoSucursal::query()
+                ->where('sucursal_id', $sucursalId)
+                ->where('activo', true)
+                ->whereHas('lotePresentacion', fn ($q) => $q
+                    ->where('producto_presentacion_id', $pres->id)
+                    ->where('stock', '>', 0)
+                    ->whereHas('lote', fn ($l) => $l->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+                )
+                ->get()
+                ->sum(fn ($ps) => (float) $ps->stock);
+
+            $precio = (float) (ProductoSucursal::where('sucursal_id', $sucursalId)
+                ->whereHas('lotePresentacion', fn ($q) => $q->where('producto_presentacion_id', $pres->id))
+                ->first()?->precio ?? 0.0);
+
+            $barras = $pres->barras->pluck('codigo_barra')->implode(', ');
+
+            return [
+                'id' => $pres->id,
+                'tipo_presentacion' => $pres->tipo_presentacion,
+                'unidad' => $pres->unidadMedida?->abreviatura ?? 'und',
+                'cantidad' => $pres->cantidad,
+                'stock' => $stock,
+                'precio' => $precio,
+                'barras_actuales' => $barras ?: 'Sin código de barra',
+            ];
+        })->toArray();
+
+        $this->showVincularCodigoModal = true;
+        $this->searchProducto = '';
+        $this->limpiarResultadosBusquedaProducto();
+    }
+
+    public function seleccionarPresentacionParaVincular(int $presentacionId): void
+    {
+        if (! $this->vincularProductoId || ! $this->vincularCodigoBarra) {
+            $this->cerrarVincularCodigoModal();
+
+            return;
+        }
+
+        $producto = Producto::find($this->vincularProductoId);
+        $presentacion = ProductoPresentacion::find($presentacionId);
+
+        if (! $producto || ! $presentacion || $presentacion->producto_id !== $producto->id) {
+            $this->cerrarVincularCodigoModal();
+
+            return;
+        }
+
+        $codigoBarra = $this->vincularCodigoBarra;
+
+        DB::transaction(function () use ($producto, $presentacion, $codigoBarra) {
+            ProductoPresentacionBarra::firstOrCreate(
+                ['codigo_barra' => $codigoBarra],
+                ['producto_presentacion_id' => $presentacion->id]
+            );
+
+            $nuevoSku = Producto::generarCodigoInterno($producto->nombre);
+            $producto->update([
+                'codigo_interno' => $nuevoSku,
+            ]);
+        });
+
+        $this->agregarProducto($presentacion->id);
+
+        Notification::make()
+            ->title('Código vinculado exitosamente')
+            ->body("El código {$codigoBarra} se asignó a {$presentacion->tipo_presentacion}. El código interno del producto se actualizó a {$producto->fresh()->codigo_interno}.")
+            ->success()
+            ->send();
+
+        $this->cerrarVincularCodigoModal();
+    }
+
+    public function desvincularCodigoSinAsignar(): void
+    {
+        if ($this->vincularProductoId) {
+            $producto = Producto::find($this->vincularProductoId);
+            if ($producto) {
+                $nuevoSku = Producto::generarCodigoInterno($producto->nombre);
+                $producto->update([
+                    'codigo_interno' => $nuevoSku,
+                ]);
+
+                Notification::make()
+                    ->title('Código liberado')
+                    ->body("El código interno de {$producto->nombre} fue actualizado a {$nuevoSku}. El código {$this->vincularCodigoBarra} quedó libre.")
+                    ->info()
+                    ->send();
+            }
+        }
+
+        $this->cerrarVincularCodigoModal();
+    }
+
+    public function cerrarVincularCodigoModal(): void
+    {
+        $this->showVincularCodigoModal = false;
+        $this->vincularCodigoBarra = null;
+        $this->vincularProductoId = null;
+        $this->vincularProductoNombre = null;
+        $this->vincularPresentaciones = [];
     }
 
     public function updatedCartItems($value, $key): void
