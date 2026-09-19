@@ -133,7 +133,7 @@
                                 <button
                                     type="button"
                                     wire:click="crearYVincularNuevaPresentacion"
-                                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                                    class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
                                 >
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -147,9 +147,9 @@
 
                 {{-- Opción: Crear un producto completamente nuevo --}}
                 <div class="border-t border-slate-200 dark:border-slate-800 pt-4">
-                    <div class="p-3.5 rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/20 flex items-center justify-between gap-3">
+                    <div class="p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-800/50 bg-emerald-50/80 dark:bg-emerald-950/20 flex items-center justify-between gap-3 shadow-xs">
                         <div class="space-y-0.5 min-w-0 flex-1">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-300">
                                 3. ¿Es un producto totalmente diferente?
                             </h4>
                             <p class="text-[11px] text-slate-600 dark:text-slate-400">
@@ -160,9 +160,9 @@
                         <button
                             type="button"
                             wire:click="crearNuevoProductoDesdeVincularModal"
-                            class="shrink-0 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm hover:shadow transition flex items-center gap-1.5"
+                            class="shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-black shadow-md shadow-emerald-600/25 hover:shadow-lg transition flex items-center gap-1.5 border border-emerald-500"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                             <span>Crear Nuevo Producto</span>
