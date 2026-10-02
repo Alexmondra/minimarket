@@ -1213,12 +1213,41 @@
                     <div class="border-t pos-border pt-3">
                         <div class="flex justify-between items-baseline mb-2">
                             <span class="text-xs font-extrabold uppercase tracking-wide pos-text-muted">Total a Pagar</span>
-                            <span class="text-2xl font-black text-amber-500 font-mono">S/ {{ number_format($resumen['totales']['total_neto'], 2) }}</span>
+                            <span id="pos-live-total-neto" data-total="{{ (float) $resumen['totales']['total_neto'] }}" class="text-2xl font-black text-amber-500 font-mono">S/ {{ number_format($resumen['totales']['total_neto'], 2) }}</span>
                         </div>
                     </div>
 
                     <!-- Payment details -->
-                    <div class="border-t pos-border pt-3 space-y-3" x-data="{ montoLocal: @entangle('montoRecibido'), totalNeto: {{ $resumen['totales']['total_neto'] }}, get montoNum() { let v = String(this.montoLocal ?? '').replace(/,/g, '.').replace(/[^0-9.]/g, ''); if (v === '' || v === '.') return 0; let p = v.split('.'); if (p.length > 2) v = p[0] + '.' + p.slice(1).join(''); return parseFloat(v) || 0; }, get vueltoLocal() { return this.montoNum - this.totalNeto; } }">
+                    <div wire:key="pos-payment-box-{{ (float) $resumen['totales']['total_neto'] }}" class="border-t pos-border pt-3 space-y-3" x-data="{
+                        montoLocal: @entangle('montoRecibido').live,
+                        limpiarMonto(val) {
+                            let v = String(val ?? '').replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                            let p = v.split('.');
+                            if (p.length > 1) {
+                                return p[0] + '.' + p.slice(1).join('').slice(0, 2);
+                            }
+                            return p[0];
+                        },
+                        onInputMonto(e) {
+                            let clean = this.limpiarMonto(e.target.value);
+                            e.target.value = clean;
+                            this.montoLocal = clean;
+                        },
+                        get totalNeto() {
+                            let el = document.getElementById('pos-live-total-neto');
+                            return el ? (parseFloat(el.dataset.total) || 0) : {{ (float) $resumen['totales']['total_neto'] }};
+                        },
+                        get montoNum() {
+                            let v = String(this.montoLocal ?? '').replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                            if (v === '' || v === '.') return 0;
+                            let p = v.split('.');
+                            if (p.length > 2) v = p[0] + '.' + p.slice(1).join('');
+                            return parseFloat(v) || 0;
+                        },
+                        get vueltoLocal() {
+                            return Math.round((this.montoNum - this.totalNeto) * 100) / 100;
+                        }
+                    }">
                         @if($medioPago === 'EFECTIVO')
                             <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 shadow-inner dark:bg-emerald-500/10">
                                 <label class="block font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300 text-[10px] mb-2">Monto recibido</label>
@@ -1229,6 +1258,24 @@
                                         inputmode="decimal"
                                         pattern="[0-9]*[.,]?[0-9]*"
                                         x-model="montoLocal"
+                                        @input="onInputMonto($event)"
+                                        @keydown="
+                                            if (!/[0-9.,]/.test($event.key) && !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'].includes($event.key) && !$event.ctrlKey && !$event.metaKey) {
+                                                $event.preventDefault();
+                                            }
+                                            if (($event.key === '.' || $event.key === ',') && ($event.target.value.includes('.') || $event.target.value.includes(','))) {
+                                                $event.preventDefault();
+                                            }
+                                            let val = $event.target.value;
+                                            let dotIdx = val.indexOf('.');
+                                            if (dotIdx !== -1 && /[0-9]/.test($event.key)) {
+                                                let selStart = $event.target.selectionStart;
+                                                let selEnd = $event.target.selectionEnd;
+                                                if (selStart === selEnd && selStart > dotIdx && val.slice(dotIdx + 1).length >= 2) {
+                                                    $event.preventDefault();
+                                                }
+                                            }
+                                        "
                                         class="w-full pos-input rounded-2xl py-3.5 pl-10 pr-3 text-xl font-black font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                                         placeholder="0.00"
                                     >
@@ -2129,6 +2176,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
             if (searchInput) searchInput.focus();
 
             const focusSearchInput = () => {
+                if (document.querySelector('[style*="z-index: 99999"]')) return;
                 const active = document.activeElement;
                 if (active && active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT') {
                     const input = document.getElementById('search-producto-input');
@@ -2145,6 +2193,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
             });
 
             document.addEventListener('click', (e) => {
+                if (document.querySelector('[style*="z-index: 99999"]')) return;
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
                 setTimeout(focusSearchInput, 50);
             });
@@ -2154,6 +2203,7 @@ wire:model.live.debounce.300ms="clienteDocumento"
         document.addEventListener('livewire:initialized', () => {
             Livewire.hook('request', ({ respond }) => {
                 respond(() => {
+                    if (document.querySelector('[style*="z-index: 99999"]')) return;
                     const active = document.activeElement;
                     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
                     setTimeout(() => {

@@ -300,6 +300,26 @@ trait RegistrarVentaBehavior
         }
     }
 
+    public function updatedMontoRecibido($value): void
+    {
+        if ($value === null || $value === '') {
+            $this->montoRecibido = '';
+
+            return;
+        }
+
+        $clean = str_replace(',', '.', trim((string) $value));
+        $clean = preg_replace('/[^0-9.]/', '', $clean);
+        $parts = explode('.', $clean);
+        if (count($parts) > 1) {
+            $clean = $parts[0] . '.' . substr(implode('', array_slice($parts, 1)), 0, 2);
+        } else {
+            $clean = $parts[0];
+        }
+
+        $this->montoRecibido = $clean;
+    }
+
     public function cambiarMedioPago(string $medio): void
     {
         if (! in_array($medio, RegistrarVentaAction::MEDIOS_PAGO_CONTADO, true)) {
@@ -1486,16 +1506,21 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        $montoRecibido = $this->normalizarNumero($this->montoRecibido) ?? 0.0;
+        $montoRecibido = $this->normalizarNumero($this->montoRecibido);
 
         if ($this->medioPago !== 'EFECTIVO') {
             $montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
             $this->montoRecibido = $this->formatearImporte($montoRecibido);
-        } elseif ($montoRecibido < (float) $resumen['totales']['total_neto']) {
-            Notification::make()->title('El monto recibido no cubre el total de la venta')->danger()->send();
-            $this->isSaving = false;
+        } else {
+            if ($montoRecibido === null || $montoRecibido <= 0.0) {
+                $montoRecibido = round((float) $resumen['totales']['total_neto'], 2);
+                $this->montoRecibido = $this->formatearImporte($montoRecibido);
+            } elseif ($montoRecibido < (float) $resumen['totales']['total_neto']) {
+                Notification::make()->title('El monto recibido no cubre el total de la venta')->danger()->send();
+                $this->isSaving = false;
 
-            return;
+                return;
+            }
         }
 
         try {
@@ -2310,6 +2335,8 @@ trait RegistrarVentaBehavior
         $this->selectedCategoriaId = null;
         $this->createdDocumentoId = null;
         $this->showSuccessModal = false;
+        $this->isSaving = false;
+        $this->limpiarSesionPOS();
     }
 
     public function getExpectedCajaBalanceProperty(): float

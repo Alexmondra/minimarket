@@ -470,6 +470,89 @@ class RegistrarVentaSearchTest extends TestCase
         $this->assertNotSame('7758574006722', $producto->codigo_interno);
         $this->assertStringStartsWith('PIQU-', $producto->codigo_interno);
     }
+
+    public function test_it_processes_sale_correctly_with_cash_and_resets(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake([\App\Jobs\ProcesarFacturaSunat::class]);
+
+        $this->actingAs($this->user);
+
+        $unidad = UniMedida::create([
+            'nombre' => 'Unidad',
+            'abreviatura' => 'und',
+            'activo' => true,
+        ]);
+
+        $producto = Producto::create([
+            'empresa_id' => $this->empresa->id,
+            'nombre' => 'GALLETA OREO',
+            'slug' => 'galleta-oreo',
+            'codigo_interno' => 'PROD-001',
+            'activo' => true,
+        ]);
+
+        $presentacion = ProductoPresentacion::create([
+            'producto_id' => $producto->id,
+            'unidad_medida_id' => $unidad->id,
+            'cantidad' => 1,
+            'tipo_presentacion' => 'Paquete',
+        ]);
+
+        $lote = Lote::create([
+            'sucursal_id' => $this->sucursal->id,
+            'codigo_lote' => 'LOT-OREO',
+            'producto_nombre' => $producto->nombre,
+            'precio_compra' => 1.50,
+            'estado_lote' => 'activo',
+        ]);
+
+        $lotePres = LotePresentacion::create([
+            'lote_id' => $lote->id,
+            'producto_presentacion_id' => $presentacion->id,
+            'stock' => 50,
+            'estado' => 'activo',
+        ]);
+
+        ProductoSucursal::create([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $this->sucursal->id,
+            'lote_presentacion_id' => $lotePres->id,
+            'precio' => 2.50,
+            'activo' => true,
+        ]);
+
+        $test = Livewire::test(RegistrarVenta::class)
+            ->call('agregarProducto', $presentacion->id)
+            ->assertCount('cartItems', 1)
+            ->set('montoRecibido', 'abc20.559')
+            ->assertSet('montoRecibido', '20.55')
+            ->call('guardarVenta')
+            ->assertSet('showSuccessModal', true);
+
+        $createdDocId = $test->get('createdDocumentoId');
+        $this->assertNotNull($createdDocId);
+
+        $doc = Documento::find($createdDocId);
+        $this->assertNotNull($doc);
+        $this->assertEquals('BOLETA', $doc->tipo_comprobante);
+        $this->assertEquals('EFECTIVO', $doc->medio_pago);
+        $this->assertEquals(2.50, (float) $doc->total_neto);
+        $this->assertEquals(20.55, (float) $doc->monto_recibido);
+        $this->assertEquals($this->caja->id, $doc->caja_sesion_id);
+        $this->assertEquals($this->sucursal->id, $doc->sucursal_id);
+
+        // Verificamos que se descontó el stock en el lote correctamente
+        $lotePres->refresh();
+        $this->assertEquals(49, $lotePres->stock);
+
+        // Cerramos el modal de éxito y verificamos reseteo
+        $test->call('cerrarSuccessModal')
+            ->assertSet('showSuccessModal', false)
+            ->assertSet('createdDocumentoId', null)
+            ->assertSet('isSaving', false)
+            ->assertCount('cartItems', 0)
+            ->assertSet('montoRecibido', '');
+    }
 }
 
 
