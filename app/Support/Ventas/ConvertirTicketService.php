@@ -77,9 +77,6 @@ class ConvertirTicketService
 
         $this->eliminarPdfAnterior($documento);
 
-        $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-        $this->fileService->guardarPdf($documento, $pdf->output());
-
         ProcesarFacturaSunat::dispatch($documento);
 
         return $documento->fresh([

@@ -853,6 +853,24 @@ trait RegistrarVentaBehavior
             ->map(function (ProductoPresentacion $presentacion): array {
                 $producto = $presentacion->producto;
 
+                $padreConStock = LotePresentacion::query()
+                    ->where('stock', '>', 0)
+                    ->whereHas('productoSucursal', fn ($q) => $q->where('sucursal_id', $this->sucursalId)->where('activo', true))
+                    ->whereHas('lote', fn ($q) => $q->whereNotIn('estado_lote', ['por_confirmar', 'vencido', 'agotado']))
+                    ->whereHas('productoPresentacion', function ($q) use ($presentacion) {
+                        $q->where(function ($sub) use ($presentacion) {
+                            $sub->where('presentacion_base_id', $presentacion->id);
+                            if ((float) $presentacion->cantidad <= 1) {
+                                $sub->orWhere(fn ($s) => $s->where('producto_id', $presentacion->producto_id)->where('id', '!=', $presentacion->id)->where('cantidad', '>', 1));
+                            }
+                        });
+                    })
+                    ->with('productoPresentacion')
+                    ->first();
+
+                $tienePadreConStock = $padreConStock !== null;
+                $padreInfo = $padreConStock ? "Disponible por empaque ({$padreConStock->stock} {$padreConStock->productoPresentacion?->tipo_presentacion})" : null;
+
                 return [
                     'producto_presentacion_id' => $presentacion->id,
                     'producto_id' => $producto?->id,
@@ -861,6 +879,8 @@ trait RegistrarVentaBehavior
                     'presentacion' => $presentacion->tipo_presentacion ?: 'Presentacion',
                     'imagen_url' => $presentacion->imagen_url,
                     'unidad' => $presentacion->unidadMedida?->abreviatura ?? 'und',
+                    'tiene_padre_con_stock' => $tienePadreConStock,
+                    'padre_info' => $padreInfo,
                 ];
             })
             ->values()
@@ -971,7 +991,40 @@ trait RegistrarVentaBehavior
 
     public function agregarProductoDirecto(int $presentacionId, float $cantidad = 1.0): void
     {
+        $cantidad = max($cantidad, 0.001);
         $producto = $this->obtenerDetalleProducto($presentacionId);
+
+        $index = collect($this->cartItems)
+            ->search(fn (array $item): bool => $item['producto_presentacion_id'] === $presentacionId);
+        $cantidadEnCarrito = $index !== false ? (float) $this->cartItems[$index]['cantidad'] : 0.0;
+        $stockActual = $producto ? (float) $producto['stock'] : 0.0;
+
+        // Si no hay producto con stock suficiente para cubrir lo solicitado + lo que ya está en carrito:
+        if (! $producto || ($stockActual < ($cantidadEnCarrito + $cantidad))) {
+            $cantidadFaltante = ($cantidadEnCarrito + $cantidad) - $stockActual;
+
+            $resultadoDescompresion = app(RegistrarVentaAction::class)->intentarDescomprimirPadres(
+                productoPresentacionId: $presentacionId,
+                cantidadNecesaria: max($cantidadFaltante, 1.0),
+                sucursalId: $this->sucursalId,
+                userId: Auth::id(),
+                empresaId: Auth::user()->empresa_id,
+                documentoReferencia: 'Venta POS'
+            );
+
+            if ($resultadoDescompresion) {
+                // Recargar el detalle del producto con el nuevo stock disponible
+                $producto = $this->obtenerDetalleProducto($presentacionId);
+
+                // Toast rápido que dura 3 segundos (3000ms) o se cierra con clic
+                Notification::make()
+                    ->title('📦 Descompresión automática')
+                    ->body("Se abrió {$resultadoDescompresion['cajas']} {$resultadoDescompresion['parent_nombre']} de {$resultadoDescompresion['producto_nombre']}. Stock disponible: {$resultadoDescompresion['stock_final_unidades']} unidades.")
+                    ->success()
+                    ->duration(3000)
+                    ->send();
+            }
+        }
 
         if (! $producto) {
             Notification::make()->title('Producto sin stock disponible')->warning()->send();
@@ -979,16 +1032,12 @@ trait RegistrarVentaBehavior
             return;
         }
 
-        $cantidad = max($cantidad, 0.001);
-
-        $index = collect($this->cartItems)
-            ->search(fn (array $item): bool => $item['producto_presentacion_id'] === $presentacionId);
-
         if ($index !== false) {
             $this->cartItems[$index]['cantidad'] = min(
                 round((float) $this->cartItems[$index]['cantidad'] + $cantidad, 3),
-                (float) $this->cartItems[$index]['stock']
+                (float) $producto['stock']
             );
+            $this->cartItems[$index]['stock'] = (float) $producto['stock'];
             $this->recalcularPrecio($index);
         } else {
             $this->cartItems[] = [
@@ -1003,6 +1052,22 @@ trait RegistrarVentaBehavior
         $this->productosSinStockResultados = [];
         $this->showProductoDropdown = false;
         $this->normalizarPuntosCanje();
+    }
+
+    public function seleccionarProductoSinStock(int $presentacionId): void
+    {
+        $this->agregarProductoDirecto($presentacionId);
+
+        // Si se logró agregar al carrito (gracias a la descompresión automática):
+        if (collect($this->cartItems)->contains('producto_presentacion_id', $presentacionId)) {
+            $this->searchProducto = '';
+            $this->limpiarResultadosBusquedaProducto();
+
+            return;
+        }
+
+        // Si realmente no hay stock en ninguna presentación, abrir el ingreso rápido:
+        $this->abrirIngresoRapido($presentacionId);
     }
 
     public function abrirIngresoRapido(?int $presentacionId = null): void
@@ -1579,7 +1644,7 @@ trait RegistrarVentaBehavior
         }
 
         if (! empty($this->productosSinStockResultados)) {
-            $this->abrirIngresoRapido($this->productosSinStockResultados[0]['producto_presentacion_id']);
+            $this->seleccionarProductoSinStock($this->productosSinStockResultados[0]['producto_presentacion_id']);
 
             return;
         }

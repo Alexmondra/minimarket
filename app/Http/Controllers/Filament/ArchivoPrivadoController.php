@@ -18,6 +18,11 @@ class ArchivoPrivadoController
 
         abort_unless($documento, 404);
         abort_unless(app(SucursalContext::class)->canAccessSucursal((int) $documento->sucursal_id), 403);
+
+        if ($archivo->tipo_archivo === 'pdf') {
+            return $this->viewDocumentoPdf($documento);
+        }
+
         abort_unless(Storage::disk('local')->exists($archivo->ruta_archivo), 404);
 
         $path = Storage::disk('local')->path($archivo->ruta_archivo);
@@ -33,6 +38,11 @@ class ArchivoPrivadoController
 
         abort_unless($documento, 404);
         abort_unless(app(SucursalContext::class)->canAccessSucursal((int) $documento->sucursal_id), 403);
+
+        if ($archivo->tipo_archivo === 'pdf') {
+            return $this->viewDocumentoPdf($documento);
+        }
+
         abort_unless(Storage::disk('local')->exists($archivo->ruta_archivo), 404);
 
         return Storage::disk('local')->download(
@@ -45,47 +55,32 @@ class ArchivoPrivadoController
     {
         abort_unless(app(SucursalContext::class)->canAccessSucursal((int) $documento->sucursal_id), 403);
 
-        if ($documento->tipo_comprobante === 'TICKET') {
-            $documento->load([
-                'empresa',
-                'sucursal.ubigeoRel',
-                'cliente',
-                'sunat',
-                'detalles.presentacion.unidadMedida',
-            ]);
-            $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-            $tmpPath = tempnam(sys_get_temp_dir(), 'ticket-pdf-');
-            $pdf->save($tmpPath);
-
-            return response()->file($tmpPath, [
-                'Content-Disposition' => 'inline; filename="'.$documento->serie.'-'.$documento->numero.'.pdf"',
-                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma' => 'no-cache',
-            ])->deleteFileAfterSend(true);
-        }
-
-        $archivo = $documento->archivos()->where('tipo_archivo', 'pdf')->first();
-
-        if (! $archivo || ! Storage::disk('local')->exists($archivo->ruta_archivo)) {
-            $documento->load([
-                'empresa',
-                'sucursal.ubigeoRel',
-                'cliente',
-                'sunat',
-                'detalles.presentacion.unidadMedida',
-            ]);
-            $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-            $ventaFileService = app(VentaFileService::class);
-
-            $documento->archivos()->where('tipo_archivo', 'pdf')->delete();
-            $archivo = $ventaFileService->guardarPdf($documento, $pdf->output());
-        }
-
-        $path = Storage::disk('local')->path($archivo->ruta_archivo);
-
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.($archivo->nombre_archivo ?: basename($path)).'"',
+        $documento->loadMissing([
+            'empresa',
+            'sucursal.ubigeoRel',
+            'cliente',
+            'sunat',
+            'detalles.presentacion.unidadMedida',
+            'documentoReferencia',
         ]);
+
+        $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
+
+        $filename = sprintf(
+            '%s-%s-%s.pdf',
+            $documento->empresa?->ruc ?? $documento->empresa_id,
+            $documento->serie,
+            str_pad((string) $documento->numero, 8, '0', STR_PAD_LEFT)
+        );
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'doc-pdf-');
+        $pdf->save($tmpPath);
+
+        return response()->file($tmpPath, [
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ])->deleteFileAfterSend(true);
     }
 
     public function viewDocumentoTicket(Documento $documento): Response

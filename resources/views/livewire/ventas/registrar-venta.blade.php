@@ -637,7 +637,7 @@
                                         @php($sinStockIndex = count($productosResultados) + $loop->index)
                                         <button 
                                             type="button" 
-                                            wire:click="abrirIngresoRapido({{ $producto['producto_presentacion_id'] }})"
+                                            wire:click="seleccionarProductoSinStock({{ $producto['producto_presentacion_id'] }})"
                                             :class="{ 'bg-amber-500 dark:bg-amber-600 ring-2 ring-inset ring-amber-700 dark:ring-amber-300 shadow-inner shadow-amber-900/20': selectedIndex === {{ $sinStockIndex }} }"
                                             data-index="{{ $sinStockIndex }}"
                                             class="w-full px-4 py-3 text-left hover:bg-amber-500/10 transition duration-150 flex items-center justify-between gap-4 text-slate-900 dark:text-white"
@@ -656,13 +656,24 @@
                                                         </span>
                                                     </div>
                                                     <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                                        Cod: {{ $producto['codigo'] ?: 'Sin codigo' }} | Stock: 0
+                                                        Cod: {{ $producto['codigo'] ?: 'Sin codigo' }} | 
+                                                        @if(!empty($producto['tiene_padre_con_stock']))
+                                                            <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ $producto['padre_info'] }}</span>
+                                                        @else
+                                                            <span>Stock: 0</span>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-300">
-                                                Agregar rapido
-                                            </div>
+                                            @if(!empty($producto['tiene_padre_con_stock']))
+                                                <div class="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-black text-emerald-600 dark:text-emerald-300 flex items-center gap-1">
+                                                    <span>📦 Descomprimir</span>
+                                                </div>
+                                            @else
+                                                <div class="rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-300">
+                                                    Agregar rapido
+                                                </div>
+                                            @endif
                                         </button>
                                     @endforeach
                                 @endif

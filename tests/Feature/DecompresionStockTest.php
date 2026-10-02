@@ -18,7 +18,7 @@ use App\Models\UniMedida;
 use App\Models\User;
 use App\Support\Ventas\RegistrarVenta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class DecompresionStockTest extends TestCase
@@ -28,8 +28,7 @@ class DecompresionStockTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Prevent jobs from running during test if not needed
-        Event::fake(ProcesarFacturaSunat::class);
+        Queue::fake();
     }
 
     public function test_it_decompresses_parent_presentation_stock_when_base_stock_is_insufficient(): void

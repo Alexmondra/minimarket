@@ -243,11 +243,8 @@ class RegistrarVenta
         if (in_array($documento->tipo_comprobante, ['FACTURA', 'BOLETA'], true)) {
             try {
                 $hash = $this->facturacionService->preparar($documento);
-                $documento->load('sunat');
-                $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-                $this->fileService->guardarPdf($documento, $pdf->output());
             } catch (\Throwable $e) {
-                Log::error('Error generando PDF sincrono para documento.', [
+                Log::error('Error preparando XML para documento.', [
                     'documento_id' => $documento->id,
                     'message' => $e->getMessage(),
                 ]);
@@ -469,20 +466,44 @@ class RegistrarVenta
         }
     }
 
-    protected function intentarDescomprimirPadres(
+    public function intentarDescomprimirPadres(
         int $productoPresentacionId,
         float $cantidadNecesaria,
         int $sucursalId,
         int $userId,
         int $empresaId,
         string $documentoReferencia
-    ): void {
+    ): ?array {
+        $basePres = ProductoPresentacion::with('producto')->find($productoPresentacionId);
+        if (! $basePres) {
+            return null;
+        }
+
+        // 1. Buscar presentaciones que tengan configurado explícitamente presentacion_base_id = $productoPresentacionId
         $parentPresentations = ProductoPresentacion::query()
             ->where('presentacion_base_id', $productoPresentacionId)
+            ->where('cantidad', '>', 1)
             ->get();
 
+        // 2. Detección inteligente: si no hay vínculo explícito y la base es unitaria (cantidad <= 1)
+        if ($parentPresentations->isEmpty() && (float) $basePres->cantidad <= 1) {
+            $parentPresentations = ProductoPresentacion::query()
+                ->where('producto_id', $basePres->producto_id)
+                ->where('id', '!=', $basePres->id)
+                ->where('cantidad', '>', 1)
+                ->orderBy('cantidad', 'asc')
+                ->get();
+
+            // Auto-vincular para el futuro
+            foreach ($parentPresentations as $p) {
+                if (is_null($p->presentacion_base_id)) {
+                    $p->update(['presentacion_base_id' => $basePres->id]);
+                }
+            }
+        }
+
         if ($parentPresentations->isEmpty()) {
-            return;
+            return null;
         }
 
         $parentIds = $parentPresentations->pluck('id')->all();
@@ -504,6 +525,9 @@ class RegistrarVenta
             ->get();
 
         $acumulado = 0.0;
+        $totalCajasDescomprimidas = 0;
+        $ultimoParentNombre = null;
+        $ultimoBaseLotePres = null;
 
         foreach ($parentStocks as $parentStock) {
             if ($acumulado >= $cantidadNecesaria) {
@@ -559,7 +583,16 @@ class RegistrarVenta
                     ->whereHas('lotePresentacion', fn ($q) => $q->where('producto_presentacion_id', $productoPresentacionId))
                     ->first();
 
-                $precioBase = $anyBaseProdSucursal ? $anyBaseProdSucursal->precio : 0.00;
+                $precioBase = $anyBaseProdSucursal ? (float) $anyBaseProdSucursal->precio : 0.00;
+                if ($precioBase <= 0.0) {
+                    $precioPadre = ProductoSucursal::query()
+                        ->where('sucursal_id', $sucursalId)
+                        ->where('lote_presentacion_id', $parentStock->id)
+                        ->value('precio');
+                    if ($precioPadre && $factor > 0) {
+                        $precioBase = round((float) $precioPadre / $factor, 2);
+                    }
+                }
                 $precioBaseMayorista = $anyBaseProdSucursal ? $anyBaseProdSucursal->precio_mayorista : null;
 
                 ProductoSucursal::create([
@@ -586,7 +619,6 @@ class RegistrarVenta
                 'stock_final' => $parentStock->fresh()->stock,
             ]);
 
-            $basePres = ProductoPresentacion::find($productoPresentacionId);
             MovimientoInventario::create([
                 'empresa_id' => $empresaId,
                 'sucursal_id' => $sucursalId,
@@ -601,7 +633,23 @@ class RegistrarVenta
             ]);
 
             $acumulado += $cantidadAdicionada;
+            $totalCajasDescomprimidas += (int) $cajasADescomprimir;
+            $ultimoParentNombre = $parentPres->tipo_presentacion;
+            $ultimoBaseLotePres = $baseLotePres;
         }
+
+        if ($acumulado > 0) {
+            return [
+                'descomprimido' => true,
+                'parent_nombre' => $ultimoParentNombre ?? 'Empaque',
+                'producto_nombre' => $basePres->producto?->nombre ?? 'Producto',
+                'cajas' => $totalCajasDescomprimidas,
+                'unidades_agregadas' => $acumulado,
+                'stock_final_unidades' => (float) $ultimoBaseLotePres?->fresh()->stock,
+            ];
+        }
+
+        return null;
     }
 
     protected function seriePorDefecto(string $tipoComprobante): string

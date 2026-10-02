@@ -205,14 +205,11 @@ class AnulacionService
             return $nota;
         });
 
-        // Preparar XML y PDF sincrono, luego encolar solo el envío a SUNAT
+        // Preparar XML sincrono, luego encolar solo el envío a SUNAT
         try {
             $hash = $this->facturacionService->prepararNota($notaCredito, $documento);
-            $notaCredito->load('sunat');
-            $pdf = Pdf::loadView('ventas.pdf', ['documento' => $notaCredito]);
-            $this->fileService->guardarPdf($notaCredito, $pdf->output());
         } catch (\Throwable $e) {
-            Log::error('Error generando PDF sincrono para Nota de Credito.', [
+            Log::error('Error preparando XML para Nota de Credito.', [
                 'documento_id' => $notaCredito->id,
                 'message' => $e->getMessage(),
             ]);

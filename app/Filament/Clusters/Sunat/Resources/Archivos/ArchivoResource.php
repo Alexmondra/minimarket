@@ -156,10 +156,6 @@ class ArchivoResource extends Resource
 
 
 
-                        // Render and save PDF
-                        $pdf = Pdf::loadView('ventas.pdf', ['documento' => $documento]);
-                        $ventaFileService->guardarPdf($documento, $pdf->output());
-
                         // Send to SUNAT
                         app(FacturacionService::class)->procesar($documento);
 
